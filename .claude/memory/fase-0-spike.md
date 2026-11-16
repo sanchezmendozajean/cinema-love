@@ -37,9 +37,11 @@ Genera `mpv.lib` (MSVC) a partir de la DLL (cmake/Libmpv.cmake). Los logs van a 
 - Las cabeceras de tipos QML necesitan `target_include_directories(... src/player)`.
 - Forzar OpenGL: `QQuickWindow::setGraphicsApi(OpenGL)` antes de crear la app.
 
+## Ventana sin marco (16/11/2026)
+Hecho y verificado con capturas (`--selftest` genera `*-fs.png` y `*-small.png`): `Qt.FramelessWindowHint`, barra de título propia (arrastre con `startSystemMove`, min/max/cerrar), bordes con `startSystemResize`, pantalla completa y redimensionado a 900x520 con controles superpuestos y video correcto. Pendiente visual: el subtítulo ASS se solapa con la barra de controles (mpv `sub-margin-y`/posición según controles visibles).
+
 ## Falta para cerrar la Fase 0 (specs/06)
 - Prueba larga: película real ≥ 2 h con pausas y saltos, y app abierta horas (ventana en blanco de la versión Flutter).
 - Archivos reales de la biblioteca: PGS, archivo en red (SMB) y por HTTP con `Range`.
 - Linux (X11 y Wayland) y plan B (Qt Multimedia) si hiciera falta.
-- Probar ventana sin marco (el spike usa marco normal) y redimensionado/pantalla completa con controles.
 - Decidir interfaz QML vs web embebida y backend sidecar vs C++ (specs/00 §4).

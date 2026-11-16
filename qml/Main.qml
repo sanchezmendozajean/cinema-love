@@ -10,6 +10,7 @@ Window {
     minimumHeight: 400
     visible: true
     color: "black"
+    flags: Qt.Window | Qt.FramelessWindowHint
     title: "CinemaLove · spike Qt 6 + libmpv"
 
     onClosing: player.shutdown()
@@ -67,6 +68,68 @@ Window {
 
     Timer { id: hideTimer; interval: 30000; onTriggered: root.controlsVisible = false }
 
+    // --- Barra de título propia (ventana sin marco) ---
+    readonly property bool fullscreen: root.visibility === Window.FullScreen
+    Rectangle {
+        id: titleBar
+        anchors { left: parent.left; right: parent.right; top: parent.top }
+        height: 36
+        visible: root.controlsVisible && !root.fullscreen
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#E6000000" }
+            GradientStop { position: 1.0; color: "#00000000" }
+        }
+        Text {
+            anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
+            text: "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true
+        }
+        DragHandler { target: null; onActiveChanged: if (active) root.startSystemMove() }
+        TapHandler { acceptedButtons: Qt.LeftButton; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
+        Row {
+            anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+            Repeater {
+                model: [ { t: "–", a: "min" }, { t: root.visibility === Window.Maximized ? "❐" : "□", a: "max" }, { t: "✕", a: "close" } ]
+                delegate: Rectangle {
+                    width: 46; height: titleBar.height
+                    color: ma.containsMouse ? (modelData.a === "close" ? "#e81123" : "#33ffffff") : "transparent"
+                    Text { anchors.centerIn: parent; text: modelData.t; color: "white"; font.pixelSize: 14 }
+                    MouseArea {
+                        id: ma; anchors.fill: parent; hoverEnabled: true
+                        onClicked: {
+                            if (modelData.a === "min") root.showMinimized()
+                            else if (modelData.a === "max") root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized
+                            else root.close()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Bordes de redimensionado (la ventana sin marco no los trae)
+    Repeater {
+        model: [
+            { e: Qt.LeftEdge, c: Qt.SizeHorCursor, l: true, t: false, r: false, b: false },
+            { e: Qt.RightEdge, c: Qt.SizeHorCursor, l: false, t: false, r: true, b: false },
+            { e: Qt.TopEdge, c: Qt.SizeVerCursor, l: false, t: true, r: false, b: false },
+            { e: Qt.BottomEdge, c: Qt.SizeVerCursor, l: false, t: false, r: false, b: true },
+            { e: Qt.LeftEdge | Qt.TopEdge, c: Qt.SizeFDiagCursor, l: true, t: true, r: false, b: false },
+            { e: Qt.RightEdge | Qt.BottomEdge, c: Qt.SizeFDiagCursor, l: false, t: false, r: true, b: true },
+            { e: Qt.RightEdge | Qt.TopEdge, c: Qt.SizeBDiagCursor, l: false, t: true, r: true, b: false },
+            { e: Qt.LeftEdge | Qt.BottomEdge, c: Qt.SizeBDiagCursor, l: true, t: false, r: false, b: true }
+        ]
+        delegate: MouseArea {
+            enabled: !root.fullscreen && root.visibility !== Window.Maximized
+            readonly property bool corner: (modelData.l || modelData.r) && (modelData.t || modelData.b)
+            x: modelData.r ? root.width - width : 0
+            y: modelData.b ? root.height - height : 0
+            width: modelData.l || modelData.r ? 6 : root.width
+            height: modelData.t || modelData.b ? 6 : root.height
+            cursorShape: modelData.c
+            onPressed: root.startSystemResize(modelData.e)
+        }
+    }
+
     // --- Superposición de controles (demuestra que QML se dibuja encima del video) ---
     Rectangle {
         id: bar
@@ -113,6 +176,7 @@ Window {
         }
         Text {
             anchors { horizontalCenter: parent.horizontalCenter; top: track.bottom; topMargin: 8 }
+            visible: root.width >= 1400
             color: "#999999"; font.pixelSize: 12
             text: "Espacio pausa · ←/→ ±10 s (Shift ±30) · F pantalla completa · clic muestra/oculta"
         }
@@ -130,8 +194,13 @@ Window {
     Timer { id: t5; interval: 11000; onTriggered: { root.mark("pausa"); player.togglePause() } }
     Timer { id: t6; interval: 13000; onTriggered: { root.mark("reanuda"); player.togglePause() } }
     Timer { id: t7; interval: 14000; onTriggered: { root.mark("volumen 150"); player.volume = 150 } }
-    Timer { id: t8; interval: 18000; onTriggered: {
-        player.writeStats(spikeArgs.statsOut || "selftest-stats.json", { selftest: root.selfLog, ventana: root.width + "x" + root.height })
+    Timer { id: t7a; interval: 15000; onTriggered: { root.mark("pantalla completa"); root.visibility = Window.FullScreen } }
+    Timer { id: t7b; interval: 16500; onTriggered: { root.mark("captura pantalla completa"); player.grabWindowTo((spikeArgs.statsOut || "selftest") + "-fs.png") } }
+    Timer { id: t7c; interval: 17000; onTriggered: { root.mark("ventana"); root.visibility = Window.Windowed } }
+    Timer { id: t7d; interval: 18500; onTriggered: { root.mark("redimensiona 900x520"); root.width = 900; root.height = 520 } }
+    Timer { id: t7e; interval: 20000; onTriggered: { root.mark("captura redimensionada"); player.grabWindowTo((spikeArgs.statsOut || "selftest") + "-small.png") } }
+    Timer { id: t8; interval: 21000; onTriggered: {
+        player.writeStats(spikeArgs.statsOut || "selftest-stats.json", { selftest: root.selfLog, ventana: root.width + "x" + root.height, sinMarco: (root.flags & Qt.FramelessWindowHint) !== 0 })
         player.shutdown()
         Qt.quit()
     } }
@@ -145,7 +214,7 @@ Window {
         if (spikeArgs.selftest) {
             root.controlsVisible = true
             hideTimer.stop()
-            t1.start(); t2.start(); t3.start(); t4.start(); t4b.start(); t5.start(); t6.start(); t7.start(); t8.start()
+            t1.start(); t2.start(); t3.start(); t4.start(); t4b.start(); t5.start(); t6.start(); t7.start(); t7a.start(); t7b.start(); t7c.start(); t7d.start(); t7e.start(); t8.start()
         }
     }
 }
