@@ -9,13 +9,39 @@ Window {
     minimumWidth: 640
     minimumHeight: 400
     visible: true
-    color: "black"
     flags: Qt.Window | Qt.FramelessWindowHint
     title: "CinemaLove · spike Qt 6 + libmpv"
 
+    color: Tokens.bg
     onClosing: player.shutdown()
 
     property bool controlsVisible: true
+    property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
+    property string movieTitle: ""
+    property string notice: ""
+
+    MovieModel { id: movies; dbPath: spikeArgs.db }
+
+    function openMovie(m) {
+        if (!movies.fileExists(m.path)) {
+            notice = "No se encuentra el archivo de «" + m.title + "». ¿Está conectado el disco " + m.path.substring(0, 2) + "?"
+            noticeTimer.restart()
+            return
+        }
+        movieTitle = m.title + (m.year > 0 ? " (" + m.year + ")" : "")
+        playing = true
+        controlsVisible = true
+        player.load(m.path)
+        hideTimer.restart()
+        player.forceActiveFocus()
+    }
+    function closeMovie() {
+        player.stop()
+        if (visibility === Window.FullScreen) visibility = Window.Windowed
+        playing = false
+        movieTitle = ""
+        hideTimer.stop()
+    }
 
     function fmt(s) {
         if (!isFinite(s) || s < 0) s = 0
@@ -40,6 +66,7 @@ Window {
         id: player
         anchors.fill: parent
         focus: true
+        onEndOfFile: (reason) => { if (reason === "eof" && !spikeArgs.selftest) root.closeMovie() }
 
         Keys.onPressed: (e) => {
             switch (e.key) {
@@ -49,7 +76,8 @@ Window {
             case Qt.Key_Up: volume = volume + 5; break
             case Qt.Key_Down: volume = volume - 5; break
             case Qt.Key_F: root.visibility = root.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen; break
-            case Qt.Key_Escape: if (root.visibility === Window.FullScreen) root.visibility = Window.Windowed; break
+            case Qt.Key_Escape: if (root.visibility === Window.FullScreen) root.visibility = Window.Windowed; else root.closeMovie(); break
+            case Qt.Key_Backspace: root.closeMovie(); break
             case Qt.Key_A: { const n = root.cycle(audioTracks, audioId, false); if (n) setAudio(n); break }
             case Qt.Key_S: { const n = root.cycle(subtitleTracks, subtitleId, true); if (n) setSubtitle(n); break }
             default: return
@@ -66,6 +94,26 @@ Window {
         }
     }
 
+    CatalogView {
+        id: catalog
+        anchors.fill: parent
+        visible: !root.playing
+        model: movies
+        total: movies.total
+        error: movies.error
+        onSearch: (t) => movies.filter = t
+        onMovieChosen: (m) => root.openMovie(m)
+    }
+
+    Rectangle { // aviso temporal (archivo no disponible)
+        visible: root.notice !== "" && !root.playing
+        anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 32 }
+        width: Math.min(parent.width - 64, noticeText.implicitWidth + 40); height: 44; radius: Tokens.radius
+        color: Tokens.surfaceRaised; border.color: Tokens.danger
+        Text { id: noticeText; anchors.centerIn: parent; width: parent.width - 40; elide: Text.ElideRight; text: root.notice; color: Tokens.text; font.pixelSize: 14 }
+    }
+    Timer { id: noticeTimer; interval: 5000; onTriggered: root.notice = "" }
+
     Timer { id: hideTimer; interval: 30000; onTriggered: root.controlsVisible = false }
 
     // --- Barra de título propia (ventana sin marco) ---
@@ -74,14 +122,21 @@ Window {
         id: titleBar
         anchors { left: parent.left; right: parent.right; top: parent.top }
         height: 36
-        visible: root.controlsVisible && !root.fullscreen
+        visible: (!root.playing || root.controlsVisible) && !root.fullscreen
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#E6000000" }
-            GradientStop { position: 1.0; color: "#00000000" }
+            GradientStop { position: 0.0; color: root.playing ? "#E6000000" : Tokens.bg }
+            GradientStop { position: 1.0; color: root.playing ? "#00000000" : Tokens.bg }
         }
-        Text {
+        Row {
             anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
-            text: "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true
+            spacing: 12
+            Text {
+                visible: root.playing
+                text: "‹ Biblioteca"; color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
+                HoverHandler { id: backHover; cursorShape: Qt.PointingHandCursor }
+                TapHandler { onTapped: root.closeMovie() }
+            }
+            Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
         }
         DragHandler { target: null; onActiveChanged: if (active) root.startSystemMove() }
         TapHandler { acceptedButtons: Qt.LeftButton; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
@@ -135,7 +190,7 @@ Window {
         id: bar
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: 130
-        visible: root.controlsVisible
+        visible: root.playing && root.controlsVisible
         gradient: Gradient {
             GradientStop { position: 0.0; color: "#00000000" }
             GradientStop { position: 1.0; color: "#E6000000" }
@@ -205,8 +260,15 @@ Window {
         Qt.quit()
     } }
 
+    Timer { id: openTimer; interval: 3000; onTriggered: root.openMovie(movies.get(0)) }
+    Timer { id: shotTimer; interval: spikeArgs.openFirst ? 14000 : 9000; onTriggered: {
+        player.grabWindowTo(spikeArgs.catalogShot); player.shutdown(); Qt.quit() } }
+
     Component.onCompleted: {
+        if (spikeArgs.catalogShot) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }
         if (spikeArgs.file) {
+            root.playing = true
+            root.movieTitle = spikeArgs.file
             player.load(spikeArgs.file)
             if (spikeArgs.sub) player.addSubtitle(spikeArgs.sub)
         }

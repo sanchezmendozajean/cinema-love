@@ -45,3 +45,11 @@ Hecho y verificado con capturas (`--selftest` genera `*-fs.png` y `*-small.png`)
 - Archivos reales de la biblioteca: PGS, archivo en red (SMB) y por HTTP con `Range`.
 - Linux (X11 y Wayland) y plan B (Qt Multimedia) si hiciera falta.
 - Decidir interfaz QML vs web embebida y backend sidecar vs C++ (specs/00 §4).
+
+## Selector de películas / catálogo (16/11/2026)
+Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin cerrarse).
+- `src/catalog/MovieModel` (QtSql, **solo lectura** `QSQLITE_OPEN_READONLY`) lee la copia `.dev-data/cinemalove.sqlite` (copiada de `flutter-version/datos/`); 537 películas con `estado_archivo='ok'`. Ruta del archivo = `libraries.ruta_actual` + `ruta_relativa` (E:\Cine y TV\Películas\…). Búsqueda sin tildes. Si `titulo` es NULL (hay 2) se usa el nombre de la carpeta.
+- QML: `theme/Tokens.qml` (singleton, colores de design/10), `PosterCard`, `CatalogView` (cabecera, búsqueda, GridView, estados vacío/error), integrado en `Main.qml`: clic → `openMovie` → reproduce; «‹ Biblioteca»/Esc/Retroceso vuelven; fin de archivo vuelve al catálogo; aviso si el archivo no está accesible.
+- Pósters: URL de TMDb cargadas con caché de disco (`.dev-data/img-cache`, `CachedNam` en main.cpp). Solo desarrollo: casi ninguno está en `images/` (cl_image_cache). El `ImageProvider` definitivo sigue pendiente.
+- Pruebas: `--catalog-shot ruta.png [--search txt] [--open-first]`, `--db ruta`.
+- Pendiente: fuentes Fraunces/Inter locales (hoy Georgia/sistema), progreso/«continuar viendo», ficha de película, rendimiento con scroll (criterio 60 fps), foco con teclado verificado solo en código.

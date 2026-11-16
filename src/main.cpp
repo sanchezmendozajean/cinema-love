@@ -1,6 +1,10 @@
 #include <clocale>
 
 #include <QCommandLineParser>
+#include <QDir>
+#include <QNetworkAccessManager>
+#include <QNetworkDiskCache>
+#include <QQmlNetworkAccessManagerFactory>
 #include <QDateTime>
 #include <QFile>
 #include <QGuiApplication>
@@ -26,6 +30,25 @@ void logHandler(QtMsgType type, const QMessageLogContext &, const QString &msg)
         g_log->flush();
     }
 }
+
+// Los pósters se descargan de TMDb y se guardan en una caché de disco (solo desarrollo; la caché definitiva compartida
+// con images/ llega con el ImageProvider, specs/04 §4).
+class CachedNam : public QQmlNetworkAccessManagerFactory
+{
+public:
+    explicit CachedNam(QString dir) : m_dir(std::move(dir)) {}
+    QNetworkAccessManager *create(QObject *parent) override
+    {
+        auto *nam = new QNetworkAccessManager(parent);
+        auto *cache = new QNetworkDiskCache(nam);
+        cache->setCacheDirectory(m_dir);
+        cache->setMaximumCacheSize(512LL * 1024 * 1024);
+        nam->setCache(cache);
+        return nam;
+    }
+private:
+    QString m_dir;
+};
 
 } // namespace
 
@@ -57,15 +80,25 @@ int main(int argc, char *argv[])
     QCommandLineOption selftest(QStringLiteral("selftest"), QStringLiteral("Secuencia automática (seek, pistas, pausa) y salida"));
     QCommandLineOption statsOut(QStringLiteral("stats-out"), QStringLiteral("Ruta del JSON de métricas del selftest"), QStringLiteral("ruta"));
     QCommandLineOption subFile(QStringLiteral("sub"), QStringLiteral("Subtítulo externo a cargar"), QStringLiteral("ruta"));
-    parser.addOptions({selftest, statsOut, subFile});
+    QCommandLineOption dataDb(QStringLiteral("db"), QStringLiteral("Copia de cinemalove.sqlite (por defecto .dev-data/)"), QStringLiteral("ruta"));
+    QCommandLineOption catShot(QStringLiteral("catalog-shot"), QStringLiteral("Captura el catálogo a un PNG (con --search opcional) y sale"), QStringLiteral("ruta"));
+    QCommandLineOption searchOpt(QStringLiteral("search"), QStringLiteral("Texto de búsqueda inicial"), QStringLiteral("texto"));
+    QCommandLineOption openFirst(QStringLiteral("open-first"), QStringLiteral("Abre la primera película del catálogo filtrado (prueba)"));
+    parser.addOptions({selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst});
     parser.process(app);
 
     QQmlApplicationEngine engine;
+    const QString devData = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../../../.dev-data"));
+    engine.setNetworkAccessManagerFactory(new CachedNam(QDir::cleanPath(devData + QStringLiteral("/img-cache"))));
     QVariantMap args;
     args["file"] = parser.positionalArguments().value(0);
     args["selftest"] = parser.isSet(selftest);
     args["statsOut"] = parser.value(statsOut);
+    args["catalogShot"] = parser.value(catShot);
+    args["openFirst"] = parser.isSet(openFirst);
+    args["search"] = parser.value(searchOpt);
     args["sub"] = parser.value(subFile);
+    args["db"] = parser.isSet(dataDb) ? parser.value(dataDb) : QDir::cleanPath(devData + QStringLiteral("/cinemalove.sqlite"));
     engine.rootContext()->setContextProperty(QStringLiteral("spikeArgs"), args);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); },
