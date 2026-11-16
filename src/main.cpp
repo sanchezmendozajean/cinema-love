@@ -84,7 +84,8 @@ int main(int argc, char *argv[])
     QCommandLineOption catShot(QStringLiteral("catalog-shot"), QStringLiteral("Captura el catálogo a un PNG (con --search opcional) y sale"), QStringLiteral("ruta"));
     QCommandLineOption searchOpt(QStringLiteral("search"), QStringLiteral("Texto de búsqueda inicial"), QStringLiteral("texto"));
     QCommandLineOption openFirst(QStringLiteral("open-first"), QStringLiteral("Abre la primera película del catálogo filtrado (prueba)"));
-    parser.addOptions({selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst});
+    QCommandLineOption playOpt(QStringLiteral("play"), QStringLiteral("Con --open-first: reproduce en vez de mostrar la ficha"));
+    parser.addOptions({selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt});
     parser.process(app);
 
     QQmlApplicationEngine engine;
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
     args["statsOut"] = parser.value(statsOut);
     args["catalogShot"] = parser.value(catShot);
     args["openFirst"] = parser.isSet(openFirst);
+    args["play"] = parser.isSet(playOpt);
     args["search"] = parser.value(searchOpt);
     args["sub"] = parser.value(subFile);
     args["db"] = parser.isSet(dataDb) ? parser.value(dataDb) : QDir::cleanPath(devData + QStringLiteral("/cinemalove.sqlite"));

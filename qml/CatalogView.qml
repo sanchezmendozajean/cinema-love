@@ -12,7 +12,7 @@ Rectangle {
     property string error: ""
     signal search(string text)
     function setSearch(t) { searchField.text = t }
-    signal movieChosen(var movie)
+    signal movieChosen(int row)
 
     Column {
         id: header
@@ -76,11 +76,12 @@ Rectangle {
         }
         delegate: PosterCard {
             required property var model
+            required property int index
             width: grid.cellWidth; height: grid.cellHeight
             title: model.title
             year: model.year
             posterUrl: model.posterUrl
-            onActivated: view.movieChosen({ title: model.title, year: model.year, path: model.path })
+            onActivated: view.movieChosen(index)
         }
         KeyNavigation.up: searchField
     }

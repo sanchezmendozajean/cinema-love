@@ -19,10 +19,19 @@ Window {
     property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
     property string movieTitle: ""
     property string notice: ""
+    property var detail: null   // ficha abierta (mapa de MovieModel.get) o null
 
     MovieModel { id: movies; dbPath: spikeArgs.db }
 
-    function openMovie(m) {
+    function showDetail(row) {
+        const m = movies.get(row)
+        m.available = movies.fileExists(m.path)
+        detail = m
+        detailView.forceActiveFocus()
+    }
+    function closeDetail() { detail = null; catalog.forceActiveFocus() }
+
+    function openMovie(m, start) {
         if (!movies.fileExists(m.path)) {
             notice = "No se encuentra el archivo de «" + m.title + "». ¿Está conectado el disco " + m.path.substring(0, 2) + "?"
             noticeTimer.restart()
@@ -31,7 +40,7 @@ Window {
         movieTitle = m.title + (m.year > 0 ? " (" + m.year + ")" : "")
         playing = true
         controlsVisible = true
-        player.load(m.path)
+        player.load(m.path, start || 0)
         hideTimer.restart()
         player.forceActiveFocus()
     }
@@ -41,6 +50,7 @@ Window {
         playing = false
         movieTitle = ""
         hideTimer.stop()
+        if (detail) detailView.forceActiveFocus()
     }
 
     function fmt(s) {
@@ -97,12 +107,21 @@ Window {
     CatalogView {
         id: catalog
         anchors.fill: parent
-        visible: !root.playing
+        visible: !root.playing && !root.detail
         model: movies
         total: movies.total
         error: movies.error
         onSearch: (t) => movies.filter = t
-        onMovieChosen: (m) => root.openMovie(m)
+        onMovieChosen: (row) => root.showDetail(row)
+    }
+
+    DetailView {
+        id: detailView
+        anchors.fill: parent
+        visible: !root.playing && root.detail !== null
+        movie: root.detail || ({})
+        onBack: root.closeDetail()
+        onPlay: (start) => root.openMovie(root.detail, start)
     }
 
     Rectangle { // aviso temporal (archivo no disponible)
@@ -131,10 +150,10 @@ Window {
             anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
             spacing: 12
             Text {
-                visible: root.playing
-                text: "‹ Biblioteca"; color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
+                visible: root.playing || root.detail !== null
+                text: root.playing ? "‹ " + (root.detail ? "Ficha" : "Biblioteca") : "‹ Películas"; color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
                 HoverHandler { id: backHover; cursorShape: Qt.PointingHandCursor }
-                TapHandler { onTapped: root.closeMovie() }
+                TapHandler { onTapped: root.playing ? root.closeMovie() : root.closeDetail() }
             }
             Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
         }
@@ -260,7 +279,8 @@ Window {
         Qt.quit()
     } }
 
-    Timer { id: openTimer; interval: 3000; onTriggered: root.openMovie(movies.get(0)) }
+    Timer { id: openTimer; interval: 3000; onTriggered: {
+        if (spikeArgs.play) root.openMovie(movies.get(0), 0); else root.showDetail(0) } }
     Timer { id: shotTimer; interval: spikeArgs.openFirst ? 14000 : 9000; onTriggered: {
         player.grabWindowTo(spikeArgs.catalogShot); player.shutdown(); Qt.quit() } }
 

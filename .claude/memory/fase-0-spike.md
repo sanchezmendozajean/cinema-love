@@ -56,3 +56,9 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - Pósters: URL de TMDb cargadas con caché de disco (`.dev-data/img-cache`, `CachedNam` en main.cpp). Solo desarrollo: casi ninguno está en `images/` (cl_image_cache). El `ImageProvider` definitivo sigue pendiente.
 - Pruebas: `--catalog-shot ruta.png [--search txt] [--open-first]`, `--db ruta`.
 - Pendiente: fuentes Fraunces/Inter locales (hoy Georgia/sistema), progreso/«continuar viendo», ficha de película, rendimiento con scroll (criterio 60 fps), foco con teclado verificado solo en código.
+
+## Ficha de película (16/11/2026)
+`qml/DetailView.qml` (design/11 · P5, versión reducida): backdrop con degradados, póster, título/original/año/duración/idioma, chips de género, estudio, botón Reproducir / Continuar (con minutos restantes y barra de progreso, leído de `watch_progresses`) / Volver a ver, ↺ reiniciar, «Vista», sinopsis, reparto (fotos circulares con `MultiEffect` + máscara) y equipo (dirección/guion). Flujo: catálogo → ficha → reproductor; «‹ Ficha»/Esc vuelven al paso anterior. `MovieModel.get(row)` devuelve el mapa completo.
+- El progreso es **solo lectura**: reproducir aquí todavía NO guarda posición (escritura aditiva en `watch_progresses` pendiente, tras acordar con la API/otras versiones).
+- Pruebas: `npm run dev -- --catalog-shot x.png --search "The Majestic" --open-first [--play]`.
+- Pendiente de la ficha: extras, colecciones, detalles técnicos, pistas de audio/subs recordadas (`pista_*_id`), estados sin metadatos y skeletons.

@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -43,7 +44,15 @@ QVariantMap MovieModel::get(int row) const
 {
     if (row < 0 || row >= m_view.size()) return {};
     const Movie &m = m_view.at(row);
-    return {{"title", m.title}, {"year", m.year}, {"path", m.path}};
+    auto list = [](const QString &json) {
+        QVariantList out;
+        for (const auto &v : QJsonDocument::fromJson(json.toUtf8()).array()) out << v.toObject().toVariantMap();
+        return out;
+    };
+    return {{"id", m.id}, {"title", m.title}, {"year", m.year}, {"path", m.path}, {"posterUrl", m.posterUrl},
+            {"backdropUrl", m.backdropUrl}, {"origTitle", m.origTitle}, {"studio", m.studio}, {"lang", m.lang},
+            {"duration", m.duration}, {"genres", m.genres}, {"synopsis", m.synopsis}, {"cast", list(m.castJson)},
+            {"crew", list(m.crewJson)}, {"progressPos", m.progressPos}, {"progressState", m.progressState}};
 }
 
 bool MovieModel::fileExists(const QString &path) const { return QFileInfo::exists(path); }
@@ -69,7 +78,10 @@ void MovieModel::load()
             q.setForwardOnly(true);
             const bool ok = q.exec(QStringLiteral(
                 "SELECT m.id, m.titulo, m.anio, m.poster_url, m.duracion_segundos, m.generos, m.sinopsis, "
-                "       l.ruta_actual, m.ruta_relativa "
+                "       l.ruta_actual, m.ruta_relativa, m.titulo_original, m.backdrop_url, m.estudio, m.idioma_original, "
+                "       m.reparto, m.equipo, "
+                "       (SELECT posicion_segundos FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1), "
+                "       (SELECT estado FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1) "
                 "FROM media_items m JOIN libraries l ON l.id = m.library_id "
                 "WHERE m.series_id IS NULL AND l.tipo = 'pelicula' AND m.estado_archivo = 'ok'"));
             if (!ok) {
@@ -88,6 +100,14 @@ void MovieModel::load()
                     m.genres = gl.join(QStringLiteral(" · "));
                     m.synopsis = q.value(6).toString();
                     m.path = QDir::toNativeSeparators(q.value(7).toString() + QLatin1Char('/') + q.value(8).toString());
+                    m.origTitle = q.value(9).toString();
+                    m.backdropUrl = q.value(10).toString();
+                    m.studio = q.value(11).toString();
+                    m.lang = q.value(12).toString();
+                    m.castJson = q.value(13).toString();
+                    m.crewJson = q.value(14).toString();
+                    m.progressPos = q.value(15).toDouble();
+                    m.progressState = q.value(16).toString();
                     if (m.title.trimmed().isEmpty()) {
                         // Sin metadata de TMDb: se usa el nombre de la carpeta («Título (2001)») para que no quede una tarjeta vacía.
                         const QString rel = q.value(8).toString();

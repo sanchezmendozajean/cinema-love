@@ -42,6 +42,8 @@ signals:
 private:
     struct Movie {
         QString id, title, posterUrl, genres, path, synopsis;
+        QString origTitle, backdropUrl, studio, lang, castJson, crewJson, progressState;
+        double progressPos = 0;
         int year = 0, duration = 0;
         QString folded; // título normalizado (sin tildes, minúsculas) para buscar
     };
