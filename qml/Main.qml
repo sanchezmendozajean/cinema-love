@@ -19,6 +19,8 @@ Window {
     property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
     property string movieTitle: ""
     property string notice: ""
+    // Sección principal: «home» (Inicio) o «catalog» (Películas). Las pruebas del catálogo arrancan en «catalog».
+    property string section: spikeArgs.section || ((spikeArgs.catalogShot || spikeArgs.progressTest || spikeArgs.openFirst) ? "catalog" : "home")
     property var detail: null   // ficha abierta (mapa de MovieModel.get) o null
 
     MovieModel { id: movies; dbPath: spikeArgs.db }
@@ -59,8 +61,15 @@ Window {
         }
     }
 
-    function showDetail(row) {
-        const m = movies.get(row)
+    function showDetail(row) { openDetailOf(movies.get(row)) }
+    function showDetailById(id) { openDetailOf(movies.getById(id)) }
+    function playById(id) {
+        const m = movies.getById(id)
+        m.available = movies.fileExists(m.path)
+        detail = m
+        openMovie(m, m.progressState === "enProgreso" ? m.progressPos : 0)
+    }
+    function openDetailOf(m) {
         m.available = movies.fileExists(m.path)
         detail = m
         detailView.forceActiveFocus()
@@ -158,12 +167,21 @@ Window {
     CatalogView {
         id: catalog
         anchors.fill: parent
-        visible: !root.playing && !root.detail
+        visible: !root.playing && !root.detail && root.section === "catalog"
         model: movies
         total: movies.total
         error: movies.error
         onSearch: (t) => movies.filter = t
         onMovieChosen: (row) => root.showDetail(row)
+    }
+
+    HomeView {
+        id: homeView
+        anchors.fill: parent
+        visible: !root.playing && !root.detail && root.section === "home"
+        model: movies
+        onOpenDetail: (id) => root.showDetailById(id)
+        onPlayMovie: (id) => root.playById(id)
     }
 
     DetailView {
@@ -207,6 +225,16 @@ Window {
                 TapHandler { onTapped: root.playing ? root.closeMovie() : root.closeDetail() }
             }
             Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
+            Repeater {
+                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" } ]
+                delegate: Text {
+                    leftPadding: 12
+                    text: modelData.t; font.pixelSize: 13; font.weight: Font.Medium
+                    color: root.section === modelData.k ? Tokens.text : (navHover.hovered ? Tokens.text : Tokens.textMuted)
+                    HoverHandler { id: navHover; cursorShape: Qt.PointingHandCursor }
+                    TapHandler { onTapped: root.section = modelData.k }
+                }
+            }
         }
         DragHandler { target: null; onActiveChanged: if (active) root.startSystemMove() }
         TapHandler { acceptedButtons: Qt.LeftButton; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
@@ -339,6 +367,7 @@ Window {
     Timer { id: pt3; interval: 14500; onTriggered: { root.closeMovie()
         console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
     Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
+    Timer { id: homeScrollTimer; interval: 4000; onTriggered: homeView.scrollTo(spikeArgs.homeScroll) }
     Timer { id: openTimer; interval: 3000; onTriggered: {
         if (spikeArgs.play) root.openMovie(movies.get(0), 0); else root.showDetail(0) } }
     Timer { id: shotTimer; interval: spikeArgs.openFirst ? 14000 : 9000; onTriggered: {
@@ -346,6 +375,7 @@ Window {
 
     Component.onCompleted: {
         if (spikeArgs.progressTest) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); pt1.start(); pt2.start(); pt3.start(); pt4.start() }
+        if (spikeArgs.homeScroll > 0) Qt.callLater(() => homeScrollTimer.start())
         if (spikeArgs.catalogShot) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }
         if (spikeArgs.file) {
             root.playing = true

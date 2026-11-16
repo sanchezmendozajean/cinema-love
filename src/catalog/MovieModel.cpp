@@ -130,6 +130,8 @@ bool MovieModel::saveProgress(const QString &id, double position, const QString 
             if (m.id != id) continue;
             m.progressState = state;
             m.progressPos = double(pos);
+            m.lastPlayed = QDateTime::currentSecsSinceEpoch();
+            if (watched) m.queuedAt = 0;
             if (!audioId.isEmpty()) m.progressAudio = audioId;
             if (!subId.isEmpty()) m.progressSub = subId;
         }
@@ -140,8 +142,45 @@ bool MovieModel::saveProgress(const QString &id, double position, const QString 
             if (!subId.isEmpty()) m.progressSub = subId;
         }
         refreshRow(id);
+        emit homeChanged();
     }
     return ok;
+}
+
+QVariantMap MovieModel::card(const Movie &m) const
+{
+    const double frac = m.duration > 0 ? qBound(0.0, m.progressPos / m.duration, 1.0) : 0.0;
+    return {{"id", m.id}, {"title", m.title}, {"year", m.year}, {"posterUrl", m.posterUrl}, {"backdropUrl", m.backdropUrl},
+            {"progressState", m.progressState}, {"progressFraction", frac}, {"duration", m.duration},
+            {"progressPos", m.progressPos}, {"genres", m.genres}, {"synopsis", m.synopsis}};
+}
+
+QVariantList MovieModel::homeRow(const QString &kind, int limit) const
+{
+    QVector<const Movie *> sel;
+    for (const Movie &m : m_all) {
+        if (kind == QLatin1String("continue")) {
+            if (m.progressState == QLatin1String("enProgreso") && m.progressPos > 0 && (m.duration <= 0 || m.progressPos / m.duration < 0.95)) sel << &m;
+        } else if (kind == QLatin1String("queue")) {
+            if (m.queuedAt > 0) sel << &m;
+        } else if (kind == QLatin1String("watched")) {
+            if (m.progressState == QLatin1String("visto")) sel << &m;
+        } else {
+            sel << &m; // recent
+        }
+    }
+    auto key = [&](const Movie *m) {
+        if (kind == QLatin1String("recent")) return m->createdAt;
+        if (kind == QLatin1String("queue")) return m->queuedAt;
+        return m->lastPlayed;
+    };
+    std::stable_sort(sel.begin(), sel.end(), [&](const Movie *a, const Movie *b) { return key(a) > key(b); });
+    QVariantList out;
+    for (const Movie *m : std::as_const(sel)) {
+        if (out.size() >= limit) break;
+        out << card(*m);
+    }
+    return out;
 }
 
 void MovieModel::refreshRow(const QString &id)
@@ -181,7 +220,10 @@ void MovieModel::load()
                 "       (SELECT posicion_segundos FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1), "
                 "       (SELECT estado FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1), "
                 "       (SELECT pista_audio_id FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1), "
-                "       (SELECT pista_subtitulo_id FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1) "
+                "       (SELECT pista_subtitulo_id FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1), "
+                "       m.creado_en, "
+                "       (SELECT ultima_reproduccion FROM watch_progresses w WHERE w.media_item_id = m.id ORDER BY ultima_reproduccion DESC LIMIT 1), "
+                "       (SELECT agregado_en FROM proximas_a_ver p WHERE p.media_item_id = m.id AND p.usuario_id IS NULL LIMIT 1) "
                 "FROM media_items m JOIN libraries l ON l.id = m.library_id "
                 "WHERE m.series_id IS NULL AND l.tipo = 'pelicula' AND m.estado_archivo = 'ok'"));
             if (!ok) {
@@ -210,6 +252,9 @@ void MovieModel::load()
                     m.progressState = q.value(16).toString();
                     m.progressAudio = q.value(17).toString();
                     m.progressSub = q.value(18).toString();
+                    m.createdAt = q.value(19).toLongLong();
+                    m.lastPlayed = q.value(20).toLongLong();
+                    m.queuedAt = q.value(21).toLongLong();
                     if (m.title.trimmed().isEmpty()) {
                         // Sin metadata de TMDb: se usa el nombre de la carpeta («Título (2001)») para que no quede una tarjeta vacía.
                         const QString rel = q.value(8).toString();

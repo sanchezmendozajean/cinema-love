@@ -71,3 +71,9 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - Pendiente: mapear subtítulos externos `ext-k` ↔ ids de mpv (specs/05 §3), ids de pista con las otras versiones.
 - **Trampa de PowerShell**: `-db` es alias de `-Debug`; por eso la opción de la app es `--database` (no `--db`). Los argumentos con espacios pasan bien por `npm run dev --`.
 - Las pruebas que escriben deben usar `--database` con una copia aparte en `.dev-data/` (la base original de `flutter-version/datos/` nunca se toca). Prueba: `--progress-test --search "101 d"` (ejecutar dos veces).
+
+## Inicio (16/11/2026)
+`HomeView` (design/11 · P2, RF-11): héroe con backdrop (lo último en curso; si no hay, lo más reciente) + filas «Continuar viendo» (tarjetas apaisadas `LandscapeCard`, minutos restantes), «Próximas a ver» (`proximas_a_ver`), «Agregados recientemente» (`creado_en`), «Vistos recientemente»; filas vacías se ocultan. Datos: `MovieModel::homeRow(kind, limit)` (continue|queue|recent|watched) + señal `homeChanged` al guardar progreso. Pestañas Inicio/Películas en la barra de título (`root.section`); Inicio es la sección por defecto.
+- Trampa QML: no usar `readonly property var x: { rev; return model.f() }` — no se reevaluaba al llegar el modelo; se usa `refresh()` explícito. Y no nombrar una propiedad igual que un `id` del mismo archivo.
+- Pruebas: `--section home|catalog`, `--home-scroll px`, `--database` con copia aparte.
+- Pendiente: series/episodios en «Continuar viendo», flechas ‹ › en las filas, skeletons de carga, ítem con foco por teclado en filas, filas por género (no están en RF-11).

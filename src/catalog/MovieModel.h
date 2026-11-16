@@ -36,6 +36,8 @@ public:
     Q_INVOKABLE bool saveProgress(const QString &id, double position, const QString &state,
                                   const QString &audioId = {}, const QString &subId = {});
     bool writable() const;
+    /** Filas de Inicio (RF-11): kind = continue | queue | recent | watched. Devuelve tarjetas ligeras. */
+    Q_INVOKABLE QVariantList homeRow(const QString &kind, int limit = 20) const;
     Q_INVOKABLE bool fileExists(const QString &path) const;
 
 signals:
@@ -43,11 +45,13 @@ signals:
     void filterChanged();
     void countChanged();
     void errorChanged();
+    void homeChanged(); // cambió algo que afecta a las filas de Inicio (progreso)
 
 private:
     struct Movie {
         QString id, title, posterUrl, genres, path, synopsis;
         QString progressAudio, progressSub;
+        qint64 createdAt = 0, lastPlayed = 0, queuedAt = 0; // creado_en, última reproducción, agregado a «Próximas a ver»
         QString origTitle, backdropUrl, studio, lang, castJson, crewJson, progressState;
         double progressPos = 0;
         int year = 0, duration = 0;
@@ -55,6 +59,7 @@ private:
     };
     void load();
     QVariantMap toMap(const Movie &m) const;
+    QVariantMap card(const Movie &m) const;
     void refreshRow(const QString &id);
     void applyFilter();
     static QString fold(const QString &s);

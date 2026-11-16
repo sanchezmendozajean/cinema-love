@@ -25,6 +25,9 @@ qt_add_qml_module(cinemalove
         qml/CatalogView.qml
         qml/PosterCard.qml
         qml/DetailView.qml
+        qml/HomeView.qml
+        qml/HomeRow.qml
+        qml/LandscapeCard.qml
         qml/theme/Tokens.qml
     SOURCES
         src/catalog/MovieModel.h
