@@ -1,0 +1,51 @@
+# Compilación (CMake / Qt Creator / Visual Studio)
+build/
+build-*/
+out/
+cmake-build-*/
+CMakeUserPresets.json
+CMakeLists.txt.user*
+*.user
+.qtc_clangd/
+.cache/
+compile_commands.json
+.vs/
+.vscode/
+
+# Binarios y artefactos de Qt / compilación
+*.o
+*.obj
+*.a
+*.lib
+*.exp
+*.pdb
+*.ilk
+moc_*
+qrc_*
+ui_*
+*_autogen/
+
+# Distribución
+dist/
+*.AppImage
+*.zip
+*.tar.gz
+
+# Dependencias nativas descargadas por scripts (libmpv, sidecar, etc.); lo versionado son los scripts y los checksums
+third_party/libmpv/*
+!third_party/libmpv/.gitkeep
+third_party/*/bin/
+backend/node_modules/
+backend/dist/
+node_modules/
+
+# Datos de desarrollo: copias de datos reales del usuario
+.dev-data/
+
+# Ajustes personales de Claude Code
+.claude/settings.local.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
