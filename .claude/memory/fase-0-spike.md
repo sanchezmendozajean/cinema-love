@@ -62,3 +62,12 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - El progreso es **solo lectura**: reproducir aquí todavía NO guarda posición (escritura aditiva en `watch_progresses` pendiente, tras acordar con la API/otras versiones).
 - Pruebas: `npm run dev -- --catalog-shot x.png --search "The Majestic" --open-first [--play]`.
 - Pendiente de la ficha: extras, colecciones, detalles técnicos, pistas de audio/subs recordadas (`pista_*_id`), estados sin metadatos y skeletons.
+
+## Guardar y reanudar progreso (16/11/2026)
+- `MovieModel::saveProgress` replica `escritura.ts`: upsert en `watch_progresses` con `usuario_id IS NULL`, `ultima_reproduccion` en segundos, conserva pistas si no llegan nuevas; «visto» → posición 0 + borra de `proximas_a_ver`. **Solo escribe si la ruta contiene `/.dev-data/`** (si no, avisa y omite).
+- Eventos de guardado (specs/05 §4): pausa, seek, cambio de pista (agrupados con un Timer de 700 ms), cerrar el reproductor/ventana, y >95 % o fin de archivo → visto. Nunca periódico. No se guarda con posición < 5 s ni antes de restaurar pistas (`progressReady`), para no pisar las guardadas con «auto».
+- Reanudar: `load(ruta, start)` + reselección única de audio/subtítulo al conocer las pistas. Verificado: guarda 311 → reanuda en 318,7 → guarda 622; audio `1`, sub `no`.
+- Catálogo: barra de progreso y marca ✓ en las tarjetas; la ficha se refresca al volver.
+- Pendiente: mapear subtítulos externos `ext-k` ↔ ids de mpv (specs/05 §3), ids de pista con las otras versiones.
+- **Trampa de PowerShell**: `-db` es alias de `-Debug`; por eso la opción de la app es `--database` (no `--db`). Los argumentos con espacios pasan bien por `npm run dev --`.
+- Las pruebas que escriben deben usar `--database` con una copia aparte en `.dev-data/` (la base original de `flutter-version/datos/` nunca se toca). Prueba: `--progress-test --search "101 d"` (ejecutar dos veces).

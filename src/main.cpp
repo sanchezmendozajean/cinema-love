@@ -80,12 +80,13 @@ int main(int argc, char *argv[])
     QCommandLineOption selftest(QStringLiteral("selftest"), QStringLiteral("Secuencia automática (seek, pistas, pausa) y salida"));
     QCommandLineOption statsOut(QStringLiteral("stats-out"), QStringLiteral("Ruta del JSON de métricas del selftest"), QStringLiteral("ruta"));
     QCommandLineOption subFile(QStringLiteral("sub"), QStringLiteral("Subtítulo externo a cargar"), QStringLiteral("ruta"));
-    QCommandLineOption dataDb(QStringLiteral("db"), QStringLiteral("Copia de cinemalove.sqlite (por defecto .dev-data/)"), QStringLiteral("ruta"));
+    QCommandLineOption dataDb(QStringLiteral("database"), QStringLiteral("Copia de cinemalove.sqlite (por defecto .dev-data/)"), QStringLiteral("ruta"));
     QCommandLineOption catShot(QStringLiteral("catalog-shot"), QStringLiteral("Captura el catálogo a un PNG (con --search opcional) y sale"), QStringLiteral("ruta"));
     QCommandLineOption searchOpt(QStringLiteral("search"), QStringLiteral("Texto de búsqueda inicial"), QStringLiteral("texto"));
     QCommandLineOption openFirst(QStringLiteral("open-first"), QStringLiteral("Abre la primera película del catálogo filtrado (prueba)"));
     QCommandLineOption playOpt(QStringLiteral("play"), QStringLiteral("Con --open-first: reproduce en vez de mostrar la ficha"));
-    parser.addOptions({selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt});
+    QCommandLineOption progTest(QStringLiteral("progress-test"), QStringLiteral("Prueba de guardar/reanudar progreso con la primera coincidencia de --search"));
+    parser.addOptions({selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
     QQmlApplicationEngine engine;
@@ -98,6 +99,7 @@ int main(int argc, char *argv[])
     args["catalogShot"] = parser.value(catShot);
     args["openFirst"] = parser.isSet(openFirst);
     args["play"] = parser.isSet(playOpt);
+    args["progressTest"] = parser.isSet(progTest);
     args["search"] = parser.value(searchOpt);
     args["sub"] = parser.value(subFile);
     args["db"] = parser.isSet(dataDb) ? parser.value(dataDb) : QDir::cleanPath(devData + QStringLiteral("/cinemalove.sqlite"));

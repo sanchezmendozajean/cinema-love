@@ -15,7 +15,7 @@ class MovieModel : public QAbstractListModel
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
 
 public:
-    enum Roles { IdRole = Qt::UserRole + 1, TitleRole, YearRole, PosterRole, DurationRole, GenresRole, PathRole, SynopsisRole };
+    enum Roles { IdRole = Qt::UserRole + 1, ProgressStateRole, ProgressFractionRole, TitleRole, YearRole, PosterRole, DurationRole, GenresRole, PathRole, SynopsisRole };
 
     explicit MovieModel(QObject *parent = nullptr);
 
@@ -31,6 +31,11 @@ public:
     QString error() const { return m_error; }
 
     Q_INVOKABLE QVariantMap get(int row) const;
+    Q_INVOKABLE QVariantMap getById(const QString &id) const;
+    /** Guarda el progreso como lo hace Electron (upsert en watch_progresses, usuario NULL). Solo en copias de .dev-data. */
+    Q_INVOKABLE bool saveProgress(const QString &id, double position, const QString &state,
+                                  const QString &audioId = {}, const QString &subId = {});
+    bool writable() const;
     Q_INVOKABLE bool fileExists(const QString &path) const;
 
 signals:
@@ -42,12 +47,15 @@ signals:
 private:
     struct Movie {
         QString id, title, posterUrl, genres, path, synopsis;
+        QString progressAudio, progressSub;
         QString origTitle, backdropUrl, studio, lang, castJson, crewJson, progressState;
         double progressPos = 0;
         int year = 0, duration = 0;
         QString folded; // título normalizado (sin tildes, minúsculas) para buscar
     };
     void load();
+    QVariantMap toMap(const Movie &m) const;
+    void refreshRow(const QString &id);
     void applyFilter();
     static QString fold(const QString &s);
 

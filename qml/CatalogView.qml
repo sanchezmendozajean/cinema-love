@@ -81,6 +81,8 @@ Rectangle {
             title: model.title
             year: model.year
             posterUrl: model.posterUrl
+            progressState: model.progressState
+            progressFraction: model.progressFraction
             onActivated: view.movieChosen(index)
         }
         KeyNavigation.up: searchField

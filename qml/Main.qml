@@ -13,7 +13,7 @@ Window {
     title: "CinemaLove · spike Qt 6 + libmpv"
 
     color: Tokens.bg
-    onClosing: player.shutdown()
+    onClosing: { persist(); player.shutdown() }
 
     property bool controlsVisible: true
     property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
@@ -22,6 +22,42 @@ Window {
     property var detail: null   // ficha abierta (mapa de MovieModel.get) o null
 
     MovieModel { id: movies; dbPath: spikeArgs.db }
+
+    // --- Progreso (specs/05 §4): se guarda solo al pausar, hacer seek, cambiar de pista, cerrar y al superar el 95 % ---
+    property var nowPlaying: null       // ficha en reproducción (null en el modo --selftest / archivo suelto)
+    property bool progressReady: false  // no se guarda hasta restaurar las pistas elegidas (evita pisarlas con «auto»)
+    property bool watchedMarked: false
+    property var pendingTracks: null
+
+    function persist() {
+        if (!nowPlaying || watchedMarked || !progressReady || player.position < 5) return
+        movies.saveProgress(nowPlaying.id, player.position, "enProgreso", String(player.audioId), String(player.subtitleId))
+    }
+    function markWatched() {
+        if (!nowPlaying || watchedMarked) return
+        watchedMarked = true
+        movies.saveProgress(nowPlaying.id, 0, "visto")
+    }
+
+    Timer { id: saveTimer; interval: 700; onTriggered: root.persist() }   // agrupa pausa/seek/pista en un solo guardado
+    Timer { id: readyTimer; interval: 1500; onTriggered: root.progressReady = true }
+    Timer { id: readyFallback; interval: 6000; onTriggered: root.progressReady = true }
+
+    Connections {
+        target: player
+        function onPausedChanged() { if (root.playing) saveTimer.restart() }
+        function onPositionChanged() {
+            if (root.nowPlaying && !root.watchedMarked && player.duration > 0 && player.position / player.duration > 0.95) root.markWatched()
+        }
+        function onTracksChanged() {   // reselección única de audio/subtítulo guardados, cuando ya se conoce la lista real
+            if (!root.pendingTracks || player.audioTracks.length === 0) return
+            const t = root.pendingTracks
+            root.pendingTracks = null
+            if (t.a && t.a !== "auto") player.setAudio(t.a)
+            if (t.s && t.s !== "auto") player.setSubtitle(t.s)
+            readyTimer.restart()
+        }
+    }
 
     function showDetail(row) {
         const m = movies.get(row)
@@ -37,6 +73,11 @@ Window {
             noticeTimer.restart()
             return
         }
+        nowPlaying = m.id ? m : null
+        watchedMarked = false
+        progressReady = false
+        pendingTracks = m.id ? { a: m.progressAudio, s: m.progressSub } : null
+        if (m.id) readyFallback.restart()
         movieTitle = m.title + (m.year > 0 ? " (" + m.year + ")" : "")
         playing = true
         controlsVisible = true
@@ -45,7 +86,17 @@ Window {
         player.forceActiveFocus()
     }
     function closeMovie() {
+        persist()
+        saveTimer.stop()
+        const id = nowPlaying ? nowPlaying.id : ""
+        nowPlaying = null
+        pendingTracks = null
         player.stop()
+        if (id && detail && detail.id === id) { // la ficha refleja el progreso recién guardado
+            const m = movies.getById(id)
+            m.available = true
+            detail = m
+        }
         if (visibility === Window.FullScreen) visibility = Window.Windowed
         playing = false
         movieTitle = ""
@@ -76,20 +127,20 @@ Window {
         id: player
         anchors.fill: parent
         focus: true
-        onEndOfFile: (reason) => { if (reason === "eof" && !spikeArgs.selftest) root.closeMovie() }
+        onEndOfFile: (reason) => { if (reason === "eof" && !spikeArgs.selftest) { root.markWatched(); root.closeMovie() } }
 
         Keys.onPressed: (e) => {
             switch (e.key) {
             case Qt.Key_Space: togglePause(); break
-            case Qt.Key_Right: seek(e.modifiers & Qt.ShiftModifier ? 30 : 10, true); break
-            case Qt.Key_Left: seek(e.modifiers & Qt.ShiftModifier ? -30 : -10, true); break
+            case Qt.Key_Right: seek(e.modifiers & Qt.ShiftModifier ? 30 : 10, true); saveTimer.restart(); break
+            case Qt.Key_Left: seek(e.modifiers & Qt.ShiftModifier ? -30 : -10, true); saveTimer.restart(); break
             case Qt.Key_Up: volume = volume + 5; break
             case Qt.Key_Down: volume = volume - 5; break
             case Qt.Key_F: root.visibility = root.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen; break
             case Qt.Key_Escape: if (root.visibility === Window.FullScreen) root.visibility = Window.Windowed; else root.closeMovie(); break
             case Qt.Key_Backspace: root.closeMovie(); break
-            case Qt.Key_A: { const n = root.cycle(audioTracks, audioId, false); if (n) setAudio(n); break }
-            case Qt.Key_S: { const n = root.cycle(subtitleTracks, subtitleId, true); if (n) setSubtitle(n); break }
+            case Qt.Key_A: { const n = root.cycle(audioTracks, audioId, false); if (n) setAudio(n); saveTimer.restart(); break }
+            case Qt.Key_S: { const n = root.cycle(subtitleTracks, subtitleId, true); if (n) setSubtitle(n); saveTimer.restart(); break }
             default: return
             }
             root.controlsVisible = true
@@ -233,7 +284,7 @@ Window {
             }
             MouseArea {
                 anchors { fill: parent; topMargin: -10; bottomMargin: -10 }
-                onClicked: (m) => { if (player.duration > 0) player.seek(player.duration * m.x / width, false) }
+                onClicked: (m) => { if (player.duration > 0) { player.seek(player.duration * m.x / width, false); saveTimer.restart() } }
             }
         }
         Text {
@@ -279,12 +330,22 @@ Window {
         Qt.quit()
     } }
 
+    // Prueba de progreso: abre (reanudando si hay progreso), muestra posición, hace seek, cierra y deja la ficha refrescada.
+    Timer { id: pt1; interval: 3000; onTriggered: { root.showDetail(0); const d = root.detail
+        console.log("PT ficha: estado=" + d.progressState + " pos=" + d.progressPos + " audio=" + d.progressAudio + " sub=" + d.progressSub)
+        root.openMovie(d, d.progressState === "enProgreso" ? d.progressPos : 0) } }
+    Timer { id: pt2; interval: 11000; onTriggered: { console.log("PT tras reanudar: pos=" + player.position.toFixed(1) + " aid=" + player.audioId + " sid=" + player.subtitleId)
+        player.seek(player.position + 300, false); saveTimer.restart() } }
+    Timer { id: pt3; interval: 14500; onTriggered: { root.closeMovie()
+        console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
+    Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
     Timer { id: openTimer; interval: 3000; onTriggered: {
         if (spikeArgs.play) root.openMovie(movies.get(0), 0); else root.showDetail(0) } }
     Timer { id: shotTimer; interval: spikeArgs.openFirst ? 14000 : 9000; onTriggered: {
         player.grabWindowTo(spikeArgs.catalogShot); player.shutdown(); Qt.quit() } }
 
     Component.onCompleted: {
+        if (spikeArgs.progressTest) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); pt1.start(); pt2.start(); pt3.start(); pt4.start() }
         if (spikeArgs.catalogShot) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }
         if (spikeArgs.file) {
             root.playing = true

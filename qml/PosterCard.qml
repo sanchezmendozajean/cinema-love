@@ -8,6 +8,8 @@ Item {
     property int year
     property string posterUrl
     property bool available: true
+    property string progressState
+    property real progressFraction: 0
     signal activated()
 
     readonly property bool hovered: hover.hovered
@@ -44,6 +46,18 @@ Item {
             wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
+        }
+        Rectangle { // progreso (en curso)
+            visible: card.progressState === "enProgreso" && card.progressFraction > 0
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 1 }
+            height: 4; color: "#99000000"
+            Rectangle { height: parent.height; width: parent.width * card.progressFraction; color: Tokens.accent }
+        }
+        Rectangle { // visto
+            visible: card.progressState === "visto"
+            anchors { right: parent.right; top: parent.top; margins: 8 }
+            width: 24; height: 24; radius: 12; color: "#E64CAF7D"
+            Text { anchors.centerIn: parent; text: "✓"; color: "white"; font.pixelSize: 14; font.bold: true }
         }
         Rectangle { // «No disponible» si el archivo no está en el disco
             visible: !card.available
