@@ -46,6 +46,9 @@ Hecho y verificado con capturas (`--selftest` genera `*-fs.png` y `*-small.png`)
 - Linux (X11 y Wayland) y plan B (Qt Multimedia) si hiciera falta.
 - Decidir interfaz QML vs web embebida y backend sidecar vs C++ (specs/00 §4).
 
+## Arranque de desarrollo
+`npm run dev [-- args de la app]` (scripts/dev.ps1): configura si falta, compila y lanza. `npm run dev:debug`, `npm run configure`.
+
 ## Selector de películas / catálogo (16/11/2026)
 Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin cerrarse).
 - `src/catalog/MovieModel` (QtSql, **solo lectura** `QSQLITE_OPEN_READONLY`) lee la copia `.dev-data/cinemalove.sqlite` (copiada de `flutter-version/datos/`); 537 películas con `estado_archivo='ok'`. Ruta del archivo = `libraries.ruta_actual` + `ruta_relativa` (E:\Cine y TV\Películas\…). Búsqueda sin tildes. Si `titulo` es NULL (hay 2) se usa el nombre de la carpeta.
