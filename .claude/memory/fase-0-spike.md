@@ -12,7 +12,7 @@ metadata:
 ## Entorno de desarrollo (esta máquina)
 - Qt 6.8.3 LTS (msvc2022_64) en `D:\Qt` (instalado con aqtinstall + Python 3.12 por winget). `QT_ROOT=D:/Qt/6.8.3/msvc2022_64`.
 - MSVC 2022 Build Tools; CMake y Ninja de Visual Studio (no están en PATH): `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe`.
-- libmpv: `scripts/fetch-libmpv.ps1` (build shinchiro 20261111, **GPL**: solo para desarrollo; para distribuir hace falta build LGPL, ver specs/05).
+- libmpv: `scripts/fetch-libmpv.ps1` (build **LGPL** de zhongfly/mpv-winbuild 2026-11-15, mpv v0.42). Verificado con `mpv-configuration` (`-Dgpl=false`) y `ffmpeg-configuration` (sin `--enable-gpl`/`nonfree`/`version3`). El build de shinchiro (`mpv-dev-x86_64`) es GPL y no tiene variante LGPL: no usarlo para distribuir.
 - GPU del equipo: AMD Vega 8 (iGPU) + NVIDIA GTX 1650; Qt eligió la Vega 8 (OpenGL 3.3 core).
 
 ## Compilar y ejecutar

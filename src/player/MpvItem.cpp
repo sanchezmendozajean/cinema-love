@@ -382,7 +382,8 @@ QVariantMap MpvItem::stats() const
     static const char *props[] = {"hwdec-current", "video-codec", "audio-codec-name", "video-params/w", "video-params/h",
                                   "video-params/pixelformat", "estimated-vf-fps", "frame-drop-count",
                                   "decoder-frame-drop-count", "current-vo", "gpu-api", "time-pos", "duration",
-                                  "container-fps", "audio-params/format", "audio-params/channel-count"};
+                                  "container-fps", "audio-params/format", "audio-params/channel-count",
+                                  "mpv-version", "mpv-configuration", "ffmpeg-version", "ffmpeg-configuration"};
     for (const char *p : props)
         s[QString::fromUtf8(p)] = getString(p);
     s["track-list"] = QJsonDocument::fromJson(getString("track-list").toUtf8()).array().toVariantList();
