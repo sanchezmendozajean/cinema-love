@@ -63,3 +63,5 @@ if (-not $NoZip) {
     Compress-Archive -Path $dest -DestinationPath $zip -CompressionLevel Optimal
     Write-Host ("ZIP: {0} ({1} MB)" -f $zip, [math]::Round((Get-Item $zip).Length / 1MB))
 }
+
+exit 0   # robocopy devuelve 1 cuando copia archivos; no es un error
