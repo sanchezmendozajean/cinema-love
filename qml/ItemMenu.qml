@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import CinemaLove
 
-// Menú contextual ⋯ de una tarjeta. `entries`: [{ label, danger, header, run() }]. Se cierra al hacer clic afuera o con Esc.
+// Menú contextual ⋯ de una tarjeta. `entries`: [{ label, icon, danger, header, run() }]; cada opción lleva su icono (NavIcon). Se cierra al hacer clic afuera o con Esc.
 Popup {
     id: menu
     property var entries: []
@@ -36,7 +36,14 @@ Popup {
                     visible: !modelData.header
                     anchors.fill: parent; radius: Tokens.radiusSmall
                     color: rowHover.hovered ? Tokens.surfaceHover : "transparent"
-                    Text { anchors { left: parent.left; leftMargin: 10; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
+                    NavIcon {
+                        id: entryIcon
+                        width: 20; height: 20
+                        anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
+                        name: modelData.icon || "info"
+                        color: modelData.danger ? Tokens.danger : (rowHover.hovered ? Tokens.text : Tokens.textMuted)
+                    }
+                    Text { anchors { left: entryIcon.right; leftMargin: 12; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
                            text: modelData.label || ""; elide: Text.ElideRight; font.pixelSize: 14
                            color: modelData.danger ? Tokens.danger : Tokens.text }
                     HoverHandler { id: rowHover; cursorShape: Qt.PointingHandCursor }

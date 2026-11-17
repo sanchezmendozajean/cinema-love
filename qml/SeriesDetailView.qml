@@ -186,10 +186,8 @@ Rectangle {
                         Rectangle {
                             id: sFrame
                             width: 140; height: 210; radius: Tokens.radius; color: Tokens.surface
-                            border.width: selected || sHover.hovered ? 2 : 1
-                            border.color: selected ? Tokens.accent : (sHover.hovered ? Tokens.accentSoft : Tokens.border)
                             Image {
-                                anchors { fill: parent; margins: 1 }
+                                anchors.fill: parent
                                 source: Images.src(modelData.posterUrl); asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 300
                                 opacity: selected ? 1 : 0.82
                             }
@@ -199,6 +197,10 @@ Rectangle {
                             Rectangle { visible: modelData.progressFraction > 0 && modelData.progressFraction < 1
                                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 1 } height: 4; color: "#99000000"
                                 Rectangle { height: parent.height; width: parent.width * modelData.progressFraction; color: Tokens.accent } }
+                            RoundedCorners { anchors.fill: parent; radius: Tokens.radius }
+                            Rectangle { anchors.fill: parent; radius: Tokens.radius; color: "transparent"
+                                        border.width: selected || sHover.hovered ? 2 : 1
+                                        border.color: selected ? Tokens.accent : (sHover.hovered ? Tokens.accentSoft : Tokens.border) }
                         }
                         Text { y: 218; width: 140; text: "Temporada " + modelData.number; color: selected ? Tokens.text : Tokens.textMuted; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
                         Text { y: 238; width: 140; text: modelData.episodes + (modelData.episodes === 1 ? " episodio" : " episodios"); color: Tokens.textFaint; font.pixelSize: 12 }

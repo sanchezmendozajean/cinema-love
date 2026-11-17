@@ -22,14 +22,12 @@ Item {
         height: width * 1.5
         radius: Tokens.radius
         color: Tokens.surface
-        border.width: card.activeFocus || card.hovered ? 2 : 1
-        border.color: card.activeFocus || card.hovered ? Tokens.accent : Tokens.border
         scale: card.hovered ? 1.03 : 1.0
         Behavior on scale { NumberAnimation { duration: Tokens.durFast; easing.type: Easing.OutCubic } }
 
         Image {
             id: img
-            anchors { fill: parent; margins: 1 }
+            anchors.fill: parent
             source: Images.src(card.posterUrl)
             asynchronous: true
             cache: true
@@ -77,6 +75,14 @@ Item {
             anchors { left: parent.left; bottom: parent.bottom; margins: 8 }
             width: unavailableText.width + 14; height: 22; radius: 4; color: "#CC000000"
             Text { id: unavailableText; anchors.centerIn: parent; text: "Sin acceso al archivo"; color: Tokens.textMuted; font.pixelSize: 11 }
+        }
+
+        // Esquinas redondeadas reales: se recortan las esquinas de la imagen y el borde se dibuja por encima de todo.
+        RoundedCorners { anchors.fill: parent; radius: Tokens.radius }
+        Rectangle {
+            anchors.fill: parent; radius: Tokens.radius; color: "transparent"
+            border.width: card.activeFocus || card.hovered ? 2 : 1
+            border.color: card.activeFocus || card.hovered ? Tokens.accent : Tokens.border
         }
     }
     Text {

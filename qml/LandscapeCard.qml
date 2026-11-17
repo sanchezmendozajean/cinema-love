@@ -19,13 +19,11 @@ Item {
         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 6 }
         height: width * 9 / 16
         radius: Tokens.radius; color: Tokens.surface
-        border.width: card.activeFocus || card.hovered ? 2 : 1
-        border.color: card.activeFocus || card.hovered ? Tokens.accent : Tokens.border
         scale: card.hovered ? 1.03 : 1.0
         Behavior on scale { NumberAnimation { duration: Tokens.durFast; easing.type: Easing.OutCubic } }
         Image {
             id: img
-            anchors { fill: parent; margins: 1 }
+            anchors.fill: parent
             source: Images.src(card.imageUrl); asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 560
             opacity: status === Image.Ready ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
@@ -53,6 +51,14 @@ Item {
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 1 }
             height: 4; color: "#99000000"
             Rectangle { height: parent.height; width: parent.width * card.progressFraction; color: Tokens.accent }
+        }
+
+        // Esquinas redondeadas reales: se recortan las esquinas de la imagen y el borde se dibuja por encima de todo.
+        RoundedCorners { anchors.fill: parent; radius: Tokens.radius }
+        Rectangle {
+            anchors.fill: parent; radius: Tokens.radius; color: "transparent"
+            border.width: card.activeFocus || card.hovered ? 2 : 1
+            border.color: card.activeFocus || card.hovered ? Tokens.accent : Tokens.border
         }
     }
     Text { anchors { left: frame.left; right: frame.right; top: frame.bottom; topMargin: 8 }

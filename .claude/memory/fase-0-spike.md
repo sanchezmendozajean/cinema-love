@@ -159,3 +159,8 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - `Sidebar.qml` + `NavIcon.qml` (iconos dibujados con Canvas, sin fuentes): Inicio · Películas · Series · Colecciones arriba; Administración y Acerca de abajo; ancha (232 px, con etiquetas) o compacta (72 px, solo iconos) si la ventana mide < 1100 px; se oculta durante la reproducción y el asistente (`root.navWidth` animado). Las vistas se desplazan con `leftMargin: root.navWidth`. La barra de título ya no lleva pestañas (solo «‹ volver», título al reproducir y controles de ventana, sobre un degradado sutil).
 - Fundido entre secciones: cada vista usa `pageActive` → `opacity` con `Behavior` (220 ms), `visible: opacity > 0`, `enabled: pageActive` (no es `shown`: CatalogView ya tiene esa propiedad). Verificado con captura a mitad de transición (`--ui-test fade` genera `<shot>-mid.png`).
 - Hero/backdrops: `verticalAlignment: Image.AlignTop` → si hay que recortar, se recorta por abajo (los rostros suelen estar arriba).
+
+## Iconos del menú y esquinas (17/11/2026)
+- `ItemMenu`: cada opción lleva `icon` (NavIcon: bookmark, bookmark-filled, check, uncheck, collection-add, collection-remove); las cabeceras no.
+- `RoundedCorners.qml`: pinta las 4 «esquinas inversas» con el color del fondo (Shape + CurveRenderer, sin capas ni MultiEffect, barato en grillas grandes) y el borde se dibuja encima como Rectangle transparente. Usado en PosterCard, LandscapeCard, mosaico de colecciones y pósters de temporada. Solo vale sobre `Tokens.bg`.
+- Trampa de compilación: si hay un `cinemalove.exe` abierto, el enlazado falla (LNK1104) y el `.exe` queda viejo. Comprobar `exit=` y la fecha del exe. No cerrar procesos del usuario (puede estar usando la app).

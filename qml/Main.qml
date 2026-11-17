@@ -128,8 +128,8 @@ Window {
         if (!api.ready) { toast("El servicio aún está iniciando; inténtalo en unos segundos."); return }
         if (it.kind === "series" || it.kind === "serie") {
             const entries = [
-                { label: "Marcar serie como vista", run: () => confirmMark(it.id, null, "visto", it.title) },
-                { label: "Marcar serie como no vista", run: () => confirmMark(it.id, null, "noVisto", it.title) }
+                { label: "Marcar serie como vista", icon: "check", run: () => confirmMark(it.id, null, "visto", it.title) },
+                { label: "Marcar serie como no vista", icon: "uncheck", run: () => confirmMark(it.id, null, "noVisto", it.title) }
             ]
             itemMenu.heading = it.title; itemMenu.entries = entries; itemMenu.showAt(x, y)
             return
@@ -142,15 +142,15 @@ Window {
                 const seen = us.progreso && us.progreso.estado === "visto"
                 const inCols = (us.colecciones || []).map(c => c.id)
                 const entries = [
-                    { label: us.enProximas ? "Quitar de Próximas a ver" : "Agregar a Próximas a ver",
+                    { label: us.enProximas ? "Quitar de Próximas a ver" : "Agregar a Próximas a ver", icon: us.enProximas ? "bookmark-filled" : "bookmark",
                       run: () => mutate(us.enProximas ? "DELETE" : "PUT", "/api/v1/watchlist/" + id, null, us.enProximas ? "Quitada de Próximas a ver." : "Agregada a Próximas a ver.") },
-                    { label: seen ? "Marcar como no vista" : "Marcar como vista",
+                    { label: seen ? "Marcar como no vista" : "Marcar como vista", icon: seen ? "uncheck" : "check",
                       run: () => mutate("PUT", "/api/v1/media/" + id + "/progress", { estado: seen ? "noVisto" : "visto" }, seen ? "Marcada como no vista." : "Marcada como vista.") }
                 ]
                 if (list.length) entries.push({ header: "COLECCIONES" })
                 list.forEach(c => {
                     const inC = inCols.indexOf(c.id) >= 0
-                    entries.push({ label: (inC ? "Quitar de «" : "Agregar a «") + c.nombre + "»",
+                    entries.push({ label: (inC ? "Quitar de «" : "Agregar a «") + c.nombre + "»", icon: inC ? "collection-remove" : "collection-add",
                         run: () => mutate(inC ? "DELETE" : "POST", inC ? "/api/v1/collections/" + c.id + "/items/" + id : "/api/v1/collections/" + c.id + "/items",
                                           inC ? null : { mediaItemId: id }, inC ? "Quitada de «" + c.nombre + "»." : "Agregada a «" + c.nombre + "».") })
                 })

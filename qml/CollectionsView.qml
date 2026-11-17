@@ -100,9 +100,8 @@ Rectangle {
                     width: 250; height: 232
                     Rectangle {
                         width: 250; height: 188; radius: Tokens.radius; color: Tokens.surface; clip: true
-                        border.width: cHover.hovered ? 2 : 1; border.color: cHover.hovered ? Tokens.accent : Tokens.border
                         Grid { // mosaico 2×2 de pósters
-                            anchors { fill: parent; margins: 1 }
+                            anchors.fill: parent
                             columns: 2
                             Repeater {
                                 model: 4
@@ -113,6 +112,9 @@ Rectangle {
                                 }
                             }
                         }
+                        RoundedCorners { anchors.fill: parent; radius: Tokens.radius }
+                        Rectangle { anchors.fill: parent; radius: Tokens.radius; color: "transparent"
+                                    border.width: cHover.hovered ? 2 : 1; border.color: cHover.hovered ? Tokens.accent : Tokens.border }
                     }
                     Text { y: 196; width: 250; text: modelData.nombre; color: Tokens.text; font.pixelSize: 15; font.weight: Font.DemiBold; elide: Text.ElideRight }
                     Text { y: 216; width: 250; text: modelData.conteo + (modelData.conteo === 1 ? " título" : " títulos") + (modelData.quitarAlVerse ? "  ·  se quitan al verlas" : "")
