@@ -116,9 +116,15 @@ Rectangle {
                                        color: modelData.disponible ? "#4CAF7D" : Tokens.danger; font.pixelSize: 11; font.weight: Font.DemiBold } }
                         }
                         Text { text: modelData.ruta; color: Tokens.textMuted; font.pixelSize: 13; elide: Text.ElideMiddle; width: parent.width }
-                        Text { color: Tokens.textFaint; font.pixelSize: 13
-                               text: (modelData.tipo === "serie" ? modelData.series + " series · " + modelData.items + " episodios" : modelData.items + " películas")
-                                     + (modelData.huerfanos > 0 ? "  ·  " + modelData.huerfanos + " sin archivo" : "") }
+                        Row {
+                            spacing: 0
+                            Text { color: Tokens.textFaint; font.pixelSize: 13
+                                   text: modelData.tipo === "serie" ? modelData.series + " series · " + modelData.items + " episodios" : modelData.items + " películas" }
+                            Text { visible: modelData.huerfanos > 0; color: orphHover.hovered ? Tokens.warning : "#C99A3A"; font.pixelSize: 13; font.underline: orphHover.hovered
+                                   text: "  ·  " + modelData.huerfanos + " sin archivo ›"
+                                   HoverHandler { id: orphHover; cursorShape: Qt.PointingHandCursor }
+                                   TapHandler { onTapped: { orphans.library = modelData; orphans.open() } } }
+                        }
                     }
                     Row {
                         id: actions
@@ -168,11 +174,27 @@ Rectangle {
                                      : modelData.estado === "completado" ? "Completado · " + view.summary(modelData.resultado)
                                      : modelData.estado === "cancelado" ? "Cancelado" : (modelData.error || "Error") }
                     }
+                    AdminButton { visible: !running && modelData.tipo === "metadata" && view.pendingOf(modelData).length > 0
+                        text: "Revisar " + view.pendingOf(modelData).length + " pendientes"; primary: true
+                        anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                        onClicked: { pendingDlg.job = modelData; pendingDlg.list = view.pendingOf(modelData); pendingDlg.open() } }
                     AdminButton { id: cancelBtn; visible: running; text: "Cancelar"; anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
                         onClicked: view.call("POST", "/jobs/" + modelData.id + "/cancelar", null, () => view.loadJobs()) }
                 }
             }
         }
+    }
+
+    // Ganchos de prueba (--ui-test)
+    function testOrphans() { const l = libraries.find(x => x.huerfanos > 0); if (l) { orphans.library = l; orphans.open() } }
+    function testTmdb() { tmdbMatch.pending = { id: "x", titulo: "Matrix", anio: 1999, tipo: "item", ruta: "Matrix (1999)/Matrix.mkv" }; tmdbMatch.open() }
+
+    // Ambiguos y sin coincidencia de un trabajo de metadata, con el motivo para mostrar.
+    function pendingOf(job) {
+        const r = job.resultado
+        if (!r || !r.total) return []
+        return (r.ambiguos || []).map(p => Object.assign({ motivo: "Varias coincidencias" }, p))
+                 .concat((r.sinCoincidencia || []).map(p => Object.assign({ motivo: "Sin coincidencia" }, p)))
     }
 
     function summary(r) {
@@ -281,6 +303,135 @@ Rectangle {
                     onClicked: view.call("DELETE", "/bibliotecas/" + delLib.target.id + "?confirm=" + encodeURIComponent(confirmField.text), null, (st, d, err) => {
                         if (st === 200) { delLib.close(); view.toast("Biblioteca eliminada."); view.loadLibraries(); view.catalogChanged() }
                         else delErr.text = err || "No se pudo eliminar." }) }
+            }
+        }
+    }
+
+    // --- Pendientes de metadata: lista → buscar en TMDb → elegir ---
+    Modal {
+        id: pendingDlg
+        property var job: null
+        property var list: []
+        heading: "Pendientes de metadata"
+        dialogWidth: 640
+        Column {
+            width: parent.width; spacing: 12
+            Text { width: parent.width; wrapMode: Text.WordWrap; color: Tokens.textMuted; font.pixelSize: 13; lineHeight: 1.3
+                   text: "Estos títulos no se pudieron identificar automáticamente. Elige la coincidencia correcta de TMDb para cada uno." }
+            Text { visible: pendingDlg.list.length === 0; color: Tokens.success; font.pixelSize: 14; text: "No queda nada pendiente. ✓" }
+            Repeater {
+                model: pendingDlg.list
+                delegate: Rectangle {
+                    required property var modelData
+                    width: parent.width; height: 64; radius: Tokens.radiusSmall; color: Tokens.surface; border.color: Tokens.border
+                    Column {
+                        anchors { left: parent.left; leftMargin: 14; right: pickBtn.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                        spacing: 3
+                        Text { width: parent.width; elide: Text.ElideRight; color: Tokens.text; font.pixelSize: 14; font.weight: Font.Medium
+                               text: modelData.titulo + (modelData.anio ? " (" + modelData.anio + ")" : "") }
+                        Text { width: parent.width; elide: Text.ElideMiddle; color: Tokens.textFaint; font.pixelSize: 12; text: modelData.motivo + "  ·  " + modelData.ruta }
+                    }
+                    AdminButton { id: pickBtn; text: "Elegir…"; anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                        onClicked: { tmdbMatch.pending = modelData; tmdbMatch.open() } }
+                }
+            }
+        }
+    }
+
+    Modal {
+        id: tmdbMatch
+        property var pending: ({ id: "", titulo: "", anio: 0, tipo: "item" })
+        property var results: []
+        property string status: ""
+        heading: "Buscar en TMDb"
+        dialogWidth: 680
+        onOpened: { qField.text = pending.titulo; yField.text = pending.anio ? String(pending.anio) : ""; results = []; status = ""; search() }
+        function search() {
+            status = "Buscando…"
+            const tipo = pending.tipo === "serie" ? "serie" : "pelicula"
+            view.call("GET", "/tmdb/buscar?tipo=" + tipo + "&q=" + encodeURIComponent(qField.text) + (yField.text ? "&anio=" + encodeURIComponent(yField.text) : ""), undefined,
+                (st, d, err) => { if (st === 200) { results = d; status = d.length ? "" : "Sin resultados. Prueba con otro título o sin año." } else { results = []; status = err || "No se pudo buscar." } })
+        }
+        Column {
+            width: parent.width; spacing: 12
+            Text { width: parent.width; elide: Text.ElideMiddle; color: Tokens.textFaint; font.pixelSize: 12; text: tmdbMatch.pending.ruta || "" }
+            Row {
+                spacing: 8
+                TextField { id: qField; width: 380; height: 40; color: Tokens.text; font.pixelSize: 14; leftPadding: 12; placeholderText: "Título"; placeholderTextColor: Tokens.textFaint
+                    background: Rectangle { radius: Tokens.radiusSmall; color: Tokens.surface; border.color: qField.activeFocus ? Tokens.accent : Tokens.border }
+                    Keys.onReturnPressed: tmdbMatch.search() }
+                TextField { id: yField; width: 90; height: 40; color: Tokens.text; font.pixelSize: 14; leftPadding: 12; placeholderText: "Año"; placeholderTextColor: Tokens.textFaint; inputMethodHints: Qt.ImhDigitsOnly
+                    background: Rectangle { radius: Tokens.radiusSmall; color: Tokens.surface; border.color: yField.activeFocus ? Tokens.accent : Tokens.border }
+                    Keys.onReturnPressed: tmdbMatch.search() }
+                AdminButton { text: "Buscar"; primary: true; onClicked: tmdbMatch.search() }
+            }
+            Text { visible: tmdbMatch.status !== ""; color: Tokens.textMuted; font.pixelSize: 13; text: tmdbMatch.status }
+            ListView {
+                width: parent.width; height: Math.min(contentHeight, 360); clip: true; spacing: 8
+                boundsBehavior: Flickable.StopAtBounds
+                model: tmdbMatch.results
+                delegate: Rectangle {
+                    required property var modelData
+                    width: ListView.view.width; height: 104; radius: Tokens.radiusSmall; color: Tokens.surface; border.color: Tokens.border
+                    Image { x: 8; y: 8; width: 60; height: 88; fillMode: Image.PreserveAspectCrop; asynchronous: true; sourceSize.width: 120
+                            source: Images.src(modelData.posterUrl) }
+                    Column {
+                        anchors { left: parent.left; leftMargin: 80; right: useBtn.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                        spacing: 4
+                        Text { width: parent.width; elide: Text.ElideRight; color: Tokens.text; font.pixelSize: 15; font.weight: Font.DemiBold
+                               text: modelData.titulo + (modelData.anio ? " (" + modelData.anio + ")" : "") }
+                        Text { visible: !!modelData.tituloOriginal && modelData.tituloOriginal !== modelData.titulo; width: parent.width; elide: Text.ElideRight
+                               color: Tokens.textMuted; font.pixelSize: 12; text: modelData.tituloOriginal || "" }
+                        Text { width: parent.width; color: Tokens.textFaint; font.pixelSize: 12; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight; text: modelData.sinopsis || "" }
+                    }
+                    AdminButton { id: useBtn; text: "Usar esta"; primary: true; anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                        onClicked: view.call("POST", "/" + (tmdbMatch.pending.tipo === "serie" ? "series" : "items") + "/" + tmdbMatch.pending.id + "/tmdb", { tmdbId: modelData.id }, (st, d, err) => {
+                            if (st === 200) {
+                                pendingDlg.list = pendingDlg.list.filter(p => p.id !== tmdbMatch.pending.id)
+                                tmdbMatch.close(); view.toast("Metadata asignada."); view.loadLibraries(); view.catalogChanged()
+                            } else tmdbMatch.status = err || "No se pudo asignar." }) }
+                }
+            }
+        }
+    }
+
+    // --- Títulos sin archivo (huérfanos) ---
+    Modal {
+        id: orphans
+        property var library: ({ id: "", nombre: "", huerfanos: 0, disponible: false })
+        property bool confirming: false
+        property var list: []
+        heading: "Sin archivo · " + (library.nombre || "")
+        dialogWidth: 640
+        onOpened: { confirming = false; list = []; err.text = ""; view.call("GET", "/bibliotecas/" + library.id + "/huerfanos", undefined, (st, d) => { if (st === 200) list = d }) }
+        Column {
+            width: parent.width; spacing: 12
+            Text { width: parent.width; wrapMode: Text.WordWrap; color: Tokens.textMuted; font.pixelSize: 13; lineHeight: 1.3
+                   text: "Estos títulos siguen en tu catálogo, pero su archivo ya no está en la carpeta. Si solo moviste o renombraste archivos, vuelve a escanear: se reconcilian por contenido sin perder progreso ni metadata. Eliminarlos del catálogo no borra ningún archivo." }
+            ListView {
+                width: parent.width; height: Math.min(contentHeight, 280); clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                model: orphans.list
+                delegate: Text { width: ListView.view.width; height: 26; elide: Text.ElideMiddle; color: Tokens.text; font.pixelSize: 13; verticalAlignment: Text.AlignVCenter
+                                 text: (modelData.serie ? modelData.serie + "  ›  " : "") + (modelData.titulo || modelData.rutaRelativa) }
+            }
+            Text { id: err; width: parent.width; wrapMode: Text.WordWrap; color: Tokens.danger; font.pixelSize: 13; visible: text !== "" }
+            Rectangle { // confirmación explícita: quitar del catálogo borra progreso, historial y metadata de esos títulos
+                visible: orphans.confirming
+                width: parent.width; height: warnText.implicitHeight + 24; radius: Tokens.radiusSmall; color: "#1AE5484D"; border.color: "#66E5484D"
+                Text { id: warnText; anchors { fill: parent; margins: 12 } wrapMode: Text.WordWrap; color: Tokens.text; font.pixelSize: 13; lineHeight: 1.3
+                       text: "Se quitarán " + orphans.list.length + " títulos del catálogo junto con su progreso, historial y metadata. Esto no se puede deshacer (los archivos de video no se tocan)." }
+            }
+            Row { anchors.right: parent.right; spacing: 10
+                AdminButton { text: orphans.confirming ? "Volver" : "Cerrar"; onClicked: orphans.confirming ? orphans.confirming = false : orphans.close() }
+                AdminButton { visible: !orphans.confirming; text: "Escanear de nuevo"; enabled: orphans.library.disponible
+                    onClicked: { orphans.close(); view.startJob("/bibliotecas/" + orphans.library.id + "/escanear", null, "Escaneo iniciado.") } }
+                AdminButton { visible: !orphans.confirming; text: "Quitar " + orphans.list.length + " del catálogo…"; danger: true; enabled: orphans.list.length > 0
+                    onClicked: orphans.confirming = true }
+                AdminButton { visible: orphans.confirming; text: "Sí, quitar " + orphans.list.length; danger: true; primary: true
+                    onClicked: view.call("DELETE", "/bibliotecas/" + orphans.library.id + "/huerfanos?confirm=" + orphans.list.length, null, (st, d, e) => {
+                        if (st === 200) { orphans.close(); view.toast(d.eliminados + " títulos quitados del catálogo."); view.loadLibraries(); view.catalogChanged() }
+                        else { orphans.confirming = false; err.text = e || "No se pudo completar." } }) }
             }
         }
     }

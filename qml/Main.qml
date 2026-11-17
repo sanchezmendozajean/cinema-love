@@ -554,6 +554,8 @@ Window {
         if (spikeArgs.uiTest === "collection") collectionsView.open(collectionsView.collections[0])
         else if (spikeArgs.uiTest === "special") collectionsView.open({ special: true })
         else if (spikeArgs.uiTest === "menu") root.openItemMenu({ id: movies.get(2).id, kind: "movie", title: movies.get(2).title }, 420, 330)
+        else if (spikeArgs.uiTest === "orphans") adminView.testOrphans()
+        else if (spikeArgs.uiTest === "tmdb") adminView.testTmdb()
         else if (spikeArgs.uiTest === "markconfirm") root.confirmMark("x", 3, "noVisto", "Banshee") } }
     Timer { id: adminScanTimer; interval: 4500; onTriggered: adminView.startJob("/escanear-todo", null, "Escaneo iniciado.") }
     Timer { id: homeScrollTimer; interval: 5000; onTriggered: { if (root.seriesOpen) seriesDetailView.scrollTo(spikeArgs.homeScroll); else homeView.scrollTo(spikeArgs.homeScroll) } }

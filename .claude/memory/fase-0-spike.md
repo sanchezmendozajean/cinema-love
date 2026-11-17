@@ -110,3 +110,8 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - `SeriesDetailView`: botones «Marcar temporada/serie como vista/no vista».
 - Trampa QML: en un `Repeater` anidado `modelData` del interior tapa al exterior → capturar en una propiedad (`readonly property var col: modelData`).
 - Pruebas: `--ui-test collection|special|menu|markconfirm`.
+
+## Administración: pendientes de metadata y huérfanos (16/11/2026)
+- Tras un trabajo de metadata, «Revisar N pendientes» abre la lista (`ambiguos` + `sinCoincidencia`) → «Elegir…» busca en TMDb (`/admin/tmdb/buscar`, usa la clave guardada en la base) → «Usar esta» (`POST /admin/{items|series}/:id/tmdb`). Verificado con una búsqueda real.
+- «N sin archivo ›» en la biblioteca abre la lista de huérfanos; «Quitar N del catálogo» pide una segunda confirmación explícita (borra progreso/metadata) y el backend exige `confirm=<cantidad>`. En los datos reales hay 4 películas Godzilla y 35 episodios sin archivo (disco/carpeta movidos): NO se tocaron.
+- Pruebas: `--ui-test orphans|tmdb`.
