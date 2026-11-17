@@ -32,7 +32,10 @@ void ApiClient::request(const QString &method, const QString &path, const QVaria
     QNetworkRequest req(QUrl(m_baseUrl + path));
     req.setRawHeader("X-Api-Key", m_token.toUtf8());
     req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
-    const QByteArray payload = body.isValid() && !body.isNull() ? QJsonDocument::fromVariant(body).toJson(QJsonDocument::Compact) : QByteArray();
+    // Los objetos JS anidados pueden llegar envueltos en un QJSValue: se desenvuelven para serializarlos bien.
+    QVariant data = body;
+    if (data.metaType() == QMetaType::fromType<QJSValue>()) data = data.value<QJSValue>().toVariant();
+    const QByteArray payload = data.isValid() && !data.isNull() ? QJsonDocument::fromVariant(data).toJson(QJsonDocument::Compact) : QByteArray();
 
     QNetworkReply *r = nullptr;
     const QString m = method.toUpper();

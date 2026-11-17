@@ -8,6 +8,9 @@ Rectangle {
     property bool compact: false
     signal navigate(string section)
     signal aboutRequested()
+    signal disconnectRequested()
+    property bool clientMode: false       // Modo Cliente: sin administración, con chip del servidor y «Desconectar»
+    property string serverName: ""
 
     color: Tokens.surface
     Rectangle { anchors { right: parent.right; top: parent.top; bottom: parent.bottom } width: 1; color: Tokens.border }
@@ -26,6 +29,15 @@ Rectangle {
         text: "CinemaLove"; color: Tokens.text; font.pixelSize: 17; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold
     }
 
+    Rectangle { // chip de modo
+        visible: bar.clientMode && !bar.compact
+        anchors { left: parent.left; leftMargin: 22; top: parent.top; topMargin: 33 }
+        height: 20; width: Math.min(bar.width - 44, chipText.implicitWidth + 18); radius: 10
+        color: "#33" + "9519AE"; border.color: "#669519AE"
+        Text { id: chipText; anchors { fill: parent; leftMargin: 9; rightMargin: 9 } verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight
+               text: "Conectado a " + bar.serverName; color: Tokens.accentSoft; font.pixelSize: 11; font.weight: Font.Medium }
+    }
+
     Column {
         anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: 56; leftMargin: 10; rightMargin: 10 }
         spacing: 4
@@ -40,7 +52,8 @@ Rectangle {
         spacing: 4
         Rectangle { width: parent.width; height: 1; color: Tokens.border; anchors.horizontalCenter: parent.horizontalCenter }
         Item { width: 1; height: 6 }
-        NavItem { width: parent.width; entry: ({ k: "admin", t: "Administración", icon: "admin" }); selected: bar.section === "admin"; compact: bar.compact; onClicked: bar.navigate("admin") }
+        NavItem { visible: !bar.clientMode; width: parent.width; entry: ({ k: "admin", t: "Administración", icon: "admin" }); selected: bar.section === "admin"; compact: bar.compact; onClicked: bar.navigate("admin") }
+        NavItem { visible: bar.clientMode; width: parent.width; entry: ({ k: "disconnect", t: "Desconectar", icon: "close" }); selected: false; compact: bar.compact; onClicked: bar.disconnectRequested() }
         NavItem { width: parent.width; entry: ({ k: "about", t: "Acerca de", icon: "info" }); selected: false; compact: bar.compact; onClicked: bar.aboutRequested() }
     }
 

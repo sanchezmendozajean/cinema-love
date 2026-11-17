@@ -3,6 +3,8 @@ import QtQuick
 
 // Tokens de design/10-sistema-de-diseno.md («sala oscura»). Único lugar donde viven los colores.
 QtObject {
+    // Modo Cliente: identidad violeta (specs/heredadas/03 §6); lo fija Main según el modo.
+    property bool clientMode: false
     readonly property color bg: "#0E0D11"
     readonly property color surface: "#19181E"
     readonly property color surfaceRaised: "#221F28"
@@ -12,8 +14,8 @@ QtObject {
     readonly property color text: "#F5F3F7"
     readonly property color textMuted: "#A7A2B0"
     readonly property color textFaint: "#6E6878"
-    readonly property color accent: "#E23F52"
-    readonly property color accentSoft: "#F2707F"
+    readonly property color accent: clientMode ? "#9519AE" : "#E23F52"
+    readonly property color accentSoft: clientMode ? "#C65BDB" : "#F2707F"
     readonly property color danger: "#E5484D"
     readonly property color success: "#4CAF7D"
     readonly property color warning: "#E0A63A"

@@ -191,14 +191,27 @@ export class AppCore {
 
   /** Carpeta de `cliente_datos.sqlite`: junto a `config.yaml` (en dev con `CL_DATA_DIR`, esa carpeta de pruebas). */
   private get carpetaCliente(): string {
-    return this.carpetaDev ?? this.config.carpeta
+    return this.carpetaClienteExplicita ?? this.carpetaDev ?? this.config.carpeta
+  }
+
+  /** Versión Qt: carpeta donde vive `cliente_datos.sqlite` (la fija quien arranca el sidecar en Modo Cliente, sin colección local). */
+  private carpetaClienteExplicita: string | null = null
+  private repoServidores: ServidoresRepo | null = null
+  usarCarpetaCliente(carpeta: string): void {
+    this.carpetaClienteExplicita = carpeta
+  }
+  /** Servidores recordados (para reconectar al abrir la app). */
+  servidoresRecordados(): { id: string; nombre: string | null; url: string }[] {
+    this.conexionCliente()
+    return (this.repoServidores?.listar() ?? []).map((s) => ({ id: s.id, nombre: s.nombre, url: `${s.https ? 'https' : 'http'}://${s.host}:${s.puerto}` }))
   }
 
   /** La conexión remota, creada la primera vez que se necesita (abre `cliente_datos.sqlite`). */
   conexionCliente(): ConexionCliente {
     if (!this.conexion) {
       this.baseCliente = abrirBaseCliente(this.carpetaCliente)
-      this.conexion = new ConexionCliente({ repo: new ServidoresRepo(this.baseCliente.db) })
+      this.repoServidores = new ServidoresRepo(this.baseCliente.db)
+      this.conexion = new ConexionCliente({ repo: this.repoServidores })
       this.conexion.alCambiar((e) => {
         for (const f of this.escuchasConexion) f(e)
       })

@@ -136,7 +136,8 @@ void SeriesCatalog::load()
                     e.synopsis = eq.value(5).toString();
                     e.stillUrl = eq.value(6).toString();
                     e.duration = eq.value(7).toInt();
-                    e.path = QDir::toNativeSeparators(eq.value(8).toString() + QLatin1Char('/') + eq.value(9).toString());
+                    e.path = eq.value(8).toString().startsWith(QLatin1String("http")) ? eq.value(8).toString() + QLatin1Char('/') + eq.value(9).toString()   // Modo Cliente: URL de streaming
+                                                                       : QDir::toNativeSeparators(eq.value(8).toString() + QLatin1Char('/') + eq.value(9).toString());
                     e.progressPos = eq.value(10).toDouble();
                     e.progressState = eq.value(11).toString();
                     e.progressAudio = eq.value(12).toString();

@@ -52,9 +52,66 @@ Window {
 
     // Los modelos leen la base solo cuando la colección está abierta: el backend (respaldo, bloqueo, migraciones) va primero.
     readonly property bool wizardMode: wizardActive
-    property bool wizardActive: dataFolder.path === ""
-    readonly property bool dataReady: dataFolder.path !== "" && (spikeArgs.noBackend || !spikeArgs.dataDir || backend.state === "listo")
-    readonly property string dbFile: dataReady ? dataFolder.dbFile : ""
+    property bool wizardActive: dataFolder.path === "" && !spikeArgs.clientAuto
+    readonly property bool dataReady: clientMode ? clientReady : (dataFolder.path !== "" && (spikeArgs.noBackend || !spikeArgs.dataDir || backend.state === "listo"))
+    readonly property string dbFile: clientMode ? mirrorDb : (dataReady ? dataFolder.dbFile : "")
+
+    // --- Modo Cliente: el catálogo de otro CinemaLove se refleja en un espejo local (backend/src/main/client/espejo.ts) que leen los mismos modelos ---
+    readonly property bool clientMode: backend.clientMode
+    property var clientConn: ({ tipo: "desconectada" })
+    property var clientMirror: ({ fase: "inactivo", hecho: 0, total: 0, ruta: null })
+    property var clientRemembered: []
+    property string mirrorDb: ""
+    property string lastMirrorPhase: ""
+    property bool clientAutoDone: false
+    readonly property bool clientReady: clientMode && clientConn.tipo === "conectada" && mirrorDb !== ""
+    readonly property string serverName: clientConn.info ? clientConn.info.nombre : ""
+    Binding { target: Tokens; property: "clientMode"; value: root.clientMode }
+    ApiClient { id: ctl; baseUrl: backend.controlUrl; token: backend.controlToken }   // servidor de control del sidecar (solo Modo Cliente)
+    function enterClientMode() {
+        wizardActive = false; mirrorDb = ""; clientConn = ({ tipo: "desconectada" }); clientAutoDone = true; lastMirrorPhase = ""
+        clientView.reset()
+        backend.restartClient(spikeArgs.clientDir)
+    }
+    function leaveClientMode() {
+        prefs.remove("modo"); prefs.remove("servidorId")
+        mirrorDb = ""; clientConn = ({ tipo: "desconectada" })
+        if (dataFolder.path !== "") backend.restart(dataFolder.path)
+        else { backend.stop(); wizardActive = true; startup.step = 0 }
+        movies.reload(); seriesCat.reload()
+    }
+    Timer {
+        interval: 800; repeat: true; running: root.clientMode && ctl.ready
+        onTriggered: ctl.request("GET", "/control/estado", null, (st, d) => {
+            if (st !== 200 || !d) { console.log("CLIENT estado fallo:", st); return }
+            root.clientConn = d.conexion; root.clientMirror = d.espejo; root.clientRemembered = d.recordados
+            if (d.conexion.tipo === "conectada") { if (backend.baseUrl !== d.conexion.api.baseUrl) backend.setApi(d.conexion.api.baseUrl, d.conexion.api.token) }
+            else if (backend.baseUrl !== backend.controlUrl) backend.setApi("", "")
+            if (d.espejo.ruta && root.mirrorDb !== d.espejo.ruta) root.mirrorDb = d.espejo.ruta
+            if (d.espejo.fase === "listo" && root.lastMirrorPhase !== "listo") { movies.reload(); seriesCat.reload() }
+            root.lastMirrorPhase = d.espejo.fase
+        })
+    }
+    Connections {   // al estar listo el sidecar en Modo Cliente: reconectar al servidor recordado (o la conexión de prueba)
+        target: backend
+        function onReadyChanged() {
+            if (!backend.clientMode || backend.controlUrl === "" || root.clientAutoDone) return
+            root.clientAutoDone = true
+            if (spikeArgs.clientConnect) {
+                ctl.request("POST", "/control/conectar", { url: spikeArgs.clientConnect, credencial: { tipo: "apiKey", apiKey: spikeArgs.clientKey }, recordar: true }, (st, d, err) => { if (st !== 200 || !d || !d.ok) console.log("CLIENT conectar falló:", st, JSON.stringify(d), err || "") })
+            } else {
+                const id = prefs.value("servidorId", "")
+                if (id) ctl.request("POST", "/control/reconectar", { id: id }, () => {})
+            }
+        }
+    }
+    // Lo que el usuario cambia se manda al servidor; el espejo local solo se refresca.
+    function pushProgress(id, pos, state, audio, sub) {
+        if (!clientMode) return
+        const body = { estado: state }
+        if (state === "enProgreso") { body.posicionSegundos = Math.round(pos); if (audio) body.pistaAudioId = audio; if (sub) body.pistaSubtituloId = sub }
+        api.request("PUT", "/api/v1/media/" + id + "/progress", body, () => {})
+    }
     MovieModel { id: movies; dbPath: root.dbFile }
     SeriesCatalog { id: seriesCat; dbPath: root.dbFile }
 
@@ -74,11 +131,13 @@ Window {
     function persist() {
         if (!nowPlaying || watchedMarked || !progressReady || player.position < 5) return
         store.saveProgress(nowPlaying.id, player.position, "enProgreso", String(player.audioId), String(player.subtitleId))
+        pushProgress(nowPlaying.id, player.position, "enProgreso", String(player.audioId), String(player.subtitleId))
     }
     function markWatched() {
         if (!nowPlaying || watchedMarked) return
         watchedMarked = true
         store.saveProgress(nowPlaying.id, 0, "visto")
+        pushProgress(nowPlaying.id, 0, "visto")
     }
 
     Timer { id: saveTimer; interval: 700; onTriggered: root.persist() }   // agrupa pausa/seek/pista en un solo guardado
@@ -138,7 +197,11 @@ Window {
     }
     // --- Menú ⋯ y acciones del usuario (Próximas a ver, vista/no vista, colecciones) vía API del backend ---
     function refreshAfterMutation() {
+        if (clientMode) { ctl.request("POST", "/control/personal", null, () => { movies.reload(); seriesCat.reload(); refreshAfterMutationViews() }); return }
         movies.reload(); seriesCat.reload()
+        refreshAfterMutationViews()
+    }
+    function refreshAfterMutationViews() {
         if (collectionsView.visible) collectionsView.reload()
         if (seriesOpen) detail = seriesCat.detail(detail.id)
         else if (movieOpen) { const m = movies.getById(detail.id); m.available = true; detail = m }
@@ -438,13 +501,31 @@ Window {
         anchors.fill: parent
         api: api
         wizard: root.wizardActive
-        readonly property bool pageActive: root.wizardActive || !root.dataReady
+        readonly property bool pageActive: (root.wizardActive || !root.dataReady) && !root.clientMode
         opacity: pageActive ? 1 : 0
         visible: opacity > 0
         enabled: pageActive
         Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+        onConnectRequested: root.enterClientMode()
         onFinished: { root.wizardActive = false; movies.reload(); seriesCat.reload() }
         onChooseAnotherFolder: { dataFolder.forget(); backend.stop(); root.wizardActive = true; startup.step = 1 }
+    }
+
+    ClientView {
+        id: clientView
+        z: 100
+        anchors.fill: parent
+        ctl: ctl
+        conn: root.clientConn
+        mirror: root.clientMirror
+        remembered: root.clientRemembered
+        readonly property bool pageActive: root.clientMode && !root.clientReady
+        opacity: pageActive ? 1 : 0
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+        onCancel: root.leaveClientMode()
+        onConnectedOk: (id) => { if (id) { prefs.setValue("modo", "cliente"); prefs.setValue("servidorId", id) } else prefs.remove("modo") }
     }
 
     HomeView {
@@ -530,6 +611,23 @@ Window {
         section: root.section
         onNavigate: (k) => { root.person = null; root.detail = null; root.section = k }
         onAboutRequested: aboutDialog.open()
+        clientMode: root.clientMode
+        serverName: root.serverName
+        onDisconnectRequested: disconnectConfirm.open()
+    }
+
+    Modal {
+        id: disconnectConfirm
+        heading: "Desconectar"
+        Column {
+            width: parent.width; spacing: 16
+            Text { width: parent.width; wrapMode: Text.WordWrap; color: Tokens.text; font.pixelSize: 14; lineHeight: 1.35
+                   text: "Dejarás de ver el catálogo de «" + root.serverName + "» y volverás a tu colección en este equipo. El servidor queda recordado para reconectarte cuando quieras; no se borra nada." }
+            Row { anchors.right: parent.right; spacing: 10
+                AdminButton { text: "Cancelar"; onClicked: disconnectConfirm.close() }
+                AdminButton { text: "Desconectar"; primary: true; onClicked: { disconnectConfirm.close(); root.person = null; root.detail = null; root.leaveClientMode() } }
+            }
+        }
     }
 
     // --- Barra de título propia (ventana sin marco) ---
@@ -700,12 +798,12 @@ Window {
         else if (spikeArgs.uiTest === "markconfirm") root.confirmMark("x", 3, "noVisto", "Banshee") } }
     Timer { id: adminScanTimer; interval: 4500; onTriggered: adminView.startJob("/escanear-todo", null, "Escaneo iniciado.") }
     Timer { id: homeScrollTimer; interval: 5000; onTriggered: { if (root.seriesOpen) seriesDetailView.scrollTo(spikeArgs.homeScroll); else homeView.scrollTo(spikeArgs.homeScroll) } }
-    Timer { id: openTimer; interval: 3000; onTriggered: {
+    Timer { id: openTimer; interval: spikeArgs.clientAuto ? 8000 : 3000; onTriggered: {
         if (root.section === "series") {
             root.showSeriesAt(0)
             if (spikeArgs.play) root.playEpisodeById(root.detail.next.episode.id)
         } else if (spikeArgs.play) root.openMovie(movies.get(0), 0); else root.showDetail(0) } }
-    Timer { id: shotTimer; interval: spikeArgs.openFirst ? 14000 : 9000; onTriggered: {
+    Timer { id: shotTimer; interval: spikeArgs.openFirst ? (spikeArgs.clientAuto ? 22000 : 14000) : 9000; onTriggered: {
         player.grabWindowTo(spikeArgs.catalogShot); if (root.playing) root.closeMovie(); player.shutdown(); Qt.quit() } }
 
     Component.onCompleted: {

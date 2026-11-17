@@ -2,6 +2,7 @@
 // Protocolo con la app Qt (specs/03 §2): una línea `CL_READY {"baseUrl":…,"token":…}` o `CL_ERROR {…}`; se cierra al recibir
 // SIGTERM, al cerrarse stdin (la app Qt murió) o con la orden «quit» por stdin.
 import { AppCore } from './main/app-core'
+import { iniciarControl } from './main/client/control'
 
 const core = new AppCore()
 let cerrando = false
@@ -24,7 +25,17 @@ process.stdin.on('end', () => void cerrar(0)) // el proceso padre desapareció
 process.stdin.on('data', (b) => { if (b.toString().includes('quit')) void cerrar(0) })
 process.stdin.resume()
 
+/** Modo Cliente (versión Qt): sin colección local; la app gestiona la conexión por el servidor de control (CL_CLIENTE_DIR = carpeta de cliente_datos.sqlite). */
+async function mainCliente(carpeta: string): Promise<void> {
+  core.usarCarpetaCliente(carpeta)
+  const control = await iniciarControl(core, carpeta)
+  const cerrarTodo = core.cerrar.bind(core)
+  core.cerrar = async () => { await control.cerrar(); await cerrarTodo() }
+  console.log('CL_READY ' + JSON.stringify({ baseUrl: control.baseUrl, token: control.token, modo: 'cliente' }))
+}
+
 async function main(): Promise<void> {
+  if (process.env.CL_CLIENTE_DIR) return mainCliente(process.env.CL_CLIENTE_DIR)
   await core.iniciar()
   const datos = core.estadoDatos
   const api = core.api

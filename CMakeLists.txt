@@ -31,6 +31,7 @@ qt_add_qml_module(cinemalove
         qml/ItemMenu.qml
         qml/PlayerOverlay.qml
         qml/PersonView.qml
+        qml/ClientView.qml
         qml/Pager.qml
         qml/SmoothWheel.qml
         qml/RoundedCorners.qml
@@ -57,6 +58,7 @@ qt_add_qml_module(cinemalove
         src/catalog/ProgressWriter.cpp
         src/backend/BackendLauncher.h
         src/backend/BackendLauncher.cpp
+        src/AppSettings.h
         src/TestInput.h
         src/TestInput.cpp
         src/backend/DataFolder.h

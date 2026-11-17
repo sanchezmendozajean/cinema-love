@@ -64,10 +64,39 @@ void BackendLauncher::start(const QString &dataDir)
     m_errorCode.clear();
     m_info.clear();
     m_failed = false;
+    m_clientMode = false;
     m_dataDir = QDir(dataDir).absolutePath();
     m_restarts = 0;
     m_stopping = false;
     launch();
+}
+
+void BackendLauncher::startClient(const QString &clientDir)
+{
+    if (m_proc) return;
+    m_errorCode.clear();
+    m_info.clear();
+    m_failed = false;
+    m_clientMode = true;
+    m_dataDir = QDir(clientDir).absolutePath();
+    QDir().mkpath(m_dataDir);
+    m_restarts = 0;
+    m_stopping = false;
+    launch();
+}
+
+void BackendLauncher::restartClient(const QString &clientDir)
+{
+    stop();
+    m_state = QStringLiteral("detenido");
+    startClient(clientDir);
+}
+
+void BackendLauncher::setApi(const QString &baseUrl, const QString &token)
+{
+    m_apiBase = baseUrl;
+    m_apiToken = token;
+    emit readyChanged();
 }
 
 void BackendLauncher::launch()
@@ -84,8 +113,9 @@ void BackendLauncher::launch()
     // El backend toma la configuración y la raíz de la app de variables de entorno (ver backend/src/electron-shim.ts).
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     const QDir dir(m_dataDir);
-    env.insert(QStringLiteral("CL_DATA_DIR"), m_dataDir);
-    env.insert(QStringLiteral("CL_APP_ROOT"), dir.dirName() == QLatin1String(".dev-data") ? QDir::cleanPath(dir.absoluteFilePath(QStringLiteral(".."))) : m_dataDir);
+    if (m_clientMode) env.insert(QStringLiteral("CL_CLIENTE_DIR"), m_dataDir);
+    else env.insert(QStringLiteral("CL_DATA_DIR"), m_dataDir);
+    env.insert(QStringLiteral("CL_APP_ROOT"), m_clientMode ? m_dataDir : dir.dirName() == QLatin1String(".dev-data") ? QDir::cleanPath(dir.absoluteFilePath(QStringLiteral(".."))) : m_dataDir);
     env.insert(QStringLiteral("CL_SIN_FFMPEG"), QStringLiteral("1")); // la UI Qt reproduce con mpv: sin sesiones de transcodificación
     m_proc->setProcessEnvironment(env);
     m_proc->setProcessChannelMode(QProcess::MergedChannels);
@@ -134,6 +164,8 @@ void BackendLauncher::onFinished(int code, QProcess::ExitStatus)
     if (p) p->deleteLater();
     m_baseUrl.clear();
     m_token.clear();
+    m_apiBase.clear();
+    m_apiToken.clear();
     emit readyChanged();
     if (m_failed) return; // conserva el estado de error con su mensaje
     if (m_stopping) {

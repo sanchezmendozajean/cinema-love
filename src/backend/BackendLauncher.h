@@ -14,8 +14,11 @@ class BackendLauncher : public QObject
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(QString state READ state NOTIFY stateChanged)       // detenido | iniciando | listo | error
-    Q_PROPERTY(QString baseUrl READ baseUrl NOTIFY readyChanged)
+    Q_PROPERTY(QString baseUrl READ baseUrl NOTIFY readyChanged)   // API que usa la interfaz (en Modo Cliente, el proxy al servidor remoto)
     Q_PROPERTY(QString token READ token NOTIFY readyChanged)
+    Q_PROPERTY(QString controlUrl READ controlUrl NOTIFY readyChanged)   // solo Modo Cliente: servidor de control del sidecar
+    Q_PROPERTY(QString controlToken READ controlToken NOTIFY readyChanged)
+    Q_PROPERTY(bool clientMode READ clientMode NOTIFY stateChanged)
     Q_PROPERTY(QString error READ error NOTIFY stateChanged)
     Q_PROPERTY(QString errorCode READ errorCode NOTIFY stateChanged)   // bloqueada | version-antigua | error | ''
     Q_PROPERTY(QVariantMap info READ info NOTIFY readyChanged)           // datos que informa el backend al abrir (respaldo, conteos…)
@@ -27,8 +30,11 @@ public:
     ~BackendLauncher() override;
 
     QString state() const { return m_state; }
-    QString baseUrl() const { return m_baseUrl; }
-    QString token() const { return m_token; }
+    QString baseUrl() const { return m_apiBase.isEmpty() ? m_baseUrl : m_apiBase; }
+    QString token() const { return m_apiBase.isEmpty() ? m_token : m_apiToken; }
+    QString controlUrl() const { return m_baseUrl; }
+    QString controlToken() const { return m_token; }
+    bool clientMode() const { return m_clientMode; }
     QString error() const { return m_error; }
     QString errorCode() const { return m_errorCode; }
     QVariantMap info() const { return m_info; }
@@ -40,6 +46,11 @@ public:
     Q_INVOKABLE void start(const QString &dataDir);
     /** Detiene el backend (si corre) y lo inicia sobre otra carpeta. */
     Q_INVOKABLE void restart(const QString &dataDir);
+    /** Modo Cliente: inicia el sidecar sin colección local; `clientDir` guarda cliente_datos.sqlite y el espejo del catálogo. */
+    Q_INVOKABLE void startClient(const QString &clientDir);
+    Q_INVOKABLE void restartClient(const QString &clientDir);
+    /** Con una conexión activa, la interfaz habla con el proxy local del servidor remoto en vez de con el sidecar. */
+    Q_INVOKABLE void setApi(const QString &baseUrl, const QString &token);
     Q_INVOKABLE void stop();
 
 signals:
@@ -62,6 +73,8 @@ private:
     bool m_requireDev = false;
     QString m_dataDir, m_state = QStringLiteral("detenido"), m_baseUrl, m_token, m_error, m_buffer;
     QStringList m_log;
+    bool m_clientMode = false;
+    QString m_apiBase, m_apiToken;
     bool m_stopping = false;
     bool m_failed = false;   // el backend informó un error de apertura (CL_ERROR): no se reintenta
     int m_restarts = 0;

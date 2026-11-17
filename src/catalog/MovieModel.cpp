@@ -153,7 +153,7 @@ void MovieModel::refreshRow(const QString &id)
         }
 }
 
-bool MovieModel::fileExists(const QString &path) const { return QFileInfo::exists(path); }
+bool MovieModel::fileExists(const QString &path) const { return path.startsWith(QLatin1String("http://")) || path.startsWith(QLatin1String("https://")) || QFileInfo::exists(path); }   // Modo Cliente: la «ruta» es la URL de streaming
 
 void MovieModel::load()
 {
@@ -204,7 +204,8 @@ void MovieModel::load()
                     for (const auto &v : g) gl << v.toString();
                     m.genres = gl.join(QStringLiteral(" · "));
                     m.synopsis = q.value(6).toString();
-                    m.path = QDir::toNativeSeparators(q.value(7).toString() + QLatin1Char('/') + q.value(8).toString());
+                    m.path = q.value(7).toString().startsWith(QLatin1String("http")) ? q.value(7).toString() + QLatin1Char('/') + q.value(8).toString()   // Modo Cliente: URL de streaming
+                                                                     : QDir::toNativeSeparators(q.value(7).toString() + QLatin1Char('/') + q.value(8).toString());
                     m.origTitle = q.value(9).toString();
                     m.backdropUrl = q.value(10).toString();
                     m.studio = q.value(11).toString();

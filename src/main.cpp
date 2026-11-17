@@ -6,6 +6,7 @@
 #include <QLocalSocket>
 #include <QSettings>
 #include <QStandardPaths>
+#include "AppSettings.h"
 #include "BackendLauncher.h"
 #include "DataFolder.h"
 #include "TestInput.h"
@@ -120,7 +121,10 @@ int main(int argc, char *argv[])
     QCommandLineOption multi(QStringLiteral("multi"), QStringLiteral("Permite varias instancias (por defecto solo una)"));
     QCommandLineOption nativeScroll(QStringLiteral("native-scroll"), QStringLiteral("Prueba: usa el desplazamiento nativo de Qt (para medir)"));
     QCommandLineOption notchOpt(QStringLiteral("notch-pixels"), QStringLiteral("Prueba: píxeles por muesca de la rueda"), QStringLiteral("px"));
-    parser.addOptions({nativeScroll, notchOpt, multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption clientDirOpt(QStringLiteral("client-dir"), QStringLiteral("Prueba del Modo Cliente: carpeta de cliente_datos.sqlite y el espejo (dentro de .dev-data/)"), QStringLiteral("ruta"));
+    QCommandLineOption clientUrlOpt(QStringLiteral("client-url"), QStringLiteral("Prueba del Modo Cliente: se conecta a esta URL"), QStringLiteral("url"));
+    QCommandLineOption clientKeyOpt(QStringLiteral("client-key"), QStringLiteral("Prueba del Modo Cliente: token (API key) del servidor"), QStringLiteral("token"));
+    parser.addOptions({clientDirOpt, clientUrlOpt, clientKeyOpt, nativeScroll, notchOpt, multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
     // Instancia única (specs/01 §5): una segunda ejecución avisa a la primera, que se trae al frente, y termina.
@@ -163,6 +167,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("dataFolder"), &dataFolder);
     TestInput testInput;
     engine.rootContext()->setContextProperty(QStringLiteral("testInput"), &testInput);
+    AppSettings prefs;
+    engine.rootContext()->setContextProperty(QStringLiteral("prefs"), &prefs);
     engine.addImageProvider(QStringLiteral("cl"), new ClImageProvider(&backend));
     engine.setNetworkAccessManagerFactory(new CachedNam(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/img")));
     QVariantMap args;
@@ -187,11 +193,26 @@ int main(int argc, char *argv[])
     args["nativeScroll"] = parser.isSet(nativeScroll);
     args["notchPixels"] = parser.value(notchOpt).toDouble();
     args["noBackend"] = parser.isSet(noBackend);
+    // Modo Cliente: recordado (se reconecta al abrir) o de prueba (--client-dir/--client-url, solo dentro de .dev-data/).
+    QString clientDir = parser.value(clientDirOpt);
+    if (!clientDir.isEmpty() && !QDir::fromNativeSeparators(QDir(clientDir).absolutePath()).contains(QStringLiteral("/.dev-data/"))) {
+        fprintf(stderr, "--client-dir debe estar dentro de .dev-data/\n");
+        return 3;
+    }
+    const bool clientAuto = !testMode && prefs.value(QStringLiteral("modo")).toString() == QLatin1String("cliente");
+    if (clientDir.isEmpty()) clientDir = AppSettings::clientDir();
+    args["clientDir"] = clientDir;
+    args["clientAuto"] = clientAuto || !parser.value(clientDirOpt).isEmpty();
+    args["clientConnect"] = parser.value(clientUrlOpt);
+    args["clientKey"] = parser.value(clientKeyOpt);
     engine.rootContext()->setContextProperty(QStringLiteral("spikeArgs"), args);
 
     {
         const QString dataDir = args["dataDir"].toString();
-        if (!parser.isSet(noBackend) && !dataDir.isEmpty()) backend.start(dataDir);
+        if (!parser.isSet(noBackend)) {
+            if (args["clientAuto"].toBool()) backend.startClient(args["clientDir"].toString());
+            else if (!dataDir.isEmpty()) backend.start(dataDir);
+        }
     }
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); },
                      Qt::QueuedConnection);

@@ -14,6 +14,7 @@ Rectangle {
     property int step: 0                   // 0 bienvenida · 1 carpeta · 2 abriendo · 3 TMDb · 4 biblioteca · 5 listo
     signal finished()
     signal chooseAnotherFolder()
+    signal connectRequested()          // «Conectarme a otro CinemaLove» (Modo Cliente)
 
     property string chosen: ""
     property var info: ({})
@@ -116,7 +117,10 @@ Rectangle {
                 Text { text: "CinemaLove"; color: Tokens.text; font.pixelSize: 46; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold }
                 Text { width: parent.width; wrapMode: Text.WordWrap; color: Tokens.textMuted; font.pixelSize: 15; lineHeight: 1.4
                        text: "Tu catálogo de cine personal: pósters, sinopsis, reparto, tu progreso y tus colecciones, con reproducción directa de tus archivos. Vamos a elegir dónde guardar tus datos; si ya usas otra versión de CinemaLove, puedes abrir esos mismos datos." }
-                AdminButton { text: "Empezar"; primary: true; onClicked: view.step = 1 }
+                Row { spacing: 10
+                    AdminButton { text: "Mi colección en este equipo"; primary: true; onClicked: view.step = 1 }
+                    AdminButton { text: "Conectarme a otro CinemaLove"; onClicked: view.connectRequested() }
+                }
             }
 
             // --- 1 Carpeta de datos ---
