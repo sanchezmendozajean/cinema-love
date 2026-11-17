@@ -362,7 +362,7 @@ Window {
             case Qt.Key_N: if (root.nextEpisodeId !== "") root.playNext(); break
             case Qt.Key_Escape:
                 if (overlay.exitArmed) root.closeMovie()
-                else { overlay.armExit(); if (root.fullscreen) root.visibility = Window.Windowed }
+                else overlay.armExit()   // Esc no sale de pantalla completa (F o el botón); la segunda pulsación cierra el reproductor
                 break
             case Qt.Key_A: { const n = root.cycle(audioTracks, audioId, false); if (n) setAudio(n); saveTimer.restart(); break }
             case Qt.Key_S: { const n = root.cycle(subtitleTracks, subtitleId, true); if (n) setSubtitle(n); saveTimer.restart(); break }
@@ -645,13 +645,16 @@ Window {
         Row {
             anchors { left: parent.left; leftMargin: root.navWidth + 16; verticalCenter: parent.verticalCenter }
             spacing: 12
-            Text {
+            Rectangle {   // botón de retroceso (solo icono)
                 visible: root.playing || root.detail !== null
-                text: root.playing ? "‹ " + (root.detail ? "Ficha" : "Biblioteca") : (root.person ? "‹ Ficha" : (root.seriesOpen ? "‹ Series" : "‹ Películas")); color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
+                width: 30; height: 26; radius: 6
+                color: backHover.hovered ? "#33FFFFFF" : "transparent"
+                NavIcon { anchors.centerIn: parent; width: 18; height: 18; name: "back"; color: backHover.hovered ? "white" : "#cccccc"; lineWidth: 2.2 }
                 HoverHandler { id: backHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: root.playing ? root.closeMovie() : root.closeDetail() }
+                Accessible.role: Accessible.Button; Accessible.name: "Volver"
             }
-            Text { visible: root.playing || root.navWidth === 0; text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
+            Text { visible: root.playing || root.navWidth === 0; height: 26; verticalAlignment: Text.AlignVCenter; text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
         }
         DragHandler { target: null; onActiveChanged: if (active) root.startSystemMove() }
         TapHandler { acceptedButtons: Qt.LeftButton; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
