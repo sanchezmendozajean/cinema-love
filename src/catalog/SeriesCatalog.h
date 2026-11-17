@@ -30,6 +30,8 @@ public:
     int total() const { return m_all.size(); }
     QString error() const { return m_error; }
 
+    Q_INVOKABLE void reload() { load(); if (!m_filter.isEmpty()) applyFilter(); }
+
     /** Ficha completa de una serie: metadatos, temporadas con conteos, estadísticas y el episodio sugerido (`next`). */
     Q_INVOKABLE QVariantMap detail(const QString &seriesId) const;
     Q_INVOKABLE QVariantMap detailAt(int row) const;

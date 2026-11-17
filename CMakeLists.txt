@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick OpenGL Sql Network)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 QuickDialogs2 OpenGL Sql Network)
 qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/Libmpv.cmake) # define el destino mpv::libmpv
@@ -25,6 +25,9 @@ qt_add_qml_module(cinemalove
         qml/CatalogView.qml
         qml/PosterCard.qml
         qml/DetailView.qml
+        qml/AdminView.qml
+        qml/AdminButton.qml
+        qml/Modal.qml
         qml/SeriesDetailView.qml
         qml/HomeView.qml
         qml/HomeRow.qml
@@ -37,14 +40,18 @@ qt_add_qml_module(cinemalove
         src/catalog/SeriesCatalog.cpp
         src/catalog/ProgressWriter.h
         src/catalog/ProgressWriter.cpp
+        src/backend/BackendLauncher.h
+        src/backend/BackendLauncher.cpp
+        src/backend/ApiClient.h
+        src/backend/ApiClient.cpp
         src/player/MpvItem.h
         src/player/MpvItem.cpp
 )
 
-target_include_directories(cinemalove PRIVATE src/player src/catalog)
+target_include_directories(cinemalove PRIVATE src/player src/catalog src/backend)
 
 target_link_libraries(cinemalove PRIVATE
-    Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::OpenGL Qt6::Sql Qt6::Network
+    Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::OpenGL Qt6::Sql Qt6::Network Qt6::QuickControls2
     mpv::libmpv
 )
 

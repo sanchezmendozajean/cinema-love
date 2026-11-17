@@ -1,0 +1,25 @@
+{
+  "name": "cinemalove-backend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Sidecar de CinemaLove (Qt): el backend de la versión Electron ejecutado con Node plano, sin Electron.",
+  "type": "commonjs",
+  "scripts": {
+    "sync": "node scripts/sync-from-electron.mjs",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/main.cjs"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.1",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "bonjour-service": "^1.4.4",
+    "fastify": "^5.12.7",
+    "node-forge": "^1.4.2",
+    "qrcode": "^1.5.4",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

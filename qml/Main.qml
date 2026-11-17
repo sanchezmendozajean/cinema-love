@@ -19,7 +19,7 @@ Window {
     property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
     property string movieTitle: ""
     property string notice: ""
-    // Sección principal: «home» (Inicio), «catalog» (Películas) o «series». Las pruebas del catálogo arrancan en «catalog».
+    // Sección principal: «home» (Inicio), «catalog» (Películas), «series» o «admin» (Administración). Las pruebas del catálogo arrancan en «catalog».
     property string section: spikeArgs.section || ((spikeArgs.catalogShot || spikeArgs.progressTest || spikeArgs.openFirst) ? "catalog" : "home")
     property var detail: null   // ficha abierta (película de MovieModel o serie de SeriesCatalog, con kind === "series") o null
     readonly property bool seriesOpen: detail !== null && detail.kind === "series"
@@ -27,6 +27,17 @@ Window {
 
     MovieModel { id: movies; dbPath: spikeArgs.db }
     SeriesCatalog { id: seriesCat; dbPath: spikeArgs.db }
+
+    // Backend (sidecar Node): escáner, TMDb, administración. Arranca la primera vez que se abre Administración.
+    BackendLauncher { id: backend }
+    ApiClient { id: api; baseUrl: backend.baseUrl; token: backend.token }
+    function ensureBackend() {
+        if (backend.state !== "detenido") return
+        if (!spikeArgs.dataDir) { backendNote = "La administración necesita una carpeta de datos con cinemalove.sqlite (usa --database .dev-data/cinemalove.sqlite)."; return }
+        backend.start(spikeArgs.dataDir)
+    }
+    property string backendNote: ""
+    onSectionChanged: if (section === "admin") ensureBackend()
 
     // --- Progreso (specs/05 §4): se guarda solo al pausar, hacer seek, cambiar de pista, cerrar y al superar el 95 % ---
     property var nowPlaying: null       // ficha en reproducción (null en el modo --selftest / archivo suelto)
@@ -231,6 +242,17 @@ Window {
         onMovieChosen: (row) => root.showSeriesAt(row)
     }
 
+    AdminView {
+        id: adminView
+        anchors.fill: parent
+        visible: !root.playing && !root.detail && root.section === "admin"
+        api: api
+        backendState: root.backendNote !== "" ? "error" : backend.state
+        backendError: root.backendNote !== "" ? root.backendNote : backend.error
+        onToast: (t) => { root.notice = t; noticeTimer.restart() }
+        onCatalogChanged: { movies.reload(); seriesCat.reload() }
+    }
+
     HomeView {
         id: homeView
         anchors.fill: parent
@@ -264,7 +286,7 @@ Window {
         visible: root.notice !== "" && !root.playing
         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 32 }
         width: Math.min(parent.width - 64, noticeText.implicitWidth + 40); height: 44; radius: Tokens.radius
-        color: Tokens.surfaceRaised; border.color: Tokens.danger
+        color: Tokens.surfaceRaised; border.color: Tokens.borderStrong
         Text { id: noticeText; anchors.centerIn: parent; width: parent.width - 40; elide: Text.ElideRight; text: root.notice; color: Tokens.text; font.pixelSize: 14 }
     }
     Timer { id: noticeTimer; interval: 5000; onTriggered: root.notice = "" }
@@ -293,7 +315,7 @@ Window {
             }
             Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
             Repeater {
-                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" } ]
+                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" }, { k: "admin", t: "Administración" } ]
                 delegate: Text {
                     leftPadding: 12
                     text: modelData.t; font.pixelSize: 13; font.weight: Font.Medium
@@ -434,6 +456,7 @@ Window {
     Timer { id: pt3; interval: 14500; onTriggered: { root.closeMovie()
         console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
     Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
+    Timer { id: adminScanTimer; interval: 4500; onTriggered: adminView.startJob("/escanear-todo", null, "Escaneo iniciado.") }
     Timer { id: homeScrollTimer; interval: 5000; onTriggered: { if (root.seriesOpen) seriesDetailView.scrollTo(spikeArgs.homeScroll); else homeView.scrollTo(spikeArgs.homeScroll) } }
     Timer { id: openTimer; interval: 3000; onTriggered: {
         if (root.section === "series") {
@@ -445,6 +468,8 @@ Window {
 
     Component.onCompleted: {
         if (spikeArgs.progressTest) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); pt1.start(); pt2.start(); pt3.start(); pt4.start() }
+        if (root.section === "admin") ensureBackend()
+        if (spikeArgs.adminScan) adminScanTimer.start()
         if (spikeArgs.homeScroll > 0) Qt.callLater(() => homeScrollTimer.start())
         if (spikeArgs.catalogShot) { if (spikeArgs.search) root.currentCatalog().setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }
         if (spikeArgs.file) {

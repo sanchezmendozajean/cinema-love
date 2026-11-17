@@ -2,6 +2,7 @@
 
 #include <QCommandLineParser>
 #include <QDir>
+#include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkDiskCache>
 #include <QQmlNetworkAccessManagerFactory>
@@ -88,7 +89,8 @@ int main(int argc, char *argv[])
     QCommandLineOption progTest(QStringLiteral("progress-test"), QStringLiteral("Prueba de guardar/reanudar progreso con la primera coincidencia de --search"));
     QCommandLineOption sectionOpt(QStringLiteral("section"), QStringLiteral("Sección inicial: home | catalog"), QStringLiteral("seccion"));
     QCommandLineOption scrollOpt(QStringLiteral("home-scroll"), QStringLiteral("Desplaza Inicio N píxeles antes de la captura (prueba)"), QStringLiteral("px"));
-    parser.addOptions({scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption adminScan(QStringLiteral("admin-scan"), QStringLiteral("Prueba: inicia «Escanear todo» en Administración y muestra Tareas"));
+    parser.addOptions({adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
     QQmlApplicationEngine engine;
@@ -104,9 +106,14 @@ int main(int argc, char *argv[])
     args["progressTest"] = parser.isSet(progTest);
     args["section"] = parser.value(sectionOpt);
     args["homeScroll"] = parser.value(scrollOpt).toInt();
+    args["adminScan"] = parser.isSet(adminScan);
     args["search"] = parser.value(searchOpt);
     args["sub"] = parser.value(subFile);
     args["db"] = parser.isSet(dataDb) ? parser.value(dataDb) : QDir::cleanPath(devData + QStringLiteral("/cinemalove.sqlite"));
+    {   // Carpeta de datos del backend: solo si el archivo se llama cinemalove.sqlite (el backend siempre abre ese nombre).
+        const QFileInfo dbInfo(args["db"].toString());
+        args["dataDir"] = dbInfo.fileName() == QLatin1String("cinemalove.sqlite") ? dbInfo.absolutePath() : QString();
+    }
     engine.rootContext()->setContextProperty(QStringLiteral("spikeArgs"), args);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); },

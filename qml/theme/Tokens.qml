@@ -15,6 +15,8 @@ QtObject {
     readonly property color accent: "#E23F52"
     readonly property color accentSoft: "#F2707F"
     readonly property color danger: "#E5484D"
+    readonly property color success: "#4CAF7D"
+    readonly property color warning: "#E0A63A"
     readonly property int radius: 10
     readonly property int radiusSmall: 6
     readonly property int durFast: 140

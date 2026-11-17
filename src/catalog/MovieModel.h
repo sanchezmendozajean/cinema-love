@@ -30,6 +30,8 @@ public:
     int total() const { return m_all.size(); }
     QString error() const { return m_error; }
 
+    /** Vuelve a leer la base (tras un escaneo o una importación de metadata hechos por el backend). */
+    Q_INVOKABLE void reload() { load(); applyFilterAfterReload(); }
     Q_INVOKABLE QVariantMap get(int row) const;
     Q_INVOKABLE QVariantMap getById(const QString &id) const;
     /** Guarda el progreso como lo hace Electron (upsert en watch_progresses, usuario NULL). Solo en copias de .dev-data. */
@@ -58,6 +60,7 @@ private:
         QString folded; // título normalizado (sin tildes, minúsculas) para buscar
     };
     void load();
+    void applyFilterAfterReload() { if (!m_filter.isEmpty()) applyFilter(); }
     QVariantMap toMap(const Movie &m) const;
     QVariantMap card(const Movie &m) const;
     void refreshRow(const QString &id);
