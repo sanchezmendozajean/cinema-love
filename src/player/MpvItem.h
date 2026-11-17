@@ -27,6 +27,9 @@ class MpvItem : public QQuickFramebufferObject
     Q_PROPERTY(QString subtitleId READ subtitleId NOTIFY tracksChanged)
     Q_PROPERTY(QString state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString info READ info NOTIFY infoChanged)
+    Q_PROPERTY(bool muted READ muted WRITE setMuted NOTIFY mutedChanged)
+    Q_PROPERTY(double cached READ cached NOTIFY cachedChanged)
+    Q_PROPERTY(QString errorText READ errorText NOTIFY errorTextChanged)
 
 public:
     explicit MpvItem(QQuickItem *parent = nullptr);
@@ -45,8 +48,13 @@ public:
     QString subtitleId() const { return m_sid; }
     QString state() const { return m_state; }
     QString info() const { return m_info; }
+    bool muted() const { return m_muted; }
+    /** Segundo hasta el que hay datos en la caché de lectura (zona de buffer de la línea de tiempo). */
+    double cached() const { return m_cached; }
+    QString errorText() const { return m_errorText; }
 
     void setVolume(double v);
+    void setMuted(bool m);
 
     Q_INVOKABLE void load(const QString &source, double start = 0);
     Q_INVOKABLE void togglePause();
@@ -55,6 +63,13 @@ public:
     Q_INVOKABLE void setSubtitle(const QString &id);
     Q_INVOKABLE void addSubtitle(const QString &path);
     Q_INVOKABLE void stop();
+    /** Tamaño (sub-font-size) y posición vertical (sub-pos, 0–100) de los subtítulos que dibuja mpv. */
+    Q_INVOKABLE void setSubtitleStyle(double size, double pos);
+    /** Datos técnicos del archivo en reproducción (resolución, códecs, hwdec…) para el panel «i». */
+    Q_INVOKABLE QVariantMap techInfo() const;
+    /** Preferencias del reproductor (volumen, estilo de subtítulos) en el archivo de ajustes local del equipo. */
+    Q_INVOKABLE QVariant setting(const QString &key, const QVariant &fallback = {}) const;
+    Q_INVOKABLE void setSetting(const QString &key, const QVariant &value);
     /** Destrucción ordenada de mpv con la ventana y el bucle de eventos aún vivos (llamar antes de cerrar). */
     Q_INVOKABLE void shutdown();
     /** Captura la ventana completa (video de mpv + controles QML) a un PNG. */
@@ -72,6 +87,9 @@ signals:
     void tracksChanged();
     void stateChanged();
     void infoChanged();
+    void mutedChanged();
+    void cachedChanged();
+    void errorTextChanged();
     void endOfFile(const QString &reason);
 
 private slots:
@@ -104,4 +122,9 @@ private:
     QString m_sid = QStringLiteral("auto");
     QString m_state = QStringLiteral("inactivo");
     QString m_info;
+    bool m_muted = false;
+    double m_cached = 0;
+    QString m_errorText;
+    QString m_errorBase;
+    QStringList m_errorLog;
 };

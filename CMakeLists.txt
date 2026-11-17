@@ -29,6 +29,7 @@ qt_add_qml_module(cinemalove
         qml/AdminButton.qml
         qml/Modal.qml
         qml/ItemMenu.qml
+        qml/PlayerOverlay.qml
         qml/Pager.qml
         qml/SmoothWheel.qml
         qml/RoundedCorners.qml

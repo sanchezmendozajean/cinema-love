@@ -176,3 +176,10 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Verificado: 537 películas → 6 páginas, la última con 37; la ficha de la 1.ª de la página 2 abre la correcta. Pruebas: `--ui-test page2|page2list|page6`.
 - Fichas de película y serie: el hero es SOLO imagen (alto `clamp(340, 0.58·alto, 640)`), sin nada superpuesto; póster, título, botones, sinopsis y reparto empiezan en `hero.height + 16`.
 - Capturas de prueba a veces salen a medias si la máquina va cargada: repetir antes de sospechar del código.
+
+## Interfaz del reproductor (17/11/2026)
+- `qml/PlayerOverlay.qml` (barra, OSD, carga, error, fin, tarjeta «Siguiente episodio», aviso Esc×2, menús audio/subs, configuración de subtítulos, panel «i»). `Main.qml` solo aporta teclas, ratón (rueda=volumen, arrastre de ventana, cursor oculto a 5 s) y lógica (`playNext`, `retry`, `replay`, `ended`).
+- `MpvItem`: `muted`, `cached` (buffer), `errorText`, `techInfo()`, `setSubtitleStyle()`, `setting()/setSetting()` (volumen y estilo de subtítulos en `window.ini`, grupo `player`).
+- Trampas: `Popup.dim` es FINAL (usar `dimmed`); `Popup.x/y` no se pueden redeclarar; en QML no poner `;` tras un bloque `anchors { }`.
+- Hooks de prueba: `--ui-test pl-ended|pl-audio|pl-subs|pl-subcfg|pl-info|pl-osd|pl-nextcard|pl-error` (con `--open-first --play`).
+- Pendiente: estilo de subtítulos aún no sincroniza con `subtitle_font_size/subtitle_vertical_offset` de config.yaml; sin hover-preview con miniatura de imagen; OSD verificado solo por código.

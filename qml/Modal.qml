@@ -8,16 +8,19 @@ Popup {
     property string heading
     default property alias content: body.data
     property int dialogWidth: 520
+    property bool dimmed: true          // false: deja ver lo de atrás (p. ej. la vista previa de subtítulos sobre el video)
+    property bool atTop: false       // true: arriba y centrado en vez de en el centro
 
     parent: Overlay.overlay
-    anchors.centerIn: parent
+    anchors.centerIn: atTop ? undefined : parent
+    onAboutToShow: if (atTop) { x = Math.round(((parent ? parent.width : 800) - width) / 2); y = 60 }
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape      // sin CloseOnPressOutside
     width: Math.min(dialogWidth, (parent ? parent.width : 800) - 48)
     padding: 0
 
-    Overlay.modal: Rectangle { color: "#B80E0D11" } // --scrim
+    Overlay.modal: Rectangle { color: modal.dimmed ? "#B80E0D11" : "transparent" } // --scrim
     background: Rectangle { radius: Tokens.radius + 4; color: Tokens.surfaceRaised; border.color: Tokens.borderStrong }
 
     contentItem: Column {

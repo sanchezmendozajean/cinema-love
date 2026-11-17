@@ -9,6 +9,8 @@
 #include <QOpenGLContext>
 #include <QOpenGLFramebufferObject>
 #include <QQuickWindow>
+#include <QSettings>
+#include <QStandardPaths>
 #include <QRunnable>
 #include <atomic>
 #include <memory>
@@ -115,6 +117,8 @@ MpvItem::MpvItem(QQuickItem *parent) : QQuickFramebufferObject(parent)
     mpv_observe_property(m_mpv, 0, "pause", MPV_FORMAT_FLAG);
     mpv_observe_property(m_mpv, 0, "paused-for-cache", MPV_FORMAT_FLAG);
     mpv_observe_property(m_mpv, 0, "volume", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(m_mpv, 0, "mute", MPV_FORMAT_FLAG);
+    mpv_observe_property(m_mpv, 0, "demuxer-cache-time", MPV_FORMAT_DOUBLE);
     mpv_observe_property(m_mpv, 0, "track-list", MPV_FORMAT_NONE);
     mpv_observe_property(m_mpv, 0, "aid", MPV_FORMAT_NONE);
     mpv_observe_property(m_mpv, 0, "sid", MPV_FORMAT_NONE);
@@ -219,6 +223,15 @@ void MpvItem::command(const QStringList &args)
 void MpvItem::load(const QString &source, double start)
 {
     setState(QStringLiteral("cargando"));
+    m_errorLog.clear();
+    if (!m_errorText.isEmpty()) {
+        m_errorText.clear();
+        emit errorTextChanged();
+    }
+    if (m_cached != 0) {
+        m_cached = 0;
+        emit cachedChanged();
+    }
     if (start > 0)
         mpv_set_property_string(m_mpv, "start", QByteArray::number(start, 'f', 3).constData());
     else
@@ -241,6 +254,51 @@ void MpvItem::setVolume(double v)
 {
     v = qBound(0.0, v, 150.0);
     mpv_set_property_async(m_mpv, 0, "volume", MPV_FORMAT_DOUBLE, &v);
+}
+
+void MpvItem::setMuted(bool m)
+{
+    mpv_set_property_string(m_mpv, "mute", m ? "yes" : "no");
+}
+
+void MpvItem::setSubtitleStyle(double size, double pos)
+{
+    mpv_set_property_string(m_mpv, "sub-font-size", QByteArray::number(qBound(16.0, size, 120.0), 'f', 0).constData());
+    mpv_set_property_string(m_mpv, "sub-pos", QByteArray::number(qBound(0.0, pos, 100.0), 'f', 0).constData());
+}
+
+QVariantMap MpvItem::techInfo() const
+{
+    QVariantMap m;
+    m["archivo"] = getString("path");
+    m["contenedor"] = getString("file-format");
+    m["resolucion"] = getString("video-params/w") + QStringLiteral("×") + getString("video-params/h");
+    m["videoCodec"] = getString("video-codec");
+    m["fps"] = getString("container-fps");
+    m["formatoPixel"] = getString("video-params/pixelformat");
+    m["hwdec"] = getString("hwdec-current");
+    m["audioCodec"] = getString("audio-codec-name");
+    m["audioCanales"] = getString("audio-params/hr-channels");
+    m["audioFrecuencia"] = getString("audio-params/samplerate");
+    m["perdidos"] = getString("frame-drop-count");
+    return m;
+}
+
+static QString settingsFile()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QStringLiteral("/window.ini");
+}
+
+QVariant MpvItem::setting(const QString &key, const QVariant &fallback) const
+{
+    QSettings st(settingsFile(), QSettings::IniFormat);
+    return st.value(QStringLiteral("player/") + key, fallback);
+}
+
+void MpvItem::setSetting(const QString &key, const QVariant &value)
+{
+    QSettings st(settingsFile(), QSettings::IniFormat);
+    st.setValue(QStringLiteral("player/") + key, value);
 }
 
 void MpvItem::setAudio(const QString &id)
@@ -332,6 +390,12 @@ void MpvItem::processEvents()
             } else if (name == "paused-for-cache" && p->format == MPV_FORMAT_FLAG) {
                 m_buffering = *static_cast<int *>(p->data);
                 emit bufferingChanged();
+            } else if (name == "mute" && p->format == MPV_FORMAT_FLAG) {
+                m_muted = *static_cast<int *>(p->data);
+                emit mutedChanged();
+            } else if (name == "demuxer-cache-time" && p->format == MPV_FORMAT_DOUBLE) {
+                m_cached = *static_cast<double *>(p->data);
+                emit cachedChanged();
             } else if (name == "volume" && p->format == MPV_FORMAT_DOUBLE) {
                 m_volume = *static_cast<double *>(p->data);
                 emit volumeChanged();
@@ -359,6 +423,13 @@ void MpvItem::processEvents()
             }
             qInfo("mpv: fin de archivo (%s)%s", qPrintable(reason),
                   e->reason == MPV_END_FILE_REASON_ERROR ? qPrintable(QStringLiteral(": ") + QString::fromUtf8(mpv_error_string(e->error))) : "");
+            if (reason == QStringLiteral("error")) {
+                m_errorBase = QString::fromUtf8(mpv_error_string(e->error));
+                m_errorText = m_errorBase;
+                if (!m_errorLog.isEmpty())
+                    m_errorText += QStringLiteral("\n\n") + m_errorLog.join(QLatin1Char('\n'));
+                emit errorTextChanged();
+            }
             setState(reason == QStringLiteral("error") ? QStringLiteral("error") : QStringLiteral("fin"));
             emit endOfFile(reason);
             break;
@@ -366,6 +437,15 @@ void MpvItem::processEvents()
         case MPV_EVENT_LOG_MESSAGE: {
             auto *m = static_cast<mpv_event_log_message *>(ev->data);
             qInfo("mpv[%s/%s] %s", m->prefix, m->level, QByteArray(m->text).trimmed().constData());
+            if (m->log_level <= MPV_LOG_LEVEL_ERROR) {   // detalle técnico para la pantalla de error
+                m_errorLog.append(QStringLiteral("[%1] %2").arg(QString::fromUtf8(m->prefix), QString::fromUtf8(m->text).trimmed()));
+                while (m_errorLog.size() > 8)
+                    m_errorLog.removeFirst();
+                if (m_state == QStringLiteral("error")) {   // el detalle puede llegar después del evento de fin
+                    m_errorText = m_errorBase + QStringLiteral("\n\n") + m_errorLog.join(QLatin1Char('\n'));
+                    emit errorTextChanged();
+                }
+            }
             break;
         }
         case MPV_EVENT_SHUTDOWN:

@@ -72,6 +72,59 @@ Canvas {
             c.beginPath(); c.moveTo(11, 10); c.lineTo(11, 15); c.stroke()
             c.beginPath(); c.arc(11, 7, 0.9, 0, Math.PI * 2); c.fill()
             break
+        case "play":
+            c.beginPath(); c.moveTo(6.5, 3.5); c.lineTo(18, 11); c.lineTo(6.5, 18.5); c.closePath(); c.fill()
+            break
+        case "pause":
+            rr(c, 5, 3.5, 4, 15, 1); c.fill(); rr(c, 13, 3.5, 4, 15, 1); c.fill()
+            break
+        case "back10":
+        case "fwd10": {
+            const f = name === "fwd10" ? 1 : -1, cx = 11
+            c.beginPath(); c.arc(cx, 12, 7.2, f > 0 ? -Math.PI * 0.35 : Math.PI * 1.35, f > 0 ? Math.PI * 1.6 : Math.PI * -0.6, f < 0); c.stroke()
+            c.beginPath(); c.moveTo(cx + f * 1, 1.8); c.lineTo(cx + f * 1 + f * 3, 4.8); c.lineTo(cx + f * 1, 7.6); c.stroke()
+            c.font = "bold 7.5px sans-serif"; c.textAlign = "center"; c.fillText("10", cx, 14.6)
+            break }
+        case "volume":
+        case "volume-low":
+        case "mute":
+            c.beginPath(); c.moveTo(3, 8.5); c.lineTo(7, 8.5); c.lineTo(11.5, 4.5); c.lineTo(11.5, 17.5); c.lineTo(7, 13.5); c.lineTo(3, 13.5); c.closePath(); c.stroke()
+            if (name === "mute") { c.beginPath(); c.moveTo(14.5, 8.5); c.lineTo(19.5, 13.5); c.moveTo(19.5, 8.5); c.lineTo(14.5, 13.5); c.stroke() }
+            else { c.beginPath(); c.arc(11.5, 11, 4.2, -0.9, 0.9); c.stroke()
+                   if (name === "volume") { c.beginPath(); c.arc(11.5, 11, 7.6, -0.9, 0.9); c.stroke() } }
+            break
+        case "audio":
+            c.beginPath(); c.arc(11, 12, 7.5, Math.PI, 0); c.stroke()
+            rr(c, 3, 11.5, 4, 6.5, 1.5); c.stroke(); rr(c, 15, 11.5, 4, 6.5, 1.5); c.stroke()
+            break
+        case "subtitles":
+            rr(c, 2.5, 4.5, 17, 13, 2.5); c.stroke()
+            c.beginPath(); c.moveTo(6, 10); c.lineTo(10, 10); c.moveTo(12, 10); c.lineTo(16, 10); c.moveTo(6, 13.5); c.lineTo(8.5, 13.5); c.moveTo(10.5, 13.5); c.lineTo(16, 13.5); c.stroke()
+            break
+        case "next":
+            c.beginPath(); c.moveTo(5, 4.5); c.lineTo(14, 11); c.lineTo(5, 17.5); c.closePath(); c.fill()
+            c.beginPath(); c.moveTo(17, 4.5); c.lineTo(17, 17.5); c.stroke()
+            break
+        case "fullscreen":
+            c.beginPath(); c.moveTo(3.5, 8); c.lineTo(3.5, 3.5); c.lineTo(8, 3.5); c.moveTo(14, 3.5); c.lineTo(18.5, 3.5); c.lineTo(18.5, 8)
+            c.moveTo(18.5, 14); c.lineTo(18.5, 18.5); c.lineTo(14, 18.5); c.moveTo(8, 18.5); c.lineTo(3.5, 18.5); c.lineTo(3.5, 14); c.stroke()
+            break
+        case "exit-fullscreen":
+            c.beginPath(); c.moveTo(8, 3.5); c.lineTo(8, 8); c.lineTo(3.5, 8); c.moveTo(14, 3.5); c.lineTo(14, 8); c.lineTo(18.5, 8)
+            c.moveTo(18.5, 14); c.lineTo(14, 14); c.lineTo(14, 18.5); c.moveTo(3.5, 14); c.lineTo(8, 14); c.lineTo(8, 18.5); c.stroke()
+            break
+        case "close":
+            c.beginPath(); c.moveTo(5, 5); c.lineTo(17, 17); c.moveTo(17, 5); c.lineTo(5, 17); c.stroke()
+            break
+        case "back":
+            c.beginPath(); c.moveTo(13.5, 4.5); c.lineTo(7, 11); c.lineTo(13.5, 17.5); c.stroke()
+            break
+        case "replay":
+            c.beginPath(); c.arc(11, 11.5, 7, -Math.PI * 0.4, Math.PI * 1.5); c.stroke()
+            c.beginPath(); c.moveTo(11, 1.8); c.lineTo(14.5, 4.6); c.lineTo(11, 7.4); c.stroke()
+            break
+        case "blank":
+            break
         }
     }
 }

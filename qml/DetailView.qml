@@ -5,6 +5,7 @@ import CinemaLove
 // Ficha de película (design/11 · P5), versión del spike: backdrop, póster, metadatos, acción principal, sinopsis, reparto y equipo.
 Rectangle {
     id: view
+    readonly property real contentTop: Math.max(300, Math.min(560, view.height * 0.46))   // donde empieza el contenido
     color: Tokens.bg
     property var movie: ({})
     signal back()
@@ -39,7 +40,7 @@ Rectangle {
         Item {
             id: hero
             width: parent.width
-            height: Math.max(340, Math.min(640, view.height * 0.58))   // el hero es solo imagen: nada se superpone
+            height: contentTop + 240   // la imagen se prolonga bajo el contenido; el negro empieza más abajo
             Image {
                 anchors.fill: parent
                 source: Images.src(view.movie.backdropUrl)
@@ -52,7 +53,7 @@ Rectangle {
             }
             Rectangle { anchors.fill: parent; gradient: Gradient { // inferior
                 GradientStop { position: 0.0; color: "#00000000" }
-                GradientStop { position: 0.62; color: "#000E0D11" }
+                GradientStop { position: 0.74; color: "#000E0D11" }
                 GradientStop { position: 1.0; color: Tokens.bg } } }
             Rectangle { anchors.fill: parent; gradient: Gradient { // lateral izquierdo
                 orientation: Gradient.Horizontal
@@ -65,7 +66,7 @@ Rectangle {
         // --- Póster + datos principales ---
         Rectangle {
             id: poster
-            x: 56; y: hero.height + 16      // el contenido empieza donde acaba el hero
+            x: 56; y: view.contentTop + 4      // el contenido empieza donde acaba el hero
             width: 220; height: 330
             radius: Tokens.radius; color: Tokens.surface
             border.color: Tokens.border

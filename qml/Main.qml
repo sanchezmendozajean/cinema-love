@@ -1,4 +1,4 @@
-import QtQuick
+﻿import QtQuick
 import CinemaLove
 
 // Spike de la Fase 0: reproduce con mpv y superpone controles QML sobre el video.
@@ -16,6 +16,25 @@ Window {
     onClosing: { persist(); player.shutdown() }
 
     property bool controlsVisible: true
+    property bool ended: false            // fin de reproducción: se muestra la pantalla final
+    property bool cursorHidden: false
+    readonly property string nextEpisodeId: nowPlaying && nowPlaying.kind === "episode" ? seriesCat.nextEpisodeId(nowPlaying.id) : ""
+    readonly property string nextEpisodeLabel: {
+        if (nextEpisodeId === "") return ""
+        const e = seriesCat.episode(nextEpisodeId)
+        return (e.label ? e.label + " — " : "") + (e.title || "")
+    }
+    function toggleFullscreen() { visibility = visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    function playNext() {
+        const id = nextEpisodeId
+        if (!id || !nowPlaying) return
+        const cur = nowPlaying
+        markWatched()
+        refreshDetailAfter("episode", cur.id)
+        playEpisodeById(id, 0)
+    }
+    function retry() { if (nowPlaying) { ended = false; player.load(nowPlaying.path, player.position) } }
+    function replay() { if (nowPlaying) { ended = false; watchedMarked = true; player.load(nowPlaying.path, 0) } }
     property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
     property string movieTitle: ""
     property string notice: ""
@@ -182,6 +201,8 @@ Window {
             return
         }
         nowPlaying = m.id ? m : null
+        ended = false
+        overlay.reset()
         watchedMarked = false
         progressReady = false
         pendingTracks = m.id ? { a: m.progressAudio, s: m.progressSub } : null
@@ -210,6 +231,7 @@ Window {
         const kind = nowPlaying ? nowPlaying.kind : ""
         const id = nowPlaying ? nowPlaying.id : ""
         nowPlaying = null
+        ended = false
         pendingTracks = null
         player.stop()
         if (id) refreshDetailAfter(kind, id)
@@ -244,39 +266,56 @@ Window {
         anchors.fill: parent
         focus: true
         onEndOfFile: (reason) => {
-            if (reason !== "eof" || spikeArgs.selftest) return
-            const cur = root.nowPlaying
+            if (reason !== "eof" || spikeArgs.selftest || !root.nowPlaying) return
             root.markWatched()
-            const nextId = cur && cur.kind === "episode" ? seriesCat.nextEpisodeId(cur.id) : ""
-            if (nextId) { // reproduce el siguiente episodio de la serie sin volver a la ficha
-                root.refreshDetailAfter("episode", cur.id)
-                root.playEpisodeById(nextId, 0)
-            } else root.closeMovie()
+            root.refreshDetailAfter(root.nowPlaying.kind, root.nowPlaying.id)
+            if (root.nextEpisodeId !== "" && !overlay.nextCancelled) root.playNext()   // salto automático al siguiente episodio
+            else root.ended = true                                                      // pantalla final
         }
 
         Keys.onPressed: (e) => {
-            switch (e.key) {
-            case Qt.Key_Space: togglePause(); break
-            case Qt.Key_Right: seek(e.modifiers & Qt.ShiftModifier ? 30 : 10, true); saveTimer.restart(); break
-            case Qt.Key_Left: seek(e.modifiers & Qt.ShiftModifier ? -30 : -10, true); saveTimer.restart(); break
-            case Qt.Key_Up: volume = volume + 5; break
-            case Qt.Key_Down: volume = volume - 5; break
-            case Qt.Key_F: root.visibility = root.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen; break
-            case Qt.Key_Escape: if (root.visibility === Window.FullScreen) root.visibility = Window.Windowed; else root.closeMovie(); break
-            case Qt.Key_Backspace: root.closeMovie(); break
+            const k = e.key, sec = (e.modifiers & Qt.ShiftModifier) ? 30 : 10
+            if (root.ended || overlay.failed) {
+                if (k === Qt.Key_Escape || k === Qt.Key_Backspace) root.closeMovie()
+                else return
+                e.accepted = true
+                return
+            }
+            switch (k) {
+            case Qt.Key_Space: togglePause(); overlay.flashCenter(paused ? "play" : "pause", ""); break
+            case Qt.Key_Right: seek(sec, true); overlay.flashSkip(sec); saveTimer.restart(); break
+            case Qt.Key_Left: seek(-sec, true); overlay.flashSkip(-sec); saveTimer.restart(); break
+            case Qt.Key_Up: overlay.adjustVolume(5); break          // el volumen no muestra la barra de controles
+            case Qt.Key_Down: overlay.adjustVolume(-5); break
+            case Qt.Key_M: muted = !muted; overlay.flashVolume(); break
+            case Qt.Key_F: root.toggleFullscreen(); break
+            case Qt.Key_N: if (root.nextEpisodeId !== "") root.playNext(); break
+            case Qt.Key_Escape:
+                if (overlay.exitArmed) root.closeMovie()
+                else { overlay.armExit(); if (root.fullscreen) root.visibility = Window.Windowed }
+                break
             case Qt.Key_A: { const n = root.cycle(audioTracks, audioId, false); if (n) setAudio(n); saveTimer.restart(); break }
             case Qt.Key_S: { const n = root.cycle(subtitleTracks, subtitleId, true); if (n) setSubtitle(n); saveTimer.restart(); break }
             default: return
             }
-            root.controlsVisible = true
+            // Solo las teclas de reproducción reinician el ocultado; ninguna muestra los controles.
             hideTimer.restart()
             e.accepted = true
         }
 
         MouseArea {
             anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: root.cursorHidden && !root.controlsVisible ? Qt.BlankCursor : Qt.ArrowCursor
+            onPositionChanged: { root.cursorHidden = false; cursorTimer.restart() }
             onClicked: { root.controlsVisible = !root.controlsVisible; hideTimer.restart() }
-            onDoubleClicked: root.visibility = root.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen
+            onDoubleClicked: root.toggleFullscreen()
+            onWheel: (w) => overlay.adjustVolume(w.angleDelta.y > 0 ? 5 : -5)
+        }
+        DragHandler {   // en modo ventana se arrastra desde cualquier punto del video
+            target: null
+            enabled: !root.fullscreen && root.visibility !== Window.Maximized
+            onActiveChanged: if (active) root.startSystemMove()
         }
     }
 
@@ -453,6 +492,7 @@ Window {
     }
     Timer { id: noticeTimer; interval: 5000; onTriggered: root.notice = "" }
 
+    Timer { id: cursorTimer; interval: 5000; onTriggered: root.cursorHidden = true }   // el cursor se oculta a los 5 s si no hay controles
     Timer { id: hideTimer; interval: 30000; onTriggered: root.controlsVisible = false }
 
     Sidebar {
@@ -528,67 +568,42 @@ Window {
         ]
         delegate: MouseArea {
             z: 300
-            enabled: !root.fullscreen && root.visibility !== Window.Maximized
+            readonly property bool resizable: !root.fullscreen && root.visibility !== Window.Maximized
+            enabled: resizable
+            visible: resizable   // maximizada o en pantalla completa no hay bordes ni cursor de redimensionado
             readonly property bool corner: (modelData.l || modelData.r) && (modelData.t || modelData.b)
             x: modelData.r ? root.width - width : 0
             y: modelData.b ? root.height - height : 0
             width: modelData.l || modelData.r ? 6 : root.width
             height: modelData.t || modelData.b ? 6 : root.height
-            cursorShape: modelData.c
+            cursorShape: resizable ? modelData.c : Qt.ArrowCursor
             onPressed: root.startSystemResize(modelData.e)
         }
     }
 
-    // --- Superposición de controles (demuestra que QML se dibuja encima del video) ---
-    Rectangle {
-        id: bar
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-        height: 130
-        visible: root.playing && root.controlsVisible
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: "#00000000" }
-            GradientStop { position: 1.0; color: "#E6000000" }
-        }
-
-        Text {
-            id: stateText
-            anchors { left: parent.left; leftMargin: 24; top: parent.top; topMargin: 18 }
-            color: "#cccccc"; font.pixelSize: 13
-            text: player.state + (player.buffering ? " · cargando buffer…" : "") + "  |  " + player.info
-        }
-
-        // Línea de tiempo
-        Rectangle {
-            id: track
-            anchors { left: parent.left; right: parent.right; leftMargin: 24; rightMargin: 24; bottom: parent.bottom; bottomMargin: 58 }
-            height: 6; radius: 3; color: "#44ffffff"
-            Rectangle {
-                height: parent.height; radius: 3; color: "#e50914"
-                width: player.duration > 0 ? parent.width * Math.min(1, player.position / player.duration) : 0
-            }
-            MouseArea {
-                anchors { fill: parent; topMargin: -10; bottomMargin: -10 }
-                onClicked: (m) => { if (player.duration > 0) { player.seek(player.duration * m.x / width, false); saveTimer.restart() } }
-            }
-        }
-        Text {
-            anchors { left: track.left; top: track.bottom; topMargin: 8 }
-            color: "white"; font.pixelSize: 15
-            text: root.fmt(player.position) + " / " + root.fmt(player.duration)
-        }
-        Text {
-            anchors { right: track.right; top: track.bottom; topMargin: 8 }
-            color: "#dddddd"; font.pixelSize: 13
-            text: "Audio [A]: " + root.trackLabel(player.audioTracks, player.audioId)
-                  + "   Subs [S]: " + root.trackLabel(player.subtitleTracks, player.subtitleId)
-                  + "   Vol [↑↓]: " + Math.round(player.volume) + " %"
-        }
-        Text {
-            anchors { horizontalCenter: parent.horizontalCenter; top: track.bottom; topMargin: 8 }
-            visible: root.width >= 1400
-            color: "#999999"; font.pixelSize: 12
-            text: "Espacio pausa · ←/→ ±10 s (Shift ±30) · F pantalla completa · clic muestra/oculta"
-        }
+    // --- Interfaz del reproductor (barra, OSD, error, fin, siguiente episodio) ---
+    PlayerOverlay {
+        id: overlay
+        z: 50
+        anchors.fill: parent
+        visible: root.playing
+        player: player
+        title: root.movieTitle
+        isEpisode: root.nowPlaying !== null && root.nowPlaying.kind === "episode"
+        hasNext: root.nextEpisodeId !== ""
+        nextTitle: root.nextEpisodeLabel
+        backdropUrl: root.nowPlaying ? (root.nowPlaying.backdropUrl || "") : ""
+        fullscreen: root.fullscreen
+        controlsVisible: root.controlsVisible
+        ended: root.ended
+        onInteracted: hideTimer.restart()
+        onSeeked: saveTimer.restart()
+        onFocusRequested: player.forceActiveFocus()
+        onCloseRequested: root.closeMovie()
+        onFullscreenRequested: root.toggleFullscreen()
+        onNextRequested: root.playNext()
+        onRetryRequested: root.retry()
+        onReplayRequested: root.replay()
     }
 
     // --- Autoprueba: secuencia automática y volcado de métricas ---
@@ -631,6 +646,14 @@ Window {
     Timer { id: wheelT2; interval: 1500; onTriggered: console.log("WHEEL 3 muescas: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px") }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
         if (spikeArgs.uiTest === "page2") { movies.page = 1; console.log("PAGE2 primera=" + movies.get(0).title + " rows=" + movies.rowCount() + " paginas=" + movies.pageCount); root.showDetail(0) }
+        else if (spikeArgs.uiTest === "pl-ended") root.ended = true
+        else if (spikeArgs.uiTest === "pl-audio") overlay.openAudioMenu(overlay.audioButton)
+        else if (spikeArgs.uiTest === "pl-subs") overlay.openSubMenu(overlay.subButton)
+        else if (spikeArgs.uiTest === "pl-subcfg") overlay.openSubSettings()
+        else if (spikeArgs.uiTest === "pl-info") overlay.openInfo()
+        else if (spikeArgs.uiTest === "pl-osd") { overlay.flashSkip(10); overlay.flashSkip(10); overlay.flashVolume() }
+        else if (spikeArgs.uiTest === "pl-nextcard") player.seek(player.duration - 19, false)
+        else if (spikeArgs.uiTest === "pl-error") player.load("D:/no-existe-esto.mkv", 0)
         else if (spikeArgs.uiTest === "page2list") { movies.page = 1 }
         else if (spikeArgs.uiTest === "page6") { movies.page = 5; console.log("PAGE6 filas=" + movies.rowCount()) }
         else if (spikeArgs.uiTest === "wheel") { root.wheelY0 = catalog.scrollY; testInput.wheel(root, 700, 400, -120); wheelT1.start() }

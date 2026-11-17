@@ -40,7 +40,7 @@ Popup {
                         id: entryIcon
                         width: 20; height: 20
                         anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
-                        name: modelData.icon || "info"
+                        name: modelData.icon || "blank"
                         color: modelData.danger ? Tokens.danger : (rowHover.hovered ? Tokens.text : Tokens.textMuted)
                     }
                     Text { anchors { left: entryIcon.right; leftMargin: 12; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
