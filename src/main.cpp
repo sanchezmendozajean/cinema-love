@@ -93,7 +93,8 @@ int main(int argc, char *argv[])
     QCommandLineOption scrollOpt(QStringLiteral("home-scroll"), QStringLiteral("Desplaza Inicio N píxeles antes de la captura (prueba)"), QStringLiteral("px"));
     QCommandLineOption adminScan(QStringLiteral("admin-scan"), QStringLiteral("Prueba: inicia «Escanear todo» en Administración y muestra Tareas"));
     QCommandLineOption noBackend(QStringLiteral("no-backend"), QStringLiteral("No inicia el backend (las imágenes se descargan directamente de TMDb)"));
-    parser.addOptions({noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption uiTest(QStringLiteral("ui-test"), QStringLiteral("Acción de prueba tras cargar: collection | menu | markconfirm"), QStringLiteral("nombre"));
+    parser.addOptions({uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
     BackendLauncher backend; // declarado antes que el motor: debe sobrevivirle (los bindings QML lo leen al destruirse)
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
     args["section"] = parser.value(sectionOpt);
     args["homeScroll"] = parser.value(scrollOpt).toInt();
     args["adminScan"] = parser.isSet(adminScan);
+    args["uiTest"] = parser.value(uiTest);
     args["search"] = parser.value(searchOpt);
     args["sub"] = parser.value(subFile);
     args["db"] = parser.isSet(dataDb) ? parser.value(dataDb) : QDir::cleanPath(devData + QStringLiteral("/cinemalove.sqlite"));

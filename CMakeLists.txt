@@ -28,6 +28,8 @@ qt_add_qml_module(cinemalove
         qml/AdminView.qml
         qml/AdminButton.qml
         qml/Modal.qml
+        qml/ItemMenu.qml
+        qml/CollectionsView.qml
         qml/SeriesDetailView.qml
         qml/HomeView.qml
         qml/HomeRow.qml

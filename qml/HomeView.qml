@@ -10,6 +10,7 @@ Rectangle {
     property var series           // SeriesCatalog
     signal openDetail(var item)
     signal playMovie(var item)
+    signal menuRequested(var item, real x, real y)
 
     property var cont: []
     property var queue: []
@@ -115,10 +116,10 @@ Rectangle {
             y: hero.height - 40
             width: parent.width
             spacing: 24
-            HomeRow { width: parent.width; title: "Continuar viendo"; items: view.cont; landscape: true; onChosen: (it) => view.openDetail(it) }
-            HomeRow { width: parent.width; title: "Próximas a ver"; items: view.queue; onChosen: (it) => view.openDetail(it) }
-            HomeRow { width: parent.width; title: "Agregados recientemente"; items: view.recent; onChosen: (it) => view.openDetail(it) }
-            HomeRow { width: parent.width; title: "Vistos recientemente"; items: view.watched; onChosen: (it) => view.openDetail(it) }
+            HomeRow { width: parent.width; title: "Continuar viendo"; items: view.cont; landscape: true; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
+            HomeRow { width: parent.width; title: "Próximas a ver"; items: view.queue; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
+            HomeRow { width: parent.width; title: "Agregados recientemente"; items: view.recent; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
+            HomeRow { width: parent.width; title: "Vistos recientemente"; items: view.watched; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
         }
     }
 

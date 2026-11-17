@@ -11,6 +11,7 @@ Item {
     property real progressFraction: 0
     property string remaining
     signal activated()
+    signal menuRequested(real x, real y)
     readonly property bool hovered: hover.hovered
 
     Rectangle {
@@ -31,6 +32,16 @@ Item {
         }
         Text { anchors { fill: parent; margins: 12 } visible: img.status !== Image.Ready; text: card.title; color: Tokens.textFaint
                font.pixelSize: 14; font.bold: true; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+        Rectangle {
+            id: menuBtn
+            visible: card.hovered || card.activeFocus || menuHover.hovered
+            anchors { left: parent.left; top: parent.top; margins: 8 }
+            width: 30; height: 30; radius: 15
+            color: menuHover.hovered ? "#E6000000" : "#99000000"
+            Text { anchors.centerIn: parent; text: "⋯"; color: "white"; font.pixelSize: 20; font.bold: true; bottomPadding: 4 }
+            HoverHandler { id: menuHover; cursorShape: Qt.PointingHandCursor }
+            TapHandler { onTapped: { const p = menuBtn.mapToItem(null, 0, menuBtn.height + 4); card.menuRequested(p.x, p.y) } }
+        }
         Rectangle { // oscurece la base para leer el tiempo restante
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 1 }
             height: 44
@@ -50,7 +61,7 @@ Item {
            text: card.subtitle !== "" ? card.subtitle : (card.year > 0 ? card.year : ""); color: Tokens.textMuted; font.pixelSize: 12 }
 
     HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
-    TapHandler { onTapped: { card.forceActiveFocus(); card.activated() } }
+    TapHandler { onTapped: { if (menuHover.hovered) return; card.forceActiveFocus(); card.activated() } }
     Keys.onReturnPressed: card.activated()
     Keys.onSpacePressed: card.activated()
 }

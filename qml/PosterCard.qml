@@ -12,6 +12,7 @@ Item {
     property string progressState
     property real progressFraction: 0
     signal activated()
+    signal menuRequested(real x, real y)   // coordenadas de ventana donde abrir el menú ⋯
 
     readonly property bool hovered: hover.hovered
 
@@ -48,6 +49,17 @@ Item {
             horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
         }
+        Rectangle { // botón ⋯ (visible al pasar el cursor o con foco)
+            id: menuBtn
+            visible: card.hovered || card.activeFocus || menuHover.hovered
+            anchors { left: parent.left; top: parent.top; margins: 8 }
+            width: 30; height: 30; radius: 15
+            color: menuHover.hovered ? "#E6000000" : "#99000000"
+            Text { anchors.centerIn: parent; text: "⋯"; color: "white"; font.pixelSize: 20; font.bold: true; bottomPadding: 4 }
+            HoverHandler { id: menuHover; cursorShape: Qt.PointingHandCursor }
+            TapHandler { onTapped: { const p = menuBtn.mapToItem(null, 0, menuBtn.height + 4); card.menuRequested(p.x, p.y) } }
+            Accessible.role: Accessible.Button; Accessible.name: "Más opciones"
+        }
         Rectangle { // progreso (en curso)
             visible: card.progressState === "enProgreso" && card.progressFraction > 0
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 1 }
@@ -80,7 +92,8 @@ Item {
     }
 
     HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
-    TapHandler { onTapped: { card.forceActiveFocus(); card.activated() } }
+    TapHandler { onTapped: { if (menuHover.hovered) return; card.forceActiveFocus(); card.activated() } }
+    Keys.onMenuPressed: { const p = card.mapToItem(null, 20, 40); card.menuRequested(p.x, p.y) }
     Keys.onReturnPressed: card.activated()
     Keys.onEnterPressed: card.activated()
     Keys.onSpacePressed: card.activated()

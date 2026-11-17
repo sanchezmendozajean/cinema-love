@@ -103,3 +103,10 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - Trampa: `requestImageResponse` llega desde OTRO hilo; la respuesta se mueve al hilo de la red (`moveToThread` + `start()` en cola) o Qt avisa «Cannot create children for a parent that is in a different thread».
 - `BackendLauncher` ahora lo crea/inicia `main.cpp` (propiedad de contexto `backend`) y debe declararse ANTES que el `QQmlApplicationEngine` (si no, warnings de bindings con null al cerrar). `--no-backend` lo omite.
 - El ensayo escribió `D:\x.png` (raíz del disco D:) por una captura de prueba mal dirigida; el usuario debe borrarlo (el borrado lo bloqueó la comprobación de seguridad).
+
+## Menú ⋯, Colecciones y Próximas a ver (16/11/2026)
+- Todas las acciones de usuario van por la API del backend con el token admin (`usuarioId` null, igual que el modo local de Electron): `/api/v1/watchlist/:id` (PUT/DELETE), `/media/:id/progress` (PUT estado visto/noVisto), `/collections*`, `/series/:id/progress` (temporada o serie entera), `/media/:id/user-state`. Tras cada mutación se recargan los modelos (`refreshAfterMutation`).
+- `ItemMenu` (Popup no modal), botón ⋯ en `PosterCard`/`LandscapeCard` (hover/foco/tecla Menú), `CollectionsView` (lista con mosaico 2×2 + «Próximas a ver» fija; detalle con grilla; crear/renombrar/eliminar con `Modal`). Marcar «no vista»/serie/temporada siempre pide confirmación (borra posiciones de reanudación).
+- `SeriesDetailView`: botones «Marcar temporada/serie como vista/no vista».
+- Trampa QML: en un `Repeater` anidado `modelData` del interior tapa al exterior → capturar en una propiedad (`readonly property var col: modelData`).
+- Pruebas: `--ui-test collection|special|menu|markconfirm`.

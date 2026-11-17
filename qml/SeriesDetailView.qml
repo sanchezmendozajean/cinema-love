@@ -10,6 +10,7 @@ Rectangle {
     property var catalog               // SeriesCatalog
     signal back()
     signal playEpisode(string episodeId, real start)
+    signal markRequested(var seriesId, var season, string estado)   // season === null → serie completa
 
     property int season: 0
     property string lastSeriesId: ""
@@ -137,6 +138,16 @@ Rectangle {
                        color: "white"; font.pixelSize: 15; font.weight: Font.DemiBold; text: view.primaryLabel }
                 HoverHandler { id: playHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { enabled: !!view.nextEp.id; onTapped: view.playEpisode(view.nextEp.id, view.startOf(view.nextEp)) }
+            }
+            Row {
+                spacing: 10
+                readonly property var curSeason: (view.series.seasons || []).find(s => s.number === view.season)
+                readonly property bool seasonDone: !!curSeason && curSeason.episodes > 0 && curSeason.watched === curSeason.episodes
+                readonly property bool seriesDone: view.series.episodeCount > 0 && view.series.watchedCount === view.series.episodeCount
+                AdminButton { text: parent.seasonDone ? "Marcar temporada " + view.season + " como no vista" : "✓  Marcar temporada " + view.season + " como vista"
+                    onClicked: view.markRequested(view.series.id, view.season, parent.seasonDone ? "noVisto" : "visto") }
+                AdminButton { text: parent.seriesDone ? "Marcar serie como no vista" : "✓  Marcar serie como vista"
+                    onClicked: view.markRequested(view.series.id, null, parent.seriesDone ? "noVisto" : "visto") }
             }
             Rectangle {
                 visible: view.next.mode === "resume" && view.nextEp.duration > 0

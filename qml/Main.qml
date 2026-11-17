@@ -19,7 +19,7 @@ Window {
     property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
     property string movieTitle: ""
     property string notice: ""
-    // Sección principal: «home» (Inicio), «catalog» (Películas), «series» o «admin» (Administración). Las pruebas del catálogo arrancan en «catalog».
+    // Sección principal: «home» (Inicio), «catalog» (Películas), «series», «collections» o «admin» (Administración). Las pruebas del catálogo arrancan en «catalog».
     property string section: spikeArgs.section || ((spikeArgs.catalogShot || spikeArgs.progressTest || spikeArgs.openFirst) ? "catalog" : "home")
     property var detail: null   // ficha abierta (película de MovieModel o serie de SeriesCatalog, con kind === "series") o null
     readonly property bool seriesOpen: detail !== null && detail.kind === "series"
@@ -100,6 +100,64 @@ Window {
         if (!(detail && detail.id === ep.seriesId)) detail = seriesCat.detail(ep.seriesId)
         openMovie(ep, start === undefined ? (ep.progressState === "enProgreso" ? ep.progressPos : 0) : start)
     }
+    // --- Menú ⋯ y acciones del usuario (Próximas a ver, vista/no vista, colecciones) vía API del backend ---
+    function refreshAfterMutation() {
+        movies.reload(); seriesCat.reload()
+        if (collectionsView.visible) collectionsView.reload()
+        if (seriesOpen) detail = seriesCat.detail(detail.id)
+        else if (movieOpen) { const m = movies.getById(detail.id); m.available = true; detail = m }
+    }
+    function mutate(method, path, body, okMsg) {
+        api.request(method, path, body === undefined ? null : body, (st, d, err) => {
+            if (st >= 200 && st < 300) { if (okMsg) toast(okMsg); refreshAfterMutation() } else toast(err || "No se pudo completar la acción.")
+        })
+    }
+    function toast(t) { notice = t; noticeTimer.restart() }
+
+    function openItemMenu(it, x, y) {
+        if (!api.ready) { toast("El servicio aún está iniciando; inténtalo en unos segundos."); return }
+        if (it.kind === "series" || it.kind === "serie") {
+            const entries = [
+                { label: "Marcar serie como vista", run: () => confirmMark(it.id, null, "visto", it.title) },
+                { label: "Marcar serie como no vista", run: () => confirmMark(it.id, null, "noVisto", it.title) }
+            ]
+            itemMenu.heading = it.title; itemMenu.entries = entries; itemMenu.showAt(x, y)
+            return
+        }
+        const id = it.id
+        api.request("GET", "/api/v1/media/" + id + "/user-state", null, (st, us) => {
+            if (st !== 200) { toast("No se pudo leer el estado del título."); return }
+            api.request("GET", "/api/v1/collections", null, (st2, cols) => {
+                const list = st2 === 200 ? cols : []
+                const seen = us.progreso && us.progreso.estado === "visto"
+                const inCols = (us.colecciones || []).map(c => c.id)
+                const entries = [
+                    { label: us.enProximas ? "Quitar de Próximas a ver" : "Agregar a Próximas a ver",
+                      run: () => mutate(us.enProximas ? "DELETE" : "PUT", "/api/v1/watchlist/" + id, null, us.enProximas ? "Quitada de Próximas a ver." : "Agregada a Próximas a ver.") },
+                    { label: seen ? "Marcar como no vista" : "Marcar como vista",
+                      run: () => mutate("PUT", "/api/v1/media/" + id + "/progress", { estado: seen ? "noVisto" : "visto" }, seen ? "Marcada como no vista." : "Marcada como vista.") }
+                ]
+                if (list.length) entries.push({ header: "COLECCIONES" })
+                list.forEach(c => {
+                    const inC = inCols.indexOf(c.id) >= 0
+                    entries.push({ label: (inC ? "Quitar de «" : "Agregar a «") + c.nombre + "»",
+                        run: () => mutate(inC ? "DELETE" : "POST", inC ? "/api/v1/collections/" + c.id + "/items/" + id : "/api/v1/collections/" + c.id + "/items",
+                                          inC ? null : { mediaItemId: id }, inC ? "Quitada de «" + c.nombre + "»." : "Agregada a «" + c.nombre + "».") })
+                })
+                itemMenu.heading = it.title; itemMenu.entries = entries; itemMenu.showAt(x, y)
+            })
+        })
+    }
+
+    // «No vista» borra el progreso (posiciones de reanudación) y marcar una serie toca muchos episodios: siempre se confirma.
+    property var markTarget: ({ seriesId: "", season: null, estado: "visto", title: "" })
+    function confirmMark(seriesId, season, estado, title) { markTarget = { seriesId: seriesId, season: season, estado: estado, title: title }; markConfirm.open() }
+
+    function openCollectionItem(it) {
+        if (it.kind === "pelicula") showDetailById(it.id)
+        else showSeriesById(it.seriesId || it.id)
+    }
+
     function openItemDetail(it) { if (it.kind === "episode") showSeriesById(it.seriesId); else showDetailById(it.id) }
     function playItem(it) {
         if (it.kind === "episode") playEpisodeById(it.id)
@@ -220,6 +278,7 @@ Window {
         total: movies.total
         error: movies.error
         onSearch: (t) => movies.filter = t
+        onMenuRequested: (it, x, y) => root.openItemMenu(it, x, y)
         onMovieChosen: (row) => root.showDetail(row)
     }
 
@@ -232,7 +291,9 @@ Window {
         error: seriesCat.error
         heading: "Series"
         placeholder: "Buscar serie…"
+        itemKind: "series"
         onSearch: (t) => seriesCat.filter = t
+        onMenuRequested: (it, x, y) => root.openItemMenu(it, x, y)
         onMovieChosen: (row) => root.showSeriesAt(row)
     }
 
@@ -247,6 +308,43 @@ Window {
         onCatalogChanged: { movies.reload(); seriesCat.reload() }
     }
 
+    CollectionsView {
+        id: collectionsView
+        anchors.fill: parent
+        visible: !root.playing && !root.detail && root.section === "collections"
+        api: api
+        backendReady: backend.state === "listo"
+        onOpenItem: (it) => root.openCollectionItem(it)
+        onMenuRequested: (it, x, y) => root.openItemMenu(it, x, y)
+        onToast: (t) => root.toast(t)
+    }
+
+    ItemMenu { id: itemMenu }
+
+    Modal {
+        id: markConfirm
+        heading: root.markTarget.estado === "visto" ? "Marcar como vista" : "Marcar como no vista"
+        Column {
+            width: parent.width; spacing: 16
+            Text { width: parent.width; wrapMode: Text.WordWrap; color: Tokens.text; font.pixelSize: 14; lineHeight: 1.35
+                   text: (root.markTarget.estado === "visto"
+                          ? "Se marcarán como vistos "
+                          : "Se quitará el progreso (incluidas las posiciones para reanudar) de ")
+                         + (root.markTarget.season !== null ? "todos los episodios de la temporada " + root.markTarget.season + " de «" : "todos los episodios de «")
+                         + root.markTarget.title + "»." + (root.markTarget.estado === "noVisto" ? " Tus archivos no se tocan." : "") }
+            Row { anchors.right: parent.right; spacing: 10
+                AdminButton { text: "Cancelar"; onClicked: markConfirm.close() }
+                AdminButton { text: root.markTarget.estado === "visto" ? "Marcar como vista" : "Marcar como no vista"; primary: true; danger: root.markTarget.estado === "noVisto"
+                    onClicked: {
+                        markConfirm.close()
+                        root.mutate("PUT", "/api/v1/series/" + root.markTarget.seriesId + "/progress",
+                                    root.markTarget.season !== null ? { estado: root.markTarget.estado, temporada: root.markTarget.season } : { estado: root.markTarget.estado },
+                                    "Listo.")
+                    } }
+            }
+        }
+    }
+
     HomeView {
         id: homeView
         anchors.fill: parent
@@ -254,6 +352,7 @@ Window {
         model: movies
         series: seriesCat
         onOpenDetail: (it) => root.openItemDetail(it)
+        onMenuRequested: (it, x, y) => root.openItemMenu(it, x, y)
         onPlayMovie: (it) => root.playItem(it)
     }
 
@@ -265,6 +364,7 @@ Window {
         catalog: seriesCat
         onBack: root.closeDetail()
         onPlayEpisode: (id, start) => root.playEpisodeById(id, start)
+        onMarkRequested: (sid, season, estado) => root.confirmMark(sid, season, estado, root.detail.title)
     }
 
     DetailView {
@@ -309,7 +409,7 @@ Window {
             }
             Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
             Repeater {
-                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" }, { k: "admin", t: "Administración" } ]
+                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" }, { k: "collections", t: "Colecciones" }, { k: "admin", t: "Administración" } ]
                 delegate: Text {
                     leftPadding: 12
                     text: modelData.t; font.pixelSize: 13; font.weight: Font.Medium
@@ -450,6 +550,11 @@ Window {
     Timer { id: pt3; interval: 14500; onTriggered: { root.closeMovie()
         console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
     Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
+    Timer { id: uiTestTimer; interval: 5000; onTriggered: {
+        if (spikeArgs.uiTest === "collection") collectionsView.open(collectionsView.collections[0])
+        else if (spikeArgs.uiTest === "special") collectionsView.open({ special: true })
+        else if (spikeArgs.uiTest === "menu") root.openItemMenu({ id: movies.get(2).id, kind: "movie", title: movies.get(2).title }, 420, 330)
+        else if (spikeArgs.uiTest === "markconfirm") root.confirmMark("x", 3, "noVisto", "Banshee") } }
     Timer { id: adminScanTimer; interval: 4500; onTriggered: adminView.startJob("/escanear-todo", null, "Escaneo iniciado.") }
     Timer { id: homeScrollTimer; interval: 5000; onTriggered: { if (root.seriesOpen) seriesDetailView.scrollTo(spikeArgs.homeScroll); else homeView.scrollTo(spikeArgs.homeScroll) } }
     Timer { id: openTimer; interval: 3000; onTriggered: {
@@ -463,6 +568,7 @@ Window {
     Component.onCompleted: {
         if (spikeArgs.progressTest) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); pt1.start(); pt2.start(); pt3.start(); pt4.start() }
         if (spikeArgs.adminScan) adminScanTimer.start()
+        if (spikeArgs.uiTest) uiTestTimer.start()
         if (spikeArgs.homeScroll > 0) Qt.callLater(() => homeScrollTimer.start())
         if (spikeArgs.catalogShot) { if (spikeArgs.search) root.currentCatalog().setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }
         if (spikeArgs.file) {

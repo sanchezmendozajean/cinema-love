@@ -16,6 +16,8 @@ Rectangle {
     signal search(string text)
     function setSearch(t) { searchField.text = t }
     signal movieChosen(int row)
+    property string itemKind: "movie"            // movie | series (para el menú ⋯)
+    signal menuRequested(var item, real x, real y)
 
     Column {
         id: header
@@ -88,6 +90,7 @@ Rectangle {
             progressState: model.progressState
             progressFraction: model.progressFraction
             onActivated: view.movieChosen(index)
+            onMenuRequested: (x, y) => view.menuRequested({ id: model.movieId, kind: view.itemKind, title: model.title }, x, y)
         }
         KeyNavigation.up: searchField
     }

@@ -8,6 +8,7 @@ Item {
     property var items: []
     property bool landscape: false
     signal chosen(var item)
+    signal menuRequested(var item, real x, real y)
 
     visible: items.length > 0
     height: visible ? 52 + list.height : 0
@@ -37,11 +38,13 @@ Item {
         property var d: ({})
         title: d.title || ""; year: d.year || 0; subtitle: d.subtitle || ""; posterUrl: d.posterUrl || ""
         progressState: d.progressState || ""; progressFraction: d.progressFraction || 0
-        onActivated: row.chosen(d) } }
+        onActivated: row.chosen(d)
+        onMenuRequested: (x, y) => row.menuRequested(d, x, y) } }
     Component { id: landscapeC; LandscapeCard {
         property var d: ({})
         title: d.title || ""; year: d.year || 0; subtitle: d.subtitle || ""; imageUrl: d.backdropUrl || d.posterUrl || ""
         progressFraction: d.progressFraction || 0
         remaining: d.duration > 0 ? "Quedan " + Math.max(1, Math.round((d.duration - d.progressPos) / 60)) + " min" : ""
-        onActivated: row.chosen(d) } }
+        onActivated: row.chosen(d)
+        onMenuRequested: (x, y) => row.menuRequested(d, x, y) } }
 }
