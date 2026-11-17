@@ -290,6 +290,10 @@ Window {
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         model: movies
         total: movies.total
+        matches: movies.matchCount
+        page: movies.page
+        pageCount: movies.pageCount
+        onPageRequested: (p) => movies.page = p
         error: movies.error
         onSearch: (t) => movies.filter = t
         onMenuRequested: (it, x, y) => root.openItemMenu(it, x, y)
@@ -306,6 +310,10 @@ Window {
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         model: seriesCat
         total: seriesCat.total
+        matches: seriesCat.matchCount
+        page: seriesCat.page
+        pageCount: seriesCat.pageCount
+        onPageRequested: (p) => seriesCat.page = p
         error: seriesCat.error
         heading: "Series"
         placeholder: "Buscar serie…"
@@ -622,7 +630,10 @@ Window {
         for (let i = 0; i < 3; i++) testInput.wheel(root, 700, 400, -120); wheelT2.start() } }
     Timer { id: wheelT2; interval: 1500; onTriggered: console.log("WHEEL 3 muescas: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px") }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
-        if (spikeArgs.uiTest === "wheel") { root.wheelY0 = catalog.scrollY; testInput.wheel(root, 700, 400, -120); wheelT1.start() }
+        if (spikeArgs.uiTest === "page2") { movies.page = 1; console.log("PAGE2 primera=" + movies.get(0).title + " rows=" + movies.rowCount() + " paginas=" + movies.pageCount); root.showDetail(0) }
+        else if (spikeArgs.uiTest === "page2list") { movies.page = 1 }
+        else if (spikeArgs.uiTest === "page6") { movies.page = 5; console.log("PAGE6 filas=" + movies.rowCount()) }
+        else if (spikeArgs.uiTest === "wheel") { root.wheelY0 = catalog.scrollY; testInput.wheel(root, 700, 400, -120); wheelT1.start() }
         else if (spikeArgs.uiTest === "fade") { root.section = "series"; fadeShotTimer.start() }
         else if (spikeArgs.uiTest === "wizard0") { root.wizardActive = true; startup.step = 0 }
         else if (spikeArgs.uiTest === "wizard1") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir + "/../bk-test" }

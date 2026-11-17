@@ -39,7 +39,7 @@ Rectangle {
         Item {
             id: hero
             width: parent.width
-            height: Math.max(420, view.height * 0.56)
+            height: Math.max(340, Math.min(640, view.height * 0.58))   // el hero es solo imagen: nada se superpone
             Image {
                 anchors.fill: parent
                 source: Images.src(view.movie.backdropUrl)
@@ -52,20 +52,20 @@ Rectangle {
             }
             Rectangle { anchors.fill: parent; gradient: Gradient { // inferior
                 GradientStop { position: 0.0; color: "#00000000" }
-                GradientStop { position: 0.72; color: "#000E0D11" }
+                GradientStop { position: 0.62; color: "#000E0D11" }
                 GradientStop { position: 1.0; color: Tokens.bg } } }
             Rectangle { anchors.fill: parent; gradient: Gradient { // lateral izquierdo
                 orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "#F20E0D11" }
-                GradientStop { position: 0.45; color: "#CC0E0D11" }
-                GradientStop { position: 0.85; color: "#330E0D11" }
+                GradientStop { position: 0.0; color: "#8C0E0D11" }
+                GradientStop { position: 0.45; color: "#330E0D11" }
+                GradientStop { position: 0.85; color: "#000E0D11" }
                 GradientStop { position: 1.0; color: "#000E0D11" } } }
         }
 
         // --- Póster + datos principales ---
         Rectangle {
             id: poster
-            x: 56; y: 84
+            x: 56; y: hero.height + 16      // el contenido empieza donde acaba el hero
             width: 220; height: 330
             radius: Tokens.radius; color: Tokens.surface
             border.color: Tokens.border
@@ -82,7 +82,7 @@ Rectangle {
         Column {
             id: info
             x: poster.x + poster.width + 36
-            y: 120
+            y: poster.y + 36
             width: Math.min(parent.width - x - 56, 820)
             spacing: 10
 
@@ -166,7 +166,7 @@ Rectangle {
         // --- Cuerpo: sinopsis, reparto, equipo ---
         Column {
             id: body
-            x: 56; y: poster.y + poster.height + 16     // el contenido arranca justo bajo el póster: se ve más del hero
+            x: 56; y: Math.max(poster.y + poster.height, info.y + info.height) + 32
             width: parent.width - 112
             spacing: 32
 

@@ -170,3 +170,9 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Trampa: el overlay debe seguir la visibilidad del contenedor (`visible: flickable.visible`) o captura la rueda de pestañas ocultas; y al insertar bloques con un script hay que buscar la llave de cierre del bloque correcto.
 - Fichas (película/serie): el contenido arranca a `poster.y + poster.height + 16` (antes `max(hero.height-20, …)`), gradiente inferior del hero desde 0,72; reparto con avatares de 120 px (antes 80; ficha de 144×220).
 - Si hay una instancia de la app abierta, `build/win` no se puede enlazar (LNK1104). Alternativa que usé: `cmake -S . -B build/alt -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=…` y `cmake --build build/alt --config Release` (build/ está en .gitignore).
+
+## Paginación y hero de las fichas (17/11/2026)
+- Paginación de **100 elementos por página** en el modelo C++ (`MovieModel`/`SeriesCatalog`: `page`, `pageCount`, `matchCount`, `pageSize`; `rowCount`/`data`/`get`/`detailAt`/`refreshRow` relativos a la página; filtro nuevo → página 1; recargar conserva la página). `Pager.qml` («Mostrando 101–200 de 537», ‹ Anterior, 1 2 3 … 6, Siguiente ›) en Películas, Series y detalle de colecciones (este pagina en QML con `slice`). La cabecera muestra `matches` de `total` al buscar. Home/filas no se paginan.
+- Verificado: 537 películas → 6 páginas, la última con 37; la ficha de la 1.ª de la página 2 abre la correcta. Pruebas: `--ui-test page2|page2list|page6`.
+- Fichas de película y serie: el hero es SOLO imagen (alto `clamp(340, 0.58·alto, 640)`), sin nada superpuesto; póster, título, botones, sinopsis y reparto empiezan en `hero.height + 16`.
+- Capturas de prueba a veces salen a medias si la máquina va cargada: repetir antes de sospechar del código.

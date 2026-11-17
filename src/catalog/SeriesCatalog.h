@@ -11,6 +11,10 @@ class SeriesCatalog : public QAbstractListModel
     QML_ELEMENT
     Q_PROPERTY(QString dbPath READ dbPath WRITE setDbPath NOTIFY dbPathChanged)
     Q_PROPERTY(QString filter READ filter WRITE setFilter NOTIFY filterChanged)
+    Q_PROPERTY(int page READ page WRITE setPage NOTIFY pagingChanged)          // página actual (0 = primera)
+    Q_PROPERTY(int pageCount READ pageCount NOTIFY pagingChanged)
+    Q_PROPERTY(int matchCount READ matchCount NOTIFY pagingChanged)           // elementos que cumplen el filtro (todas las páginas)
+    Q_PROPERTY(int pageSize READ pageSize CONSTANT)
     Q_PROPERTY(int total READ total NOTIFY countChanged)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
 
@@ -28,6 +32,13 @@ public:
     QString filter() const { return m_filter; }
     void setFilter(const QString &f);
     int total() const { return m_all.size(); }
+    int matchCount() const { return int(m_view.size()); }
+    static constexpr int kPageSize = 100;   // elementos por página
+    int pageSize() const { return kPageSize; }
+    int page() const { return m_page; }
+    int pageCount() const { return qMax(1, (matchCount() + kPageSize - 1) / kPageSize); }
+    void setPage(int p);
+
     QString error() const { return m_error; }
 
     Q_INVOKABLE void reload() { load(); if (!m_filter.isEmpty()) applyFilter(); }
@@ -48,6 +59,7 @@ signals:
     void dbPathChanged();
     void filterChanged();
     void countChanged();
+    void pagingChanged();
     void errorChanged();
     void homeChanged();
 
@@ -79,4 +91,6 @@ private:
     QString m_dbPath, m_filter, m_error;
     QVector<Series> m_all;
     QVector<int> m_view; // índices en m_all
+    int m_page = 0;
+    int offset() const { return m_page * kPageSize; }
 };

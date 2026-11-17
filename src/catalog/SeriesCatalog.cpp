@@ -169,7 +169,9 @@ void SeriesCatalog::load()
 
     std::sort(m_all.begin(), m_all.end(), [](const Series &a, const Series &b) { return QString::localeAwareCompare(a.title, b.title) < 0; });
     for (int i = 0; i < m_all.size(); ++i) m_view.append(i);
+    m_page = qMin(m_page, pageCount() - 1);
     endResetModel();
+    emit pagingChanged();
     emit errorChanged();
     emit countChanged();
 }
@@ -181,16 +183,29 @@ void SeriesCatalog::applyFilter()
     m_view.clear();
     for (int i = 0; i < m_all.size(); ++i)
         if (f.isEmpty() || m_all.at(i).folded.contains(f)) m_view.append(i);
+    m_page = 0;
     endResetModel();
     emit countChanged();
+    emit pagingChanged();
 }
 
-int SeriesCatalog::rowCount(const QModelIndex &parent) const { return parent.isValid() ? 0 : int(m_view.size()); }
+int SeriesCatalog::rowCount(const QModelIndex &parent) const { return parent.isValid() ? 0 : qBound(0, int(m_view.size()) - offset(), kPageSize); }
+
+void SeriesCatalog::setPage(int p)
+{
+    p = qBound(0, p, pageCount() - 1);
+    if (p == m_page) return;
+    beginResetModel();
+    m_page = p;
+    endResetModel();
+    emit pagingChanged();
+}
 
 QVariant SeriesCatalog::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || index.row() >= m_view.size()) return {};
-    const Series &s = m_all.at(m_view.at(index.row()));
+    const int vi = offset() + index.row();
+    if (!index.isValid() || vi >= m_view.size()) return {};
+    const Series &s = m_all.at(m_view.at(vi));
     const int total = int(s.episodes.size()), seen = s.watched();
     switch (role) {
     case IdRole: return s.id;
@@ -277,7 +292,8 @@ QVariantMap SeriesCatalog::detail(const QString &seriesId) const
 
 QVariantMap SeriesCatalog::detailAt(int row) const
 {
-    return (row < 0 || row >= m_view.size()) ? QVariantMap{} : detail(m_all.at(m_view.at(row)).id);
+    const int vi = offset() + row;   // `row` es relativa a la página visible
+    return (row < 0 || vi >= m_view.size()) ? QVariantMap{} : detail(m_all.at(m_view.at(vi)).id);
 }
 
 QVariantList SeriesCatalog::episodes(const QString &seriesId, int season) const
@@ -361,7 +377,9 @@ void SeriesCatalog::refreshSeries(const QString &id)
 {
     for (int r = 0; r < m_view.size(); ++r)
         if (m_all.at(m_view.at(r)).id == id) {
-            const QModelIndex ix = index(r);
+            const int local = r - offset();
+            if (local < 0 || local >= rowCount()) continue;
+            const QModelIndex ix = index(local);
             emit dataChanged(ix, ix, {ProgressStateRole, ProgressFractionRole});
         }
 }

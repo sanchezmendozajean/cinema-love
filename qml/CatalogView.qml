@@ -8,7 +8,11 @@ Rectangle {
     color: Tokens.bg
     property alias model: grid.model
     property int total: 0
-    readonly property int shown: grid.count
+    property int matches: 0                 // elementos que cumplen la búsqueda (todas las páginas)
+    property int page: 0
+    property int pageCount: 1
+    signal pageRequested(int page)
+    onPageChanged: grid.positionViewAtBeginning()
     property string error: ""
     property string eyebrow: "BIBLIOTECA"
     property string heading: "Películas"
@@ -35,7 +39,7 @@ Rectangle {
             }
             Text {
                 anchors { left: h1.right; leftMargin: 14; baseline: h1.baseline }
-                text: view.shown === view.total ? view.total + " títulos" : view.shown + " de " + view.total
+                text: view.matches === view.total ? view.total + " títulos" : view.matches + " de " + view.total
                 color: Tokens.textMuted; font.pixelSize: 14
             }
             TextField {
@@ -67,7 +71,7 @@ Rectangle {
 
     GridView {
         id: grid
-        anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 24; leftMargin: 34; rightMargin: 34 }
+        anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: pager.visible ? pager.top : parent.bottom; topMargin: 24; leftMargin: 34; rightMargin: 34 }
         clip: true
         focus: true
         reuseItems: true
@@ -113,5 +117,12 @@ Rectangle {
             text: view.error !== "" ? view.error : "Prueba con otro título."
             color: Tokens.textMuted; font.pixelSize: 14
         }
+    }
+
+    Pager {
+        id: pager
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        page: view.page; pageCount: view.pageCount; total: view.matches
+        onGo: (p) => view.pageRequested(p)
     }
 }

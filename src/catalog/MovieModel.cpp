@@ -45,8 +45,9 @@ void MovieModel::setFilter(const QString &f)
 
 QVariantMap MovieModel::get(int row) const
 {
-    if (row < 0 || row >= m_view.size()) return {};
-    return toMap(m_view.at(row));
+    const int vi = offset() + row;   // `row` es relativa a la página visible
+    if (row < 0 || vi >= m_view.size()) return {};
+    return toMap(m_view.at(vi));
 }
 
 QVariantMap MovieModel::getById(const QString &id) const
@@ -145,7 +146,9 @@ void MovieModel::refreshRow(const QString &id)
 {
     for (int i = 0; i < m_view.size(); ++i)
         if (m_view.at(i).id == id) {
-            const QModelIndex ix = index(i);
+            const int local = i - offset();
+            if (local < 0 || local >= rowCount()) continue;   // no está en la página visible
+            const QModelIndex ix = index(local);
             emit dataChanged(ix, ix, {ProgressStateRole, ProgressFractionRole});
         }
 }
@@ -241,9 +244,11 @@ void MovieModel::load()
         return QString::localeAwareCompare(a.title, b.title) < 0;
     });
     m_view = m_all;
+    m_page = qMin(m_page, pageCount() - 1);   // tras recargar se conserva la página si sigue existiendo
     endResetModel();
     emit errorChanged();
     emit countChanged();
+    emit pagingChanged();
 }
 
 void MovieModel::applyFilter()
@@ -257,16 +262,29 @@ void MovieModel::applyFilter()
         for (const Movie &m : std::as_const(m_all))
             if (m.folded.contains(f)) m_view.append(m);
     }
+    m_page = 0;   // un filtro nuevo vuelve a la primera página
     endResetModel();
     emit countChanged();
+    emit pagingChanged();
 }
 
-int MovieModel::rowCount(const QModelIndex &parent) const { return parent.isValid() ? 0 : int(m_view.size()); }
+void MovieModel::setPage(int p)
+{
+    p = qBound(0, p, pageCount() - 1);
+    if (p == m_page) return;
+    beginResetModel();
+    m_page = p;
+    endResetModel();
+    emit pagingChanged();
+}
+
+int MovieModel::rowCount(const QModelIndex &parent) const { return parent.isValid() ? 0 : qBound(0, int(m_view.size()) - offset(), kPageSize); }
 
 QVariant MovieModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || index.row() >= m_view.size()) return {};
-    const Movie &m = m_view.at(index.row());
+    const int vi = offset() + index.row();
+    if (!index.isValid() || vi >= m_view.size()) return {};
+    const Movie &m = m_view.at(vi);
     switch (role) {
     case SubtitleRole: return QString();
     case IdRole: return m.id;

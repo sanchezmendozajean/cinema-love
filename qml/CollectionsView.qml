@@ -17,6 +17,11 @@ Rectangle {
     property int watchlistCount: 0
     property var current: null               // null = lista; { special: true } = Próximas a ver; { id, nombre, quitarAlVerse }
     property var items: []
+    property int itemsPage: 0
+    readonly property int pageSize: 100
+    readonly property int itemsPageCount: Math.max(1, Math.ceil(items.length / pageSize))
+    readonly property var pageItems: items.slice(itemsPage * pageSize, (itemsPage + 1) * pageSize)
+    onItemsPageChanged: grid.positionViewAtBeginning()
     property string error: ""
 
     function call(method, path, body, cb) { api.request(method, "/api/v1" + path, body === undefined ? null : body, cb) }
@@ -33,7 +38,7 @@ Rectangle {
         call("GET", path, undefined, (st, d, err) => { if (st === 200) items = d; else toast(err || "No se pudo cargar la colección.") })
     }
     function reload() { loadList(); loadItems() }
-    function open(c) { current = c; items = []; loadItems() }
+    function open(c) { current = c; items = []; itemsPage = 0; loadItems() }
     function back() { current = null; items = []; loadList() }
 
     onBackendReadyChanged: if (backendReady) loadList()
@@ -132,14 +137,14 @@ Rectangle {
     // --- Detalle ---
     GridView {
         id: grid
-        anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 24; leftMargin: 34; rightMargin: 34 }
+        anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: collPager.visible ? collPager.top : parent.bottom; topMargin: 24; leftMargin: 34; rightMargin: 34 }
         visible: !!view.current
         clip: true; reuseItems: true; cacheBuffer: 600
         boundsBehavior: Flickable.StopAtBounds
         readonly property int columns: Math.max(2, Math.floor(width / 190))
         cellWidth: Math.floor(width / columns)
         cellHeight: cellWidth * 1.5 + 54
-        model: view.items
+        model: view.pageItems
         delegate: PosterCard {
             required property var modelData
             width: grid.cellWidth; height: grid.cellHeight
@@ -161,6 +166,14 @@ Rectangle {
         Text { anchors.horizontalCenter: parent.horizontalCenter; color: Tokens.text; font.pixelSize: 20; font.weight: Font.DemiBold; text: "Aquí aún no hay nada" }
         Text { anchors.horizontalCenter: parent.horizontalCenter; color: Tokens.textMuted; font.pixelSize: 14
                text: view.current && view.current.special ? "Usa el menú ⋯ de cualquier título › Agregar a Próximas a ver." : "Agrega películas desde su menú ⋯ › Agregar a colección." }
+    }
+
+    Pager {
+        id: collPager
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        visible: !!view.current && view.itemsPageCount > 1
+        page: view.itemsPage; pageCount: view.itemsPageCount; total: view.items.length; pageSize: view.pageSize
+        onGo: (p) => view.itemsPage = p
     }
 
     // --- Diálogos ---
