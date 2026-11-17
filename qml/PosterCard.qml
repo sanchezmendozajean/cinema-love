@@ -9,12 +9,15 @@ Item {
     property string subtitle   // si viene, reemplaza al año (p. ej. «1999 · 3 temporadas»)
     property string posterUrl
     property bool available: true
+    property bool highlighted: false   // elemento actual de la grilla con el foco del teclado
     property string progressState
     property real progressFraction: 0
     signal activated()
     signal menuRequested(real x, real y)   // coordenadas de ventana donde abrir el menú ⋯
 
     readonly property bool hovered: hover.hovered
+    readonly property bool ringed: activeFocus || highlighted
+    activeFocusOnTab: true
 
     Rectangle {
         id: frame
@@ -36,10 +39,20 @@ Item {
             opacity: status === Image.Ready ? (card.available ? 1 : 0.35) : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
         }
+        Rectangle { // esqueleto de carga: destello suave mientras llega el póster
+            anchors.fill: parent; radius: Tokens.radius
+            visible: img.status === Image.Loading
+            color: "white"; opacity: 0.04
+            SequentialAnimation on opacity {
+                running: img.status === Image.Loading; loops: Animation.Infinite
+                NumberAnimation { to: 0.11; duration: 700; easing.type: Easing.InOutSine }
+                NumberAnimation { to: 0.04; duration: 700; easing.type: Easing.InOutSine }
+            }
+        }
         // Marcador mientras carga o si no hay póster
         Text {
             anchors { fill: parent; margins: 12 }
-            visible: img.status !== Image.Ready
+            visible: img.status !== Image.Ready && img.status !== Image.Loading
             text: card.title
             color: Tokens.textFaint
             font.pixelSize: 14; font.bold: true
@@ -49,7 +62,7 @@ Item {
         }
         Rectangle { // botón ⋯ (visible al pasar el cursor o con foco)
             id: menuBtn
-            visible: card.hovered || card.activeFocus || menuHover.hovered
+            visible: card.hovered || card.ringed || menuHover.hovered
             anchors { left: parent.left; top: parent.top; margins: 8 }
             width: 30; height: 30; radius: 15
             color: menuHover.hovered ? "#E6000000" : "#99000000"
@@ -81,8 +94,8 @@ Item {
         RoundedCorners { anchors.fill: parent; radius: Tokens.radius }
         Rectangle {
             anchors.fill: parent; radius: Tokens.radius; color: "transparent"
-            border.width: card.activeFocus || card.hovered ? 2 : 1
-            border.color: card.activeFocus || card.hovered ? Tokens.accent : Tokens.border
+            border.width: card.ringed || card.hovered ? 2 : 1
+            border.color: card.ringed || card.hovered ? Tokens.accent : Tokens.border
         }
     }
     Text {

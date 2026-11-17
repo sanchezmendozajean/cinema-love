@@ -104,7 +104,7 @@ Rectangle {
             x: poster.x + poster.width + 36; y: poster.y + 36
             width: Math.min(parent.width - x - 56, 860)
             spacing: 10
-            Text { width: parent.width; text: view.series.title || ""; color: Tokens.text; font.pixelSize: 48; font.family: "Georgia"
+            Text { width: parent.width; text: view.series.title || ""; color: Tokens.text; font.pixelSize: 48; font.family: Tokens.fontDisplay
                    font.weight: Font.DemiBold; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
             Text {
                 width: parent.width; elide: Text.ElideRight; color: Tokens.textMuted; font.pixelSize: 15

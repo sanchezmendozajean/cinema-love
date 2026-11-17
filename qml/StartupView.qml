@@ -57,7 +57,7 @@ Rectangle {
     Column {
         anchors.centerIn: parent; spacing: 18
         visible: view.opening
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "CinemaLove"; color: Tokens.text; font.pixelSize: 44; font.family: "Georgia"; font.weight: Font.DemiBold }
+        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "CinemaLove"; color: Tokens.text; font.pixelSize: 44; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold }
         BusyIndicator { anchors.horizontalCenter: parent.horizontalCenter; running: view.opening; palette.dark: Tokens.accent }
         Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Abriendo tu colección…"; color: Tokens.textMuted; font.pixelSize: 15 }
         Text { anchors.horizontalCenter: parent.horizontalCenter; text: dataFolder.path; color: Tokens.textFaint; font.pixelSize: 12; elide: Text.ElideMiddle; width: 520; horizontalAlignment: Text.AlignHCenter }
@@ -113,7 +113,7 @@ Rectangle {
             // --- 0 Bienvenida ---
             Column { width: parent.width; spacing: 16; visible: view.step === 0
                 Text { text: "Bienvenido a"; color: Tokens.accentSoft; font.pixelSize: 13; font.weight: Font.DemiBold; font.letterSpacing: 1.5 }
-                Text { text: "CinemaLove"; color: Tokens.text; font.pixelSize: 46; font.family: "Georgia"; font.weight: Font.DemiBold }
+                Text { text: "CinemaLove"; color: Tokens.text; font.pixelSize: 46; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold }
                 Text { width: parent.width; wrapMode: Text.WordWrap; color: Tokens.textMuted; font.pixelSize: 15; lineHeight: 1.4
                        text: "Tu catálogo de cine personal: pósters, sinopsis, reparto, tu progreso y tus colecciones, con reproducción directa de tus archivos. Vamos a elegir dónde guardar tus datos; si ya usas otra versión de CinemaLove, puedes abrir esos mismos datos." }
                 AdminButton { text: "Empezar"; primary: true; onClicked: view.step = 1 }

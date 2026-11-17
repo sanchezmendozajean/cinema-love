@@ -22,7 +22,7 @@ Modal {
     Column {
         width: parent.width; spacing: 14
         Row { spacing: 14
-            Text { text: "CinemaLove"; color: Tokens.text; font.pixelSize: 26; font.family: "Georgia"; font.weight: Font.DemiBold }
+            Text { text: "CinemaLove"; color: Tokens.text; font.pixelSize: 26; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold }
             Text { text: "versión " + Qt.application.version + " · Qt 6 + libmpv"; color: Tokens.textMuted; font.pixelSize: 13; anchors.baseline: parent.children[0].baseline } }
         Text { width: parent.width; wrapMode: Text.WordWrap; color: Tokens.textMuted; font.pixelSize: 13; lineHeight: 1.3
                text: "Tu catálogo de cine personal. Tus datos (catálogo, progreso, colecciones) son compartidos con las otras versiones de CinemaLove y no salen de tu equipo." }

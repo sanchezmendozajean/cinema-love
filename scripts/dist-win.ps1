@@ -32,6 +32,10 @@ Copy-Item (Join-Path $sq 'package.json'), (Join-Path $sq 'LICENSE') $sqDest
 Copy-Item (Join-Path $sq 'lib') $sqDest -Recurse
 Copy-Item (Join-Path $sq 'prebuilds\win32-x64.node') (Join-Path $sqDest 'prebuilds')
 
+# 2b) Tipografías opcionales (third_party/fonts/*.ttf|otf, OFL)
+$fonts = Get-ChildItem (Join-Path $root 'third_partyonts') -Include *.ttf,*.otf -Recurse -ErrorAction SilentlyContinue
+if ($fonts) { $fd = Join-Path $dest 'fonts'; New-Item -ItemType Directory -Force $fd | Out-Null; $fonts | Copy-Item -Destination $fd }
+
 # 3) Licencias y avisos
 $lic = Join-Path $dest 'licencias'
 New-Item -ItemType Directory -Force $lic | Out-Null

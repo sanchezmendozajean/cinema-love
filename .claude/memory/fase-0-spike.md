@@ -183,3 +183,7 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Trampas: `Popup.dim` es FINAL (usar `dimmed`); `Popup.x/y` no se pueden redeclarar; en QML no poner `;` tras un bloque `anchors { }`.
 - Hooks de prueba: `--ui-test pl-ended|pl-audio|pl-subs|pl-subcfg|pl-info|pl-osd|pl-nextcard|pl-error` (con `--open-first --play`).
 - Pendiente: estilo de subtítulos aún no sincroniza con `subtitle_font_size/subtitle_vertical_offset` de config.yaml; sin hover-preview con miniatura de imagen; OSD verificado solo por código.
+
+## Ronda de pendientes (17/11/2026)
+- Hecho: ficha de persona (`PersonView.qml`, reparto clicable, `/people/:id` e `in-catalog`), esqueleto de carga en `PosterCard`, foco/teclado en catálogo (flechas, Intro, tecla Menú), carga opcional de Fraunces/Inter desde `third_party/fonts/` (aún sin archivos de fuente), `build/win` y ZIP regenerados.
+- NO hecho (decisión): Modo Cliente (exige que los modelos lean de la API remota en vez de SQLite: rediseño grande), empaquetado Linux (sin máquina para probar), prueba larga de reproducción, hover-preview con miniatura, sincronizar estilo de subtítulos con config.yaml.

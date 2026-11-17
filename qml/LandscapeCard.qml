@@ -12,6 +12,7 @@ Item {
     property string remaining
     signal activated()
     signal menuRequested(real x, real y)
+    activeFocusOnTab: true
     readonly property bool hovered: hover.hovered
 
     Rectangle {

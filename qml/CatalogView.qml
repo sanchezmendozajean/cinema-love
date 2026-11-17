@@ -35,7 +35,7 @@ Rectangle {
                 id: h1
                 anchors.verticalCenter: parent.verticalCenter
                 text: view.heading; color: Tokens.text
-                font.pixelSize: 40; font.family: "Georgia"; font.weight: Font.DemiBold
+                font.pixelSize: 40; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold
             }
             Text {
                 anchors { left: h1.right; leftMargin: 14; baseline: h1.baseline }
@@ -77,9 +77,15 @@ Rectangle {
         reuseItems: true
         cacheBuffer: 600
         boundsBehavior: Flickable.StopAtBounds
+        keyNavigationEnabled: true          // flechas, Inicio/Fin y RePág/AvPág mueven el elemento actual
+        highlightMoveDuration: 0
+        currentIndex: 0
         readonly property int columns: Math.max(2, Math.floor(width / 190))
         cellWidth: Math.floor(width / columns)
         cellHeight: cellWidth * 1.5 + 54
+        Keys.onReturnPressed: if (currentItem) currentItem.activated()
+        Keys.onEnterPressed: if (currentItem) currentItem.activated()
+        Keys.onMenuPressed: if (currentItem) { const p = currentItem.mapToItem(null, 20, 40); currentItem.menuRequested(p.x, p.y) }
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AsNeeded
             contentItem: Rectangle { implicitWidth: 6; radius: 3; color: Tokens.borderStrong }
@@ -88,6 +94,7 @@ Rectangle {
             required property var model
             required property int index
             width: grid.cellWidth; height: grid.cellHeight
+            highlighted: GridView.isCurrentItem && grid.activeFocus
             title: model.title
             year: model.year
             subtitle: model.subtitle

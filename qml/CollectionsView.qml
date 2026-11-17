@@ -55,7 +55,7 @@ Rectangle {
                HoverHandler { cursorShape: view.current ? Qt.PointingHandCursor : Qt.ArrowCursor } }
         Item {
             width: parent.width; height: 56
-            Text { id: h1; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 40; font.family: "Georgia"; font.weight: Font.DemiBold; color: Tokens.text
+            Text { id: h1; anchors.verticalCenter: parent.verticalCenter; font.pixelSize: 40; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold; color: Tokens.text
                    text: view.current ? (view.current.special ? "Próximas a ver" : view.current.nombre) : "Colecciones" }
             Text { anchors { left: h1.right; leftMargin: 14; baseline: h1.baseline } color: Tokens.textMuted; font.pixelSize: 14
                    text: view.current ? view.items.length + (view.items.length === 1 ? " título" : " títulos") : view.collections.length + (view.collections.length === 1 ? " colección" : " colecciones") }

@@ -23,7 +23,7 @@ Rectangle {
     Text {
         visible: !bar.compact
         anchors { left: parent.left; leftMargin: 22; top: parent.top; topMargin: 9 }
-        text: "CinemaLove"; color: Tokens.text; font.pixelSize: 17; font.family: "Georgia"; font.weight: Font.DemiBold
+        text: "CinemaLove"; color: Tokens.text; font.pixelSize: 17; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold
     }
 
     Column {

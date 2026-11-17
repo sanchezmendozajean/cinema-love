@@ -91,7 +91,7 @@ Rectangle {
             Text {
                 width: parent.width
                 text: view.movie.title || ""
-                color: Tokens.text; font.pixelSize: 48; font.family: "Georgia"; font.weight: Font.DemiBold
+                color: Tokens.text; font.pixelSize: 48; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold
                 wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
             }
             Text {

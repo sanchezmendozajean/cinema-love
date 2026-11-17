@@ -54,7 +54,7 @@ Rectangle {
         anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: 48; leftMargin: 40; rightMargin: 40 }
         spacing: 4
         Text { text: "AJUSTES"; color: Tokens.accentSoft; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.5 }
-        Text { text: "Administración"; color: Tokens.text; font.pixelSize: 40; font.family: "Georgia"; font.weight: Font.DemiBold }
+        Text { text: "Administración"; color: Tokens.text; font.pixelSize: 40; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold }
         Row {
             spacing: 4; topPadding: 16
             Repeater {

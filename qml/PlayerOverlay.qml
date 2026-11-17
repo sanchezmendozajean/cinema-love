@@ -409,7 +409,7 @@ Item {
             anchors.centerIn: parent; spacing: 10; width: Math.min(parent.width - 96, 640)
             Text { anchors.horizontalCenter: parent.horizontalCenter; text: "FIN DE LA REPRODUCCIÓN"; color: Tokens.accentSoft; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 1.6 }
             Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap; text: ov.title
-                   color: Tokens.text; font.pixelSize: 36; font.family: "Georgia"; font.weight: Font.DemiBold }
+                   color: Tokens.text; font.pixelSize: 36; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold }
             Item { width: 1; height: 14 }
             Row { anchors.horizontalCenter: parent.horizontalCenter; spacing: 12
                 AdminButton { text: "‹  Volver a la ficha"; primary: true; implicitHeight: 48; onClicked: ov.closeRequested() }

@@ -78,7 +78,7 @@ Rectangle {
                 Text { text: view.heroContinue ? "CONTINUAR VIENDO" : "AGREGADA RECIENTEMENTE"; color: Tokens.accentSoft
                        font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.5 }
                 Text { width: parent.width; text: view.featured ? view.featured.title : ""; color: Tokens.text; font.pixelSize: 52
-                       font.family: "Georgia"; font.weight: Font.DemiBold; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
+                       font.family: Tokens.fontDisplay; font.weight: Font.DemiBold; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
                 Text { width: parent.width; elide: Text.ElideRight; color: Tokens.textMuted; font.pixelSize: 15
                        text: { if (!view.featured) return ""; const p = []
                                if ((view.featured && view.featured.kind === "episode")) { p.push(view.featured.label); p.push(view.featured.episodeTitle) }

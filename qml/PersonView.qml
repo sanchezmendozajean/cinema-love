@@ -80,7 +80,7 @@ Rectangle {
                     x: photoBox.width + 40
                     width: Math.min(parent.width - x, 820)
                     spacing: 10
-                    Text { width: parent.width; text: view.info.nombre || ""; color: Tokens.text; font.pixelSize: 44; font.family: "Georgia"; font.weight: Font.DemiBold
+                    Text { width: parent.width; text: view.info.nombre || ""; color: Tokens.text; font.pixelSize: 44; font.family: Tokens.fontDisplay; font.weight: Font.DemiBold
                            wrapMode: Text.WordWrap }
                     Text { visible: text !== ""; color: Tokens.accentSoft; font.pixelSize: 13; font.weight: Font.DemiBold; font.letterSpacing: 1.2
                            text: (view.info.departamento || "").toUpperCase() }

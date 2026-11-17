@@ -17,6 +17,8 @@ QtObject {
     readonly property color danger: "#E5484D"
     readonly property color success: "#4CAF7D"
     readonly property color warning: "#E0A63A"
+    // Tipografías: Fraunces (títulos) e Inter (interfaz) si están en third_party/fonts (se cargan en main.cpp); si no, Georgia / la del sistema.
+    readonly property string fontDisplay: Qt.fontFamilies().indexOf("Fraunces") >= 0 ? "Fraunces" : "Georgia"
     readonly property int radius: 10
     readonly property int radiusSmall: 6
     readonly property int durFast: 140

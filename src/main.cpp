@@ -18,6 +18,8 @@
 #include <QDateTime>
 #include <QFile>
 #include <QGuiApplication>
+#include <QDir>
+#include <QFontDatabase>
 #include <QOpenGLContext>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -74,6 +76,19 @@ int main(int argc, char *argv[])
     QSurfaceFormat::setDefaultFormat(fmt);
 
     QGuiApplication app(argc, argv);
+    // Tipografías opcionales (OFL) junto al ejecutable o en third_party/fonts: Fraunces para títulos, Inter para la interfaz.
+    for (const QString &dir : {QCoreApplication::applicationDirPath() + QStringLiteral("/fonts"),
+                               QCoreApplication::applicationDirPath() + QStringLiteral("/../../third_party/fonts"),
+                               QCoreApplication::applicationDirPath() + QStringLiteral("/../../../third_party/fonts")}) {
+        const auto files = QDir(dir).entryList({QStringLiteral("*.ttf"), QStringLiteral("*.otf")}, QDir::Files);
+        for (const QString &f : files)
+            QFontDatabase::addApplicationFont(dir + QLatin1Char('/') + f);
+    }
+    if (QFontDatabase::families().contains(QStringLiteral("Inter"))) {
+        QFont base = app.font();
+        base.setFamily(QStringLiteral("Inter"));
+        app.setFont(base);
+    }
     app.setApplicationName(QStringLiteral("CinemaLove"));
     app.setApplicationVersion(QStringLiteral("0.1.0"));
     std::setlocale(LC_NUMERIC, "C"); // requisito de libmpv
