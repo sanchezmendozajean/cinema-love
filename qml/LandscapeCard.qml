@@ -25,7 +25,7 @@ Item {
         Image {
             id: img
             anchors { fill: parent; margins: 1 }
-            source: card.imageUrl; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 560
+            source: Images.src(card.imageUrl); asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 560
             opacity: status === Image.Ready ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
         }

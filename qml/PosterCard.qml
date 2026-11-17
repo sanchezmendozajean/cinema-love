@@ -29,7 +29,7 @@ Item {
         Image {
             id: img
             anchors { fill: parent; margins: 1 }
-            source: card.posterUrl
+            source: Images.src(card.posterUrl)
             asynchronous: true
             cache: true
             fillMode: Image.PreserveAspectCrop

@@ -65,7 +65,7 @@ Rectangle {
             height: Math.max(420, view.height * 0.56)
             Image {
                 anchors.fill: parent
-                source: view.series.backdropUrl || ""
+                source: Images.src(view.series.backdropUrl)
                 asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 1280
                 opacity: status === Image.Ready ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 300 } }
@@ -87,7 +87,7 @@ Rectangle {
             radius: Tokens.radius; color: Tokens.surface; border.color: Tokens.border
             Image {
                 anchors { fill: parent; margins: 1 }
-                source: view.series.posterUrl || ""
+                source: Images.src(view.series.posterUrl)
                 asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 440
                 layer.enabled: true
                 layer.effect: MultiEffect { maskEnabled: true; maskSource: posterMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }
@@ -178,7 +178,7 @@ Rectangle {
                             border.color: selected ? Tokens.accent : (sHover.hovered ? Tokens.accentSoft : Tokens.border)
                             Image {
                                 anchors { fill: parent; margins: 1 }
-                                source: modelData.posterUrl || ""; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 300
+                                source: Images.src(modelData.posterUrl); asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 300
                                 opacity: selected ? 1 : 0.82
                             }
                             Rectangle { visible: modelData.watched === modelData.episodes && modelData.episodes > 0
@@ -215,7 +215,7 @@ Rectangle {
                         Rectangle {
                             id: still
                             x: 8; y: 8; width: 176; height: 99; radius: Tokens.radiusSmall; color: Tokens.bg; clip: true
-                            Image { anchors.fill: parent; source: modelData.stillUrl || ""; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 360 }
+                            Image { anchors.fill: parent; source: Images.src(modelData.stillUrl); asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 360 }
                             Text { anchors.centerIn: parent; visible: rowHover.hovered; text: "▶"; color: "white"; font.pixelSize: 28
                                    style: Text.Outline; styleColor: "#99000000" }
                             Rectangle { visible: modelData.progressState === "enProgreso" && modelData.progressFraction > 0
@@ -262,7 +262,7 @@ Rectangle {
                                 id: photo
                                 anchors { fill: parent; margins: 1 }
                                 visible: status === Image.Ready
-                                source: modelData.fotoUrl || ""; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 160
+                                source: Images.src(modelData.fotoUrl); asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 160
                                 layer.enabled: true
                                 layer.effect: MultiEffect { maskEnabled: true; maskSource: avMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }
                             }

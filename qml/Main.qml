@@ -28,16 +28,10 @@ Window {
     MovieModel { id: movies; dbPath: spikeArgs.db }
     SeriesCatalog { id: seriesCat; dbPath: spikeArgs.db }
 
-    // Backend (sidecar Node): escáner, TMDb, administración. Arranca la primera vez que se abre Administración.
-    BackendLauncher { id: backend }
+    // Backend (sidecar Node): lo crea y lo inicia main.cpp (`backend` es una propiedad de contexto); aquí solo se consume.
     ApiClient { id: api; baseUrl: backend.baseUrl; token: backend.token }
-    function ensureBackend() {
-        if (backend.state !== "detenido") return
-        if (!spikeArgs.dataDir) { backendNote = "La administración necesita una carpeta de datos con cinemalove.sqlite (usa --database .dev-data/cinemalove.sqlite)."; return }
-        backend.start(spikeArgs.dataDir)
-    }
-    property string backendNote: ""
-    onSectionChanged: if (section === "admin") ensureBackend()
+    readonly property string backendNote: spikeArgs.dataDir ? ""
+        : "La administración necesita una carpeta de datos con cinemalove.sqlite (usa --database .dev-data/cinemalove.sqlite)."
 
     // --- Progreso (specs/05 §4): se guarda solo al pausar, hacer seek, cambiar de pista, cerrar y al superar el 95 % ---
     property var nowPlaying: null       // ficha en reproducción (null en el modo --selftest / archivo suelto)
@@ -468,7 +462,6 @@ Window {
 
     Component.onCompleted: {
         if (spikeArgs.progressTest) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); pt1.start(); pt2.start(); pt3.start(); pt4.start() }
-        if (root.section === "admin") ensureBackend()
         if (spikeArgs.adminScan) adminScanTimer.start()
         if (spikeArgs.homeScroll > 0) Qt.callLater(() => homeScrollTimer.start())
         if (spikeArgs.catalogShot) { if (spikeArgs.search) root.currentCatalog().setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }

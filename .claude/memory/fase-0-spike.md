@@ -97,3 +97,9 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - Verificado: backend arranca con Node plano, `/health` y `/admin/bibliotecas` responden, «Escanear todo» sobre la biblioteca real (E:\) completó desde la UI sobre una copia, sin procesos huérfanos al cerrar. Dos escritores (Qt: progreso; backend: escáner) comparten la base con busy_timeout.
 - Pendiente de Administración: huérfanos, re-vincular, homologar nombres, edición manual y asistente de TMDb para ambiguos/sin coincidencia, usuarios/servidor público/sesiones/QR (Fase 5), ajustes de datos (limpiar caché).
 - Cuidado: un `node.exe` de Adobe corre en esta máquina; no es del proyecto.
+
+## Imágenes (descargas) vía backend (16/11/2026)
+- `ClImageProvider` (`image://cl/<url TMDb codificada>`, `Images.src(url)` en QML): pide al backend `/api/v1/image?src=<url exacta>` (índice de Flutter → `cl_image_cache` → descarga de TMDb a `images/cl/`, **la caché es compartida con las otras versiones**). Decodifica reducido según `sourceSize` en el pool de hilos. Espera si el backend está «iniciando»; si falla/está detenido descarga directo de TMDb.
+- Trampa: `requestImageResponse` llega desde OTRO hilo; la respuesta se mueve al hilo de la red (`moveToThread` + `start()` en cola) o Qt avisa «Cannot create children for a parent that is in a different thread».
+- `BackendLauncher` ahora lo crea/inicia `main.cpp` (propiedad de contexto `backend`) y debe declararse ANTES que el `QQmlApplicationEngine` (si no, warnings de bindings con null al cerrar). `--no-backend` lo omite.
+- El ensayo escribió `D:\x.png` (raíz del disco D:) por una captura de prueba mal dirigida; el usuario debe borrarlo (el borrado lo bloqueó la comprobación de seguridad).

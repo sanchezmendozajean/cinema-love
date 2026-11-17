@@ -2,6 +2,8 @@
 
 #include <QCommandLineParser>
 #include <QDir>
+#include "BackendLauncher.h"
+#include "ClImageProvider.h"
 #include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkDiskCache>
@@ -90,11 +92,16 @@ int main(int argc, char *argv[])
     QCommandLineOption sectionOpt(QStringLiteral("section"), QStringLiteral("Sección inicial: home | catalog"), QStringLiteral("seccion"));
     QCommandLineOption scrollOpt(QStringLiteral("home-scroll"), QStringLiteral("Desplaza Inicio N píxeles antes de la captura (prueba)"), QStringLiteral("px"));
     QCommandLineOption adminScan(QStringLiteral("admin-scan"), QStringLiteral("Prueba: inicia «Escanear todo» en Administración y muestra Tareas"));
-    parser.addOptions({adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption noBackend(QStringLiteral("no-backend"), QStringLiteral("No inicia el backend (las imágenes se descargan directamente de TMDb)"));
+    parser.addOptions({noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
+    BackendLauncher backend; // declarado antes que el motor: debe sobrevivirle (los bindings QML lo leen al destruirse)
     QQmlApplicationEngine engine;
     const QString devData = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../../../.dev-data"));
+    // El backend (sidecar Node) se inicia desde el arranque: las imágenes y la administración dependen de él.
+    engine.rootContext()->setContextProperty(QStringLiteral("backend"), &backend);
+    engine.addImageProvider(QStringLiteral("cl"), new ClImageProvider(&backend));
     engine.setNetworkAccessManagerFactory(new CachedNam(QDir::cleanPath(devData + QStringLiteral("/img-cache"))));
     QVariantMap args;
     args["file"] = parser.positionalArguments().value(0);
@@ -116,6 +123,10 @@ int main(int argc, char *argv[])
     }
     engine.rootContext()->setContextProperty(QStringLiteral("spikeArgs"), args);
 
+    {
+        const QString dataDir = args["dataDir"].toString();
+        if (!parser.isSet(noBackend) && !dataDir.isEmpty()) backend.start(dataDir);
+    }
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); },
                      Qt::QueuedConnection);
     engine.loadFromModule("CinemaLove", "Main");

@@ -15,7 +15,7 @@ qt_add_executable(cinemalove
     src/main.cpp
 )
 
-set_source_files_properties(qml/theme/Tokens.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/theme/Tokens.qml qml/Images.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(cinemalove
     URI CinemaLove
@@ -33,6 +33,7 @@ qt_add_qml_module(cinemalove
         qml/HomeRow.qml
         qml/LandscapeCard.qml
         qml/theme/Tokens.qml
+        qml/Images.qml
     SOURCES
         src/catalog/MovieModel.h
         src/catalog/MovieModel.cpp
@@ -44,6 +45,8 @@ qt_add_qml_module(cinemalove
         src/backend/BackendLauncher.cpp
         src/backend/ApiClient.h
         src/backend/ApiClient.cpp
+        src/backend/ClImageProvider.h
+        src/backend/ClImageProvider.cpp
         src/player/MpvItem.h
         src/player/MpvItem.cpp
 )

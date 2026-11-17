@@ -42,7 +42,7 @@ Rectangle {
             height: Math.max(420, view.height * 0.56)
             Image {
                 anchors.fill: parent
-                source: view.movie.backdropUrl || ""
+                source: Images.src(view.movie.backdropUrl)
                 asynchronous: true
                 fillMode: Image.PreserveAspectCrop
                 sourceSize.width: 1280
@@ -70,7 +70,7 @@ Rectangle {
             border.color: Tokens.border
             Image {
                 anchors { fill: parent; margins: 1 }
-                source: view.movie.posterUrl || ""
+                source: Images.src(view.movie.posterUrl)
                 asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 440
                 layer.enabled: true
                 layer.effect: MultiEffect { maskEnabled: true; maskSource: posterMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }
@@ -195,7 +195,7 @@ Rectangle {
                                 id: photo
                                 anchors { fill: parent; margins: 1 }
                                 visible: status === Image.Ready
-                                source: modelData.fotoUrl || ""
+                                source: Images.src(modelData.fotoUrl)
                                 asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 160
                                 layer.enabled: true
                                 layer.effect: MultiEffect { maskEnabled: true; maskSource: avatarMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }

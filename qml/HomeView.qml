@@ -53,7 +53,7 @@ Rectangle {
             height: Math.max(400, view.height * 0.62)
             Image {
                 anchors.fill: parent
-                source: view.featured ? view.featured.backdropUrl : ""
+                source: view.featured ? Images.src(view.featured.backdropUrl) : ""
                 asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 1280
                 opacity: status === Image.Ready ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 400 } }
