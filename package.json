@@ -7,6 +7,7 @@
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1",
     "dev:debug": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 -DebugBuild",
     "configure": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 -Configure",
+    "dist:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dist-win.ps1",
     "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-backend.ps1"
   }
 }

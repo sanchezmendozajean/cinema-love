@@ -148,3 +148,9 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - **Seguridad de pruebas**: `ProgressWriter::setRequireDevCopy` + `BackendLauncher.requireDevCopy` solo en modo de pruebas; `main.cpp` sale con código 3 si una prueba apunta fuera de `.dev-data/`. `scripts/dev.ps1` añade por defecto `--database .dev-data/cinemalove.sqlite`. Caché de imágenes de Qt ahora en CacheLocation.
 - Verificado (ejecutable nuevo): respaldo consistente (1.662 registros), bloqueos creados/retirados, segundo arranque rechazado, bloqueo REAL de otro proceso respetado sin tocar nada, recorrido «elegir carpeta → config.yaml → abrir con respaldo → Todo listo». NO verificado con clics reales: pasos TMDb/Biblioteca del asistente y «Usar otra carpeta…».
 - Pruebas: `--ui-test wizard0|wizard1|wizard1new|wizard1locked|wizard5|wizardflow` (wizardflow escribe config.yaml junto al exe: borrarlo después).
+
+## Empaquetado Windows (17/11/2026)
+`npm run dist:win` / `scripts/dist-win.ps1 [-NoZip]` → `dist/CinemaLove-win/` y `dist/CinemaLove-win-<versión>.zip` (dist/ está en .gitignore). Contenido: cinemalove.exe + Qt (lo que dejó windeployqt) + libmpv-2.dll + `backend/{main.cjs,node.exe,node_modules/better-sqlite3 (lib + prebuilds/win32-x64.node)}` + `licencias/` + LEEME. ~266 MB sin comprimir. Requiere haber compilado antes (exe Release y `backend/dist/main.cjs`).
+- Verificado: la distribución se ejecuta desde su carpeta con PATH mínimo (sin Qt, Node ni npm), levanta el backend incluido, hace el respaldo y no deja procesos huérfanos.
+- NO verificado: instalación en una máquina limpia real (sin Visual C++ Redistributable ni drivers OpenGL actualizados), Linux (AppImage/tar.gz), firma del ejecutable.
+- Para correr desde la distribución sin pasar por el asistente: no hace falta; sin `config.yaml` junto al exe se muestra el asistente.
