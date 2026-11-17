@@ -1,4 +1,5 @@
 #include "MovieModel.h"
+#include "ProgressWriter.h"
 
 #include <QDateTime>
 #include <QDir>
@@ -83,47 +84,7 @@ bool MovieModel::saveProgress(const QString &id, double position, const QString 
     }
     const bool watched = state == QLatin1String("visto");
     const qint64 pos = watched ? 0 : qint64(std::llround(position));
-    bool ok = false;
-    const QString conn = QStringLiteral("save-") + QUuid::createUuid().toString(QUuid::Id128);
-    {
-        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
-        db.setDatabaseName(m_dbPath);
-        db.setConnectOptions(QStringLiteral("QSQLITE_BUSY_TIMEOUT=5000"));
-        if (db.open() && db.transaction()) {
-            QSqlQuery q(db);
-            q.prepare(QStringLiteral("SELECT id, pista_audio_id, pista_subtitulo_id FROM watch_progresses WHERE media_item_id = ? AND usuario_id IS NULL"));
-            q.addBindValue(id);
-            ok = q.exec();
-            const bool exists = ok && q.next();
-            const qint64 rowId = exists ? q.value(0).toLongLong() : 0;
-            const QVariant keepAudio = exists ? q.value(1) : QVariant(), keepSub = exists ? q.value(2) : QVariant();
-            const qint64 now = QDateTime::currentSecsSinceEpoch();
-            // Si no llegan pistas nuevas se conservan las guardadas (igual que escritura.ts).
-            const QVariant a = audioId.isEmpty() ? keepAudio : QVariant(audioId);
-            const QVariant sb = subId.isEmpty() ? keepSub : QVariant(subId);
-            QSqlQuery w(db);
-            if (ok) {
-                if (exists) {
-                    w.prepare(QStringLiteral("UPDATE watch_progresses SET posicion_segundos = ?, estado = ?, ultima_reproduccion = ?, pista_audio_id = ?, pista_subtitulo_id = ? WHERE id = ?"));
-                    w.addBindValue(pos); w.addBindValue(state); w.addBindValue(now); w.addBindValue(a); w.addBindValue(sb); w.addBindValue(rowId);
-                } else {
-                    w.prepare(QStringLiteral("INSERT INTO watch_progresses (media_item_id, usuario_id, posicion_segundos, estado, ultima_reproduccion, pista_audio_id, pista_subtitulo_id) VALUES (?, NULL, ?, ?, ?, ?, ?)"));
-                    w.addBindValue(id); w.addBindValue(pos); w.addBindValue(state); w.addBindValue(now); w.addBindValue(a); w.addBindValue(sb);
-                }
-                ok = w.exec();
-            }
-            if (ok && watched) { // marcarVisto: se retira de «Próximas a ver»
-                QSqlQuery d(db);
-                d.prepare(QStringLiteral("DELETE FROM proximas_a_ver WHERE media_item_id = ? AND usuario_id IS NULL"));
-                d.addBindValue(id);
-                ok = d.exec();
-            }
-            if (ok) ok = db.commit(); else db.rollback();
-        }
-        if (!ok) qWarning("MovieModel: no se pudo guardar el progreso: %s", qPrintable(db.lastError().text()));
-        db.close();
-    }
-    QSqlDatabase::removeDatabase(conn);
+    const bool ok = ProgressWriter::save(m_dbPath, id, pos, state, audioId, subId);
 
     if (ok) {
         for (Movie &m : m_all) {
@@ -152,7 +113,7 @@ QVariantMap MovieModel::card(const Movie &m) const
     const double frac = m.duration > 0 ? qBound(0.0, m.progressPos / m.duration, 1.0) : 0.0;
     return {{"id", m.id}, {"title", m.title}, {"year", m.year}, {"posterUrl", m.posterUrl}, {"backdropUrl", m.backdropUrl},
             {"progressState", m.progressState}, {"progressFraction", frac}, {"duration", m.duration},
-            {"progressPos", m.progressPos}, {"genres", m.genres}, {"synopsis", m.synopsis}};
+            {"progressPos", m.progressPos}, {"genres", m.genres}, {"synopsis", m.synopsis}, {"lastPlayed", m.lastPlayed}, {"kind", "movie"}};
 }
 
 QVariantList MovieModel::homeRow(const QString &kind, int limit) const
@@ -308,6 +269,7 @@ QVariant MovieModel::data(const QModelIndex &index, int role) const
     if (!index.isValid() || index.row() >= m_view.size()) return {};
     const Movie &m = m_view.at(index.row());
     switch (role) {
+    case SubtitleRole: return QString();
     case IdRole: return m.id;
     case ProgressStateRole: return m.progressState;
     case ProgressFractionRole: return m.duration > 0 ? qBound(0.0, m.progressPos / m.duration, 1.0) : 0.0;
@@ -324,6 +286,6 @@ QVariant MovieModel::data(const QModelIndex &index, int role) const
 
 QHash<int, QByteArray> MovieModel::roleNames() const
 {
-    return {{IdRole, "movieId"}, {ProgressStateRole, "progressState"}, {ProgressFractionRole, "progressFraction"}, {TitleRole, "title"}, {YearRole, "year"}, {PosterRole, "posterUrl"},
+    return {{IdRole, "movieId"}, {ProgressStateRole, "progressState"}, {ProgressFractionRole, "progressFraction"}, {SubtitleRole, "subtitle"}, {TitleRole, "title"}, {YearRole, "year"}, {PosterRole, "posterUrl"},
             {DurationRole, "duration"}, {GenresRole, "genres"}, {PathRole, "path"}, {SynopsisRole, "synopsis"}};
 }

@@ -77,3 +77,13 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - Trampa QML: no usar `readonly property var x: { rev; return model.f() }` — no se reevaluaba al llegar el modelo; se usa `refresh()` explícito. Y no nombrar una propiedad igual que un `id` del mismo archivo.
 - Pruebas: `--section home|catalog`, `--home-scroll px`, `--database` con copia aparte.
 - Pendiente: series/episodios en «Continuar viendo», flechas ‹ › en las filas, skeletons de carga, ítem con foco por teclado en filas, filas por género (no están en RF-11).
+
+## Series y temporadas (16/11/2026)
+- `SeriesCatalog` (QAbstractListModel con los mismos roles que `MovieModel`, así `CatalogView` sirve para ambos): series → temporadas (derivadas de los episodios con `estado_archivo='ok'`) → episodios (`media_items.series_id`). 19 series, ~1.100 episodios; 499 sin título → «Episodio N». Pósters de temporada de `seasons.poster_url`; still del episodio = `media_items.poster_url` (w300).
+- «Episodio sugerido» (`detail().next`): en curso más reciente → siguiente al último visto → primero → «volver a ver». El botón de la ficha lo refleja («Continuar T3 · E1 — …», «Siguiente: …»).
+- `ProgressWriter` (src/catalog) es el único sitio que escribe en `watch_progresses` (película y episodio); solo copias de `.dev-data/`.
+- UI: sección Series, `SeriesDetailView` (héroe, temporadas con ✓/progreso, lista de episodios con still, «Siguiente», sinopsis, reparto, equipo). Reproducir un episodio guarda/reanuda igual que una película; al terminar salta al siguiente episodio sin volver a la ficha (`nextEpisodeId`).
+- Inicio: «Continuar viendo» mezcla películas y episodios (tarjeta = serie + «T1 · E3»).
+- Verificado: reanudar T3·E1 de Banshee en 1525 s (HEVC, d3d11va-copy), guardado a 1535 s conservando subtítulo. NO verificado: salto automático al siguiente episodio, «Marcar temporada como vista», disponibilidad de archivo por episodio.
+- Pendiente: «Marcar temporada/serie como vista» (escritura masiva, pedir confirmación), selector de temporada ▾, series en «Agregados recientemente», fuentes locales, ficha de persona, colecciones.
+- Pruebas: `--section series --search banshee --open-first [--play] --home-scroll 640 --catalog-shot x.png --database <copia>`.

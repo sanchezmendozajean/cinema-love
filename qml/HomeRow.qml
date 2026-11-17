@@ -7,7 +7,7 @@ Item {
     property string title
     property var items: []
     property bool landscape: false
-    signal chosen(string movieId)
+    signal chosen(var item)
 
     visible: items.length > 0
     height: visible ? 52 + list.height : 0
@@ -35,13 +35,13 @@ Item {
     }
     Component { id: posterC; PosterCard {
         property var d: ({})
-        title: d.title || ""; year: d.year || 0; posterUrl: d.posterUrl || ""
+        title: d.title || ""; year: d.year || 0; subtitle: d.subtitle || ""; posterUrl: d.posterUrl || ""
         progressState: d.progressState || ""; progressFraction: d.progressFraction || 0
-        onActivated: row.chosen(d.id) } }
+        onActivated: row.chosen(d) } }
     Component { id: landscapeC; LandscapeCard {
         property var d: ({})
-        title: d.title || ""; year: d.year || 0; imageUrl: d.backdropUrl || d.posterUrl || ""
+        title: d.title || ""; year: d.year || 0; subtitle: d.subtitle || ""; imageUrl: d.backdropUrl || d.posterUrl || ""
         progressFraction: d.progressFraction || 0
         remaining: d.duration > 0 ? "Quedan " + Math.max(1, Math.round((d.duration - d.progressPos) / 60)) + " min" : ""
-        onActivated: row.chosen(d.id) } }
+        onActivated: row.chosen(d) } }
 }

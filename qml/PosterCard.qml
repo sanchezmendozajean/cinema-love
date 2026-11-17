@@ -6,6 +6,7 @@ Item {
     id: card
     property string title
     property int year
+    property string subtitle   // si viene, reemplaza al año (p. ej. «1999 · 3 temporadas»)
     property string posterUrl
     property bool available: true
     property string progressState
@@ -74,7 +75,7 @@ Item {
     }
     Text {
         anchors { left: frame.left; right: frame.right; top: frame.bottom; topMargin: 27 }
-        text: card.year > 0 ? card.year : ""
+        text: card.subtitle !== "" ? card.subtitle : (card.year > 0 ? card.year : "")
         color: Tokens.textMuted; font.pixelSize: 12
     }
 

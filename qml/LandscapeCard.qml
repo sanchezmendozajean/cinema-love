@@ -6,6 +6,7 @@ Item {
     id: card
     property string title
     property int year
+    property string subtitle
     property string imageUrl
     property real progressFraction: 0
     property string remaining
@@ -46,7 +47,7 @@ Item {
     Text { anchors { left: frame.left; right: frame.right; top: frame.bottom; topMargin: 8 }
            text: card.title; color: Tokens.text; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
     Text { anchors { left: frame.left; right: frame.right; top: frame.bottom; topMargin: 27 }
-           text: card.year > 0 ? card.year : ""; color: Tokens.textMuted; font.pixelSize: 12 }
+           text: card.subtitle !== "" ? card.subtitle : (card.year > 0 ? card.year : ""); color: Tokens.textMuted; font.pixelSize: 12 }
 
     HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
     TapHandler { onTapped: { card.forceActiveFocus(); card.activated() } }

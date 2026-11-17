@@ -15,7 +15,7 @@ class MovieModel : public QAbstractListModel
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
 
 public:
-    enum Roles { IdRole = Qt::UserRole + 1, ProgressStateRole, ProgressFractionRole, TitleRole, YearRole, PosterRole, DurationRole, GenresRole, PathRole, SynopsisRole };
+    enum Roles { IdRole = Qt::UserRole + 1, ProgressStateRole, ProgressFractionRole, SubtitleRole, TitleRole, YearRole, PosterRole, DurationRole, GenresRole, PathRole, SynopsisRole };
 
     explicit MovieModel(QObject *parent = nullptr);
 

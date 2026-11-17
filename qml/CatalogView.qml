@@ -10,6 +10,9 @@ Rectangle {
     property int total: 0
     readonly property int shown: grid.count
     property string error: ""
+    property string eyebrow: "BIBLIOTECA"
+    property string heading: "Películas"
+    property string placeholder: "Buscar película…"
     signal search(string text)
     function setSearch(t) { searchField.text = t }
     signal movieChosen(int row)
@@ -18,13 +21,13 @@ Rectangle {
         id: header
         anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: 48; leftMargin: 40; rightMargin: 40 }
         spacing: 4
-        Text { text: "BIBLIOTECA"; color: Tokens.accentSoft; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.5 }
+        Text { text: view.eyebrow; color: Tokens.accentSoft; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.5 }
         Item {
             width: parent.width; height: 56
             Text {
                 id: h1
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Películas"; color: Tokens.text
+                text: view.heading; color: Tokens.text
                 font.pixelSize: 40; font.family: "Georgia"; font.weight: Font.DemiBold
             }
             Text {
@@ -36,7 +39,7 @@ Rectangle {
                 id: searchField
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                 width: 300; height: 40
-                placeholderText: "Buscar película…"
+                placeholderText: view.placeholder
                 placeholderTextColor: Tokens.textFaint
                 color: Tokens.text; font.pixelSize: 14
                 leftPadding: 14; rightPadding: 34
@@ -80,6 +83,7 @@ Rectangle {
             width: grid.cellWidth; height: grid.cellHeight
             title: model.title
             year: model.year
+            subtitle: model.subtitle
             posterUrl: model.posterUrl
             progressState: model.progressState
             progressFraction: model.progressFraction

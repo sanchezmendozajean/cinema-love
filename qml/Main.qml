@@ -19,11 +19,14 @@ Window {
     property bool playing: false          // true cuando se está viendo una película (si no, se muestra el catálogo)
     property string movieTitle: ""
     property string notice: ""
-    // Sección principal: «home» (Inicio) o «catalog» (Películas). Las pruebas del catálogo arrancan en «catalog».
+    // Sección principal: «home» (Inicio), «catalog» (Películas) o «series». Las pruebas del catálogo arrancan en «catalog».
     property string section: spikeArgs.section || ((spikeArgs.catalogShot || spikeArgs.progressTest || spikeArgs.openFirst) ? "catalog" : "home")
-    property var detail: null   // ficha abierta (mapa de MovieModel.get) o null
+    property var detail: null   // ficha abierta (película de MovieModel o serie de SeriesCatalog, con kind === "series") o null
+    readonly property bool seriesOpen: detail !== null && detail.kind === "series"
+    readonly property bool movieOpen: detail !== null && detail.kind !== "series"
 
     MovieModel { id: movies; dbPath: spikeArgs.db }
+    SeriesCatalog { id: seriesCat; dbPath: spikeArgs.db }
 
     // --- Progreso (specs/05 §4): se guarda solo al pausar, hacer seek, cambiar de pista, cerrar y al superar el 95 % ---
     property var nowPlaying: null       // ficha en reproducción (null en el modo --selftest / archivo suelto)
@@ -31,14 +34,16 @@ Window {
     property bool watchedMarked: false
     property var pendingTracks: null
 
+    readonly property var store: nowPlaying && nowPlaying.kind === "episode" ? seriesCat : movies   // dónde se guarda el progreso
+
     function persist() {
         if (!nowPlaying || watchedMarked || !progressReady || player.position < 5) return
-        movies.saveProgress(nowPlaying.id, player.position, "enProgreso", String(player.audioId), String(player.subtitleId))
+        store.saveProgress(nowPlaying.id, player.position, "enProgreso", String(player.audioId), String(player.subtitleId))
     }
     function markWatched() {
         if (!nowPlaying || watchedMarked) return
         watchedMarked = true
-        movies.saveProgress(nowPlaying.id, 0, "visto")
+        store.saveProgress(nowPlaying.id, 0, "visto")
     }
 
     Timer { id: saveTimer; interval: 700; onTriggered: root.persist() }   // agrupa pausa/seek/pista en un solo guardado
@@ -76,6 +81,27 @@ Window {
     }
     function closeDetail() { detail = null; catalog.forceActiveFocus() }
 
+    // --- Series ---
+    function openSeries(d) {
+        if (!d || !d.id) return
+        detail = d
+        seriesDetailView.forceActiveFocus()
+    }
+    function showSeriesAt(row) { openSeries(seriesCat.detailAt(row)) }
+    function showSeriesById(id) { openSeries(seriesCat.detail(id)) }
+    function playEpisodeById(id, start) {
+        const ep = seriesCat.episode(id)
+        if (!ep.id) return
+        if (!(detail && detail.id === ep.seriesId)) detail = seriesCat.detail(ep.seriesId)
+        openMovie(ep, start === undefined ? (ep.progressState === "enProgreso" ? ep.progressPos : 0) : start)
+    }
+    function openItemDetail(it) { if (it.kind === "episode") showSeriesById(it.seriesId); else showDetailById(it.id) }
+    function playItem(it) {
+        if (it.kind === "episode") playEpisodeById(it.id)
+        else playById(it.id)
+    }
+    function currentCatalog() { return section === "series" ? seriesCatalog : catalog }
+
     function openMovie(m, start) {
         if (!movies.fileExists(m.path)) {
             notice = "No se encuentra el archivo de «" + m.title + "». ¿Está conectado el disco " + m.path.substring(0, 2) + "?"
@@ -87,30 +113,38 @@ Window {
         progressReady = false
         pendingTracks = m.id ? { a: m.progressAudio, s: m.progressSub } : null
         if (m.id) readyFallback.restart()
-        movieTitle = m.title + (m.year > 0 ? " (" + m.year + ")" : "")
+        movieTitle = m.kind === "episode" ? m.seriesTitle + "  ·  " + m.label + " — " + m.title
+                                          : m.title + (m.year > 0 ? " (" + m.year + ")" : "")
         playing = true
         controlsVisible = true
         player.load(m.path, start || 0)
         hideTimer.restart()
         player.forceActiveFocus()
     }
-    function closeMovie() {
-        persist()
-        saveTimer.stop()
-        const id = nowPlaying ? nowPlaying.id : ""
-        nowPlaying = null
-        pendingTracks = null
-        player.stop()
-        if (id && detail && detail.id === id) { // la ficha refleja el progreso recién guardado
+    // La ficha abierta refleja el progreso recién guardado.
+    function refreshDetailAfter(kind, id) {
+        if (!detail) return
+        if (kind === "episode" && seriesOpen) detail = seriesCat.detail(detail.id)
+        else if (kind !== "episode" && movieOpen && detail.id === id) {
             const m = movies.getById(id)
             m.available = true
             detail = m
         }
+    }
+    function closeMovie() {
+        persist()
+        saveTimer.stop()
+        const kind = nowPlaying ? nowPlaying.kind : ""
+        const id = nowPlaying ? nowPlaying.id : ""
+        nowPlaying = null
+        pendingTracks = null
+        player.stop()
+        if (id) refreshDetailAfter(kind, id)
         if (visibility === Window.FullScreen) visibility = Window.Windowed
         playing = false
         movieTitle = ""
         hideTimer.stop()
-        if (detail) detailView.forceActiveFocus()
+        if (detail) (seriesOpen ? seriesDetailView : detailView).forceActiveFocus()
     }
 
     function fmt(s) {
@@ -136,7 +170,16 @@ Window {
         id: player
         anchors.fill: parent
         focus: true
-        onEndOfFile: (reason) => { if (reason === "eof" && !spikeArgs.selftest) { root.markWatched(); root.closeMovie() } }
+        onEndOfFile: (reason) => {
+            if (reason !== "eof" || spikeArgs.selftest) return
+            const cur = root.nowPlaying
+            root.markWatched()
+            const nextId = cur && cur.kind === "episode" ? seriesCat.nextEpisodeId(cur.id) : ""
+            if (nextId) { // reproduce el siguiente episodio de la serie sin volver a la ficha
+                root.refreshDetailAfter("episode", cur.id)
+                root.playEpisodeById(nextId, 0)
+            } else root.closeMovie()
+        }
 
         Keys.onPressed: (e) => {
             switch (e.key) {
@@ -175,20 +218,44 @@ Window {
         onMovieChosen: (row) => root.showDetail(row)
     }
 
+    CatalogView {
+        id: seriesCatalog
+        anchors.fill: parent
+        visible: !root.playing && !root.detail && root.section === "series"
+        model: seriesCat
+        total: seriesCat.total
+        error: seriesCat.error
+        heading: "Series"
+        placeholder: "Buscar serie…"
+        onSearch: (t) => seriesCat.filter = t
+        onMovieChosen: (row) => root.showSeriesAt(row)
+    }
+
     HomeView {
         id: homeView
         anchors.fill: parent
         visible: !root.playing && !root.detail && root.section === "home"
         model: movies
-        onOpenDetail: (id) => root.showDetailById(id)
-        onPlayMovie: (id) => root.playById(id)
+        series: seriesCat
+        onOpenDetail: (it) => root.openItemDetail(it)
+        onPlayMovie: (it) => root.playItem(it)
+    }
+
+    SeriesDetailView {
+        id: seriesDetailView
+        anchors.fill: parent
+        visible: !root.playing && root.seriesOpen
+        series: root.seriesOpen ? root.detail : ({})
+        catalog: seriesCat
+        onBack: root.closeDetail()
+        onPlayEpisode: (id, start) => root.playEpisodeById(id, start)
     }
 
     DetailView {
         id: detailView
         anchors.fill: parent
-        visible: !root.playing && root.detail !== null
-        movie: root.detail || ({})
+        visible: !root.playing && root.movieOpen
+        movie: root.movieOpen ? root.detail : ({})
         onBack: root.closeDetail()
         onPlay: (start) => root.openMovie(root.detail, start)
     }
@@ -220,13 +287,13 @@ Window {
             spacing: 12
             Text {
                 visible: root.playing || root.detail !== null
-                text: root.playing ? "‹ " + (root.detail ? "Ficha" : "Biblioteca") : "‹ Películas"; color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
+                text: root.playing ? "‹ " + (root.detail ? "Ficha" : "Biblioteca") : (root.seriesOpen ? "‹ Series" : "‹ Películas"); color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
                 HoverHandler { id: backHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: root.playing ? root.closeMovie() : root.closeDetail() }
             }
             Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
             Repeater {
-                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" } ]
+                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" } ]
                 delegate: Text {
                     leftPadding: 12
                     text: modelData.t; font.pixelSize: 13; font.weight: Font.Medium
@@ -367,16 +434,19 @@ Window {
     Timer { id: pt3; interval: 14500; onTriggered: { root.closeMovie()
         console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
     Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
-    Timer { id: homeScrollTimer; interval: 4000; onTriggered: homeView.scrollTo(spikeArgs.homeScroll) }
+    Timer { id: homeScrollTimer; interval: 5000; onTriggered: { if (root.seriesOpen) seriesDetailView.scrollTo(spikeArgs.homeScroll); else homeView.scrollTo(spikeArgs.homeScroll) } }
     Timer { id: openTimer; interval: 3000; onTriggered: {
-        if (spikeArgs.play) root.openMovie(movies.get(0), 0); else root.showDetail(0) } }
+        if (root.section === "series") {
+            root.showSeriesAt(0)
+            if (spikeArgs.play) root.playEpisodeById(root.detail.next.episode.id)
+        } else if (spikeArgs.play) root.openMovie(movies.get(0), 0); else root.showDetail(0) } }
     Timer { id: shotTimer; interval: spikeArgs.openFirst ? 14000 : 9000; onTriggered: {
-        player.grabWindowTo(spikeArgs.catalogShot); player.shutdown(); Qt.quit() } }
+        player.grabWindowTo(spikeArgs.catalogShot); if (root.playing) root.closeMovie(); player.shutdown(); Qt.quit() } }
 
     Component.onCompleted: {
         if (spikeArgs.progressTest) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); pt1.start(); pt2.start(); pt3.start(); pt4.start() }
         if (spikeArgs.homeScroll > 0) Qt.callLater(() => homeScrollTimer.start())
-        if (spikeArgs.catalogShot) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }
+        if (spikeArgs.catalogShot) { if (spikeArgs.search) root.currentCatalog().setSearch(spikeArgs.search); shotTimer.start(); if (spikeArgs.openFirst) openTimer.start() }
         if (spikeArgs.file) {
             root.playing = true
             root.movieTitle = spikeArgs.file

@@ -25,6 +25,7 @@ qt_add_qml_module(cinemalove
         qml/CatalogView.qml
         qml/PosterCard.qml
         qml/DetailView.qml
+        qml/SeriesDetailView.qml
         qml/HomeView.qml
         qml/HomeRow.qml
         qml/LandscapeCard.qml
@@ -32,6 +33,10 @@ qt_add_qml_module(cinemalove
     SOURCES
         src/catalog/MovieModel.h
         src/catalog/MovieModel.cpp
+        src/catalog/SeriesCatalog.h
+        src/catalog/SeriesCatalog.cpp
+        src/catalog/ProgressWriter.h
+        src/catalog/ProgressWriter.cpp
         src/player/MpvItem.h
         src/player/MpvItem.cpp
 )
