@@ -66,6 +66,7 @@ Rectangle {
 
     // --- Lista ---
     Flickable {
+        id: listFlick
         anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 28; leftMargin: 40; rightMargin: 40 }
         visible: !view.current
         contentHeight: flow.height + 40
@@ -125,6 +126,7 @@ Rectangle {
             }
         }
     }
+    SmoothWheel { flickable: listFlick }
     Text { anchors.centerIn: parent; visible: !view.current && view.error !== ""; text: view.error; color: Tokens.textMuted; font.pixelSize: 14 }
 
     // --- Detalle ---
@@ -152,6 +154,7 @@ Rectangle {
                                                             collectionId: view.current && !view.current.special ? view.current.id : "" }, x, y)
         }
     }
+    SmoothWheel { flickable: grid }
     Column {
         anchors.centerIn: grid; spacing: 8
         visible: !!view.current && view.items.length === 0

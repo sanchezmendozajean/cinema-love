@@ -8,6 +8,7 @@
 #include <QStandardPaths>
 #include "BackendLauncher.h"
 #include "DataFolder.h"
+#include "TestInput.h"
 #include "ProgressWriter.h"
 #include "ClImageProvider.h"
 #include <QFileInfo>
@@ -102,7 +103,9 @@ int main(int argc, char *argv[])
     QCommandLineOption uiTest(QStringLiteral("ui-test"), QStringLiteral("Acción de prueba tras cargar: collection | menu | markconfirm"), QStringLiteral("nombre"));
     QCommandLineOption adminTab(QStringLiteral("admin-tab"), QStringLiteral("Pestaña inicial de Administración (prueba)"), QStringLiteral("pestaña"));
     QCommandLineOption multi(QStringLiteral("multi"), QStringLiteral("Permite varias instancias (por defecto solo una)"));
-    parser.addOptions({multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption nativeScroll(QStringLiteral("native-scroll"), QStringLiteral("Prueba: usa el desplazamiento nativo de Qt (para medir)"));
+    QCommandLineOption notchOpt(QStringLiteral("notch-pixels"), QStringLiteral("Prueba: píxeles por muesca de la rueda"), QStringLiteral("px"));
+    parser.addOptions({nativeScroll, notchOpt, multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
     // Instancia única (specs/01 §5): una segunda ejecución avisa a la primera, que se trae al frente, y termina.
@@ -143,6 +146,8 @@ int main(int argc, char *argv[])
     // El backend (sidecar Node) se inicia desde el arranque: las imágenes y la administración dependen de él.
     engine.rootContext()->setContextProperty(QStringLiteral("backend"), &backend);
     engine.rootContext()->setContextProperty(QStringLiteral("dataFolder"), &dataFolder);
+    TestInput testInput;
+    engine.rootContext()->setContextProperty(QStringLiteral("testInput"), &testInput);
     engine.addImageProvider(QStringLiteral("cl"), new ClImageProvider(&backend));
     engine.setNetworkAccessManagerFactory(new CachedNam(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/img")));
     QVariantMap args;
@@ -164,6 +169,8 @@ int main(int argc, char *argv[])
     // Carpeta de datos del backend: solo si el archivo se llama cinemalove.sqlite (el backend siempre abre ese nombre).
     args["dataDir"] = QFileInfo(dataFolder.dbFile()).fileName() == QLatin1String("cinemalove.sqlite") ? dataFolder.path() : QString();
     args["testMode"] = testMode;
+    args["nativeScroll"] = parser.isSet(nativeScroll);
+    args["notchPixels"] = parser.value(notchOpt).toDouble();
     args["noBackend"] = parser.isSet(noBackend);
     engine.rootContext()->setContextProperty(QStringLiteral("spikeArgs"), args);
 

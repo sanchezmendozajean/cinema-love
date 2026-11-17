@@ -13,6 +13,7 @@ Rectangle {
     property string eyebrow: "BIBLIOTECA"
     property string heading: "Películas"
     property string placeholder: "Buscar película…"
+    readonly property real scrollY: grid.contentY
     signal search(string text)
     function setSearch(t) { searchField.text = t }
     signal movieChosen(int row)
@@ -94,6 +95,7 @@ Rectangle {
         }
         KeyNavigation.up: searchField
     }
+    SmoothWheel { flickable: grid }
 
     // Estados vacío / error (design: estados presentes)
     Column {

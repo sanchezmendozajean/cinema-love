@@ -616,8 +616,14 @@ Window {
         console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
     Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
     Timer { id: fadeShotTimer; interval: 110; onTriggered: player.grabWindowTo(spikeArgs.catalogShot.replace(/\.png$/, "-mid.png")) }
+    // Medición del desplazamiento con la rueda (--ui-test wheel): 1 muesca y luego 3 seguidas.
+    property real wheelY0: 0
+    Timer { id: wheelT1; interval: 1500; onTriggered: { console.log("WHEEL 1 muesca: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px"); root.wheelY0 = catalog.scrollY
+        for (let i = 0; i < 3; i++) testInput.wheel(root, 700, 400, -120); wheelT2.start() } }
+    Timer { id: wheelT2; interval: 1500; onTriggered: console.log("WHEEL 3 muescas: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px") }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
-        if (spikeArgs.uiTest === "fade") { root.section = "series"; fadeShotTimer.start() }
+        if (spikeArgs.uiTest === "wheel") { root.wheelY0 = catalog.scrollY; testInput.wheel(root, 700, 400, -120); wheelT1.start() }
+        else if (spikeArgs.uiTest === "fade") { root.section = "series"; fadeShotTimer.start() }
         else if (spikeArgs.uiTest === "wizard0") { root.wizardActive = true; startup.step = 0 }
         else if (spikeArgs.uiTest === "wizard1") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir + "/../bk-test" }
         else if (spikeArgs.uiTest === "wizard1locked") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir }

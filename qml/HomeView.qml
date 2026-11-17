@@ -123,6 +123,7 @@ Rectangle {
             HomeRow { width: parent.width; title: "Vistos recientemente"; items: view.watched; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
         }
     }
+    SmoothWheel { flickable: flick }
 
     Column { // estado vacío / error
         anchors.centerIn: parent; spacing: 8

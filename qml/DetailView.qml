@@ -52,7 +52,7 @@ Rectangle {
             }
             Rectangle { anchors.fill: parent; gradient: Gradient { // inferior
                 GradientStop { position: 0.0; color: "#00000000" }
-                GradientStop { position: 0.55; color: "#000E0D11" }
+                GradientStop { position: 0.72; color: "#000E0D11" }
                 GradientStop { position: 1.0; color: Tokens.bg } } }
             Rectangle { anchors.fill: parent; gradient: Gradient { // lateral izquierdo
                 orientation: Gradient.Horizontal
@@ -166,7 +166,7 @@ Rectangle {
         // --- Cuerpo: sinopsis, reparto, equipo ---
         Column {
             id: body
-            x: 56; y: Math.max(hero.height - 20, poster.y + poster.height + 32)
+            x: 56; y: poster.y + poster.height + 16     // el contenido arranca justo bajo el póster: se ve más del hero
             width: parent.width - 112
             spacing: 32
 
@@ -181,30 +181,30 @@ Rectangle {
                 visible: !!view.movie.cast && view.movie.cast.length > 0
                 Text { text: "REPARTO"; color: Tokens.textFaint; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.5 }
                 ListView {
-                    width: parent.width; height: 150
+                    width: parent.width; height: 220
                     orientation: ListView.Horizontal; spacing: 20; clip: true
                     boundsBehavior: Flickable.StopAtBounds
                     model: view.movie.cast || []
                     delegate: Item {
-                        width: 96; height: 150
+                        width: 144; height: 220
                         Rectangle {
                             id: avatar
-                            width: 80; height: 80; radius: 40; x: 8
+                            width: 120; height: 120; radius: 60; x: 12
                             color: Tokens.surface; border.color: Tokens.border
-                            Text { anchors.centerIn: parent; visible: !photo.visible; text: (modelData.nombre || "?").charAt(0); color: Tokens.textFaint; font.pixelSize: 28 }
+                            Text { anchors.centerIn: parent; visible: !photo.visible; text: (modelData.nombre || "?").charAt(0); color: Tokens.textFaint; font.pixelSize: 42 }
                             Image {
                                 id: photo
                                 anchors { fill: parent; margins: 1 }
                                 visible: status === Image.Ready
                                 source: Images.src(modelData.fotoUrl)
-                                asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 160
+                                asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 240
                                 layer.enabled: true
                                 layer.effect: MultiEffect { maskEnabled: true; maskSource: avatarMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }
                             }
                             Rectangle { id: avatarMask; anchors.fill: parent; radius: width / 2; layer.enabled: true; visible: false }
                         }
-                        Text { y: 88; width: parent.width; horizontalAlignment: Text.AlignHCenter; text: modelData.nombre || ""; color: Tokens.text; font.pixelSize: 12; font.weight: Font.Medium; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
-                        Text { y: 120; width: parent.width; horizontalAlignment: Text.AlignHCenter; text: modelData.rol || ""; color: Tokens.textMuted; font.pixelSize: 11; elide: Text.ElideRight }
+                        Text { y: 130; width: parent.width; horizontalAlignment: Text.AlignHCenter; text: modelData.nombre || ""; color: Tokens.text; font.pixelSize: 14; font.weight: Font.Medium; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
+                        Text { y: 178; width: parent.width; horizontalAlignment: Text.AlignHCenter; text: modelData.rol || ""; color: Tokens.textMuted; font.pixelSize: 12; elide: Text.ElideRight }
                     }
                 }
             }
@@ -219,4 +219,5 @@ Rectangle {
             }
         }
     }
+    SmoothWheel { flickable: flick }
 }

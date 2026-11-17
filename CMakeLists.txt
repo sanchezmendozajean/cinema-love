@@ -29,6 +29,7 @@ qt_add_qml_module(cinemalove
         qml/AdminButton.qml
         qml/Modal.qml
         qml/ItemMenu.qml
+        qml/SmoothWheel.qml
         qml/RoundedCorners.qml
         qml/Sidebar.qml
         qml/NavIcon.qml
@@ -53,6 +54,8 @@ qt_add_qml_module(cinemalove
         src/catalog/ProgressWriter.cpp
         src/backend/BackendLauncher.h
         src/backend/BackendLauncher.cpp
+        src/TestInput.h
+        src/TestInput.cpp
         src/backend/DataFolder.h
         src/backend/DataFolder.cpp
         src/backend/ApiClient.h

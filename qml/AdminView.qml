@@ -84,6 +84,7 @@ Rectangle {
 
     // --- Bibliotecas ---
     Flickable {
+        id: libFlick
         anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 24; leftMargin: 40; rightMargin: 40 }
         visible: view.ready && view.tab === "bibliotecas"
         contentHeight: libCol.height + 40
@@ -145,9 +146,11 @@ Rectangle {
             }
         }
     }
+    SmoothWheel { flickable: libFlick }
 
     // --- Tareas ---
     Flickable {
+        id: jobFlick
         anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 24; leftMargin: 40; rightMargin: 40 }
         visible: view.ready && view.tab === "tareas"
         contentHeight: jobCol.height + 40
@@ -185,6 +188,7 @@ Rectangle {
             }
         }
     }
+    SmoothWheel { flickable: jobFlick }
 
     // Ganchos de prueba (--ui-test)
     function testOrphans() { const l = libraries.find(x => x.huerfanos > 0); if (l) { orphans.library = l; orphans.open() } }
@@ -210,10 +214,13 @@ Rectangle {
 
     // --- Datos ---
     DataPanel {
+        id: dataPanel
         anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 24; leftMargin: 40; rightMargin: 40 }
         visible: view.tab === "datos"
         onChangeFolderRequested: view.changeFolder()
     }
+
+    SmoothWheel { flickable: dataPanel }
 
     // --- Servidor público ---
     ServerPanel {
@@ -224,6 +231,7 @@ Rectangle {
         onToast: (t) => view.toast(t)
         onVisibleChanged: if (visible) load()
     }
+    SmoothWheel { flickable: serverPanel }
 
     // --- TMDb ---
     Column {
