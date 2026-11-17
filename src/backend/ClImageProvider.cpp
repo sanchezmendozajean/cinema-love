@@ -124,7 +124,7 @@ ClImageProvider::~ClImageProvider() { delete m_nam; }
 QQuickImageResponse *ClImageProvider::requestImageResponse(const QString &id, const QSize &requestedSize)
 {
     // El id llega como la URL de TMDb; si QML la dejó codificada se decodifica.
-    const QString src = id.startsWith(QLatin1String("http")) ? id : QUrl::fromPercentEncoding(id.toUtf8());
+    const QString src = id.contains(QLatin1String("://")) ? id : QUrl::fromPercentEncoding(id.toUtf8());
     auto *r = new Response(m_nam, m_backend, src, requestedSize);
     // QNetworkAccessManager y el lanzador viven en el hilo principal: toda la lógica de red de la respuesta corre allí.
     r->moveToThread(m_nam->thread());

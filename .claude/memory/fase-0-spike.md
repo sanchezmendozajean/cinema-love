@@ -115,3 +115,14 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - Tras un trabajo de metadata, «Revisar N pendientes» abre la lista (`ambiguos` + `sinCoincidencia`) → «Elegir…» busca en TMDb (`/admin/tmdb/buscar`, usa la clave guardada en la base) → «Usar esta» (`POST /admin/{items|series}/:id/tmdb`). Verificado con una búsqueda real.
 - «N sin archivo ›» en la biblioteca abre la lista de huérfanos; «Quitar N del catálogo» pide una segunda confirmación explícita (borra progreso/metadata) y el backend exige `confirm=<cantidad>`. En los datos reales hay 4 películas Godzilla y 35 episodios sin archivo (disco/carpeta movidos): NO se tocaron.
 - Pruebas: `--ui-test orphans|tmdb`.
+
+## Servidor público, ventana, «Acerca de» (16/11/2026)
+- `ServerPanel` (pestaña «Servidor» de Administración): estado/URLs/QR (SVG vía `/admin/servidor/qr`), configuración (nombre, HTTP/HTTPS, puerto, mDNS, autostart), usuarios (crear/cambiar contraseña/eliminar escribiendo el nombre), token de acceso (mostrar/copiar/regenerar con confirmación), regenerar certificado con aviso. Verificado solo con el servidor DETENIDO (no se probó iniciarlo/mDNS/QR por no abrir la LAN en pruebas).
+- `Check.qml`: casilla con estilo oscuro (el Basic por defecto es blanco).
+- Instancia única (QLocalServer `cinemalove-qt6-instancia`; la segunda ejecución trae al frente la primera y sale; `--multi` la desactiva; los modos de prueba `--selftest/--catalog-shot` no la usan). Ventana persistente en `%LOCALAPPDATA%\CinemaLove\window.ini` (se guarda al salir, se descarta si queda fuera de pantalla). Cuidado: `QSettings` capturada por referencia en `aboutToQuit` era un bug (vida del objeto).
+- `AboutDialog` (ⓘ en la barra de título): versiones reales de libmpv/FFmpeg y licencias (Qt LGPL, libmpv LGPL, FFmpeg LGPL, Node MIT, TMDb).
+- Bug corregido: el id de `image://cl/…` llega CODIFICADO; hay que decodificar si no contiene «://» (antes solo funcionaba con backend por casualidad).
+- Trampa de herramientas: en scripts Python embebidos, `"\n"` llega como un salto de línea real; usar `chr(92)`.
+
+## Qué falta (resumen honesto, 16/11/2026)
+Fase 1: asistente de bienvenida/carpeta de datos (hoy solo `.dev-data` por seguridad), fuentes Fraunces/Inter locales, modo gráfico de respaldo. Fase 2: ficha de persona, skeletons, foco de teclado, 60 fps con 2000 pósters sin medir. Fase 4: re-vincular, homologar nombres, edición manual de metadata. Fase 5: Modo Cliente (conectar a otro CinemaLove), descubrimiento mDNS en la UI, sesiones activas. Fase 6: empaquetado (`dist:win`), instalación en máquina limpia, Linux, logs rotatorios, prueba de ≥ 8 h. Fase 0 pendiente: prueba larga, PGS, SMB/HTTP, Linux.

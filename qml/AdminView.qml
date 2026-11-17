@@ -14,7 +14,7 @@ Rectangle {
     signal catalogChanged()                // un trabajo terminó y cambió el catálogo: recargar modelos
     signal toast(string text)
 
-    property string tab: "bibliotecas"
+    property string tab: spikeArgs.adminTab || "bibliotecas"
     property var libraries: []
     property var jobs: []
     property var tmdb: ({ configurada: false, mascara: "" })
@@ -57,7 +57,7 @@ Rectangle {
         Row {
             spacing: 4; topPadding: 16
             Repeater {
-                model: [ { k: "bibliotecas", t: "Bibliotecas" }, { k: "tareas", t: "Tareas" + (view.anyRunning ? "  ●" : "") }, { k: "tmdb", t: "TMDb" } ]
+                model: [ { k: "bibliotecas", t: "Bibliotecas" }, { k: "tareas", t: "Tareas" + (view.anyRunning ? "  ●" : "") }, { k: "tmdb", t: "TMDb" }, { k: "servidor", t: "Servidor" } ]
                 delegate: Rectangle {
                     height: 36; width: lbl.width + 32; radius: Tokens.radiusSmall
                     color: view.tab === modelData.k ? "#24E23F52" : (th.hovered ? Tokens.surfaceHover : "transparent")
@@ -205,6 +205,16 @@ Rectangle {
         if (r.bibliotecas) return r.bibliotecas.map(b => b.biblioteca + ": " + (b.nuevos || 0) + " nuevos, " + (b.reconciliados || 0) + " reconciliados, "
                                                           + (b.noEncontrados || 0) + " sin archivo").join("  ·  ")
         return "listo"
+    }
+
+    // --- Servidor público ---
+    ServerPanel {
+        id: serverPanel
+        anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 24; leftMargin: 40; rightMargin: 40 }
+        visible: view.ready && view.tab === "servidor"
+        api: view.api
+        onToast: (t) => view.toast(t)
+        onVisibleChanged: if (visible) load()
     }
 
     // --- TMDb ---

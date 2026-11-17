@@ -169,8 +169,7 @@ Rectangle {
             TextField { id: newName; width: parent.width; height: 42; color: Tokens.text; font.pixelSize: 14; leftPadding: 12; maximumLength: 200
                 background: Rectangle { radius: Tokens.radiusSmall; color: Tokens.surface; border.color: newName.activeFocus ? Tokens.accent : Tokens.border }
                 Keys.onReturnPressed: createBtn.clicked() }
-            CheckBox { id: newAuto; text: "Quitar de la colección al marcar como vista"
-                contentItem: Text { leftPadding: newAuto.indicator.width + 10; text: newAuto.text; color: Tokens.text; font.pixelSize: 14; verticalAlignment: Text.AlignVCenter } }
+            Check { id: newAuto; text: "Quitar de la colección al marcar como vista" }
             Text { id: newErr; width: parent.width; wrapMode: Text.WordWrap; color: Tokens.danger; font.pixelSize: 13; visible: text !== "" }
             Row { anchors.right: parent.right; spacing: 10
                 AdminButton { text: "Cancelar"; onClicked: newCol.close() }
@@ -188,8 +187,7 @@ Rectangle {
             width: parent.width; spacing: 14
             TextField { id: renName; width: parent.width; height: 42; color: Tokens.text; font.pixelSize: 14; leftPadding: 12; maximumLength: 200
                 background: Rectangle { radius: Tokens.radiusSmall; color: Tokens.surface; border.color: renName.activeFocus ? Tokens.accent : Tokens.border } }
-            CheckBox { id: renAuto; text: "Quitar de la colección al marcar como vista"
-                contentItem: Text { leftPadding: renAuto.indicator.width + 10; text: renAuto.text; color: Tokens.text; font.pixelSize: 14; verticalAlignment: Text.AlignVCenter } }
+            Check { id: renAuto; text: "Quitar de la colección al marcar como vista" }
             Text { id: renErr; width: parent.width; wrapMode: Text.WordWrap; color: Tokens.danger; font.pixelSize: 13; visible: text !== "" }
             Row { anchors.right: parent.right; spacing: 10
                 AdminButton { text: "Cancelar"; onClicked: renameCol.close() }

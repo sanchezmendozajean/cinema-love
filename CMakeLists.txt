@@ -29,6 +29,9 @@ qt_add_qml_module(cinemalove
         qml/AdminButton.qml
         qml/Modal.qml
         qml/ItemMenu.qml
+        qml/AboutDialog.qml
+        qml/Check.qml
+        qml/ServerPanel.qml
         qml/CollectionsView.qml
         qml/SeriesDetailView.qml
         qml/HomeView.qml

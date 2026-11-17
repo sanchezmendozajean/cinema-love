@@ -2,6 +2,10 @@
 
 #include <QCommandLineParser>
 #include <QDir>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QSettings>
+#include <QStandardPaths>
 #include "BackendLauncher.h"
 #include "ClImageProvider.h"
 #include <QFileInfo>
@@ -94,9 +98,25 @@ int main(int argc, char *argv[])
     QCommandLineOption adminScan(QStringLiteral("admin-scan"), QStringLiteral("Prueba: inicia «Escanear todo» en Administración y muestra Tareas"));
     QCommandLineOption noBackend(QStringLiteral("no-backend"), QStringLiteral("No inicia el backend (las imágenes se descargan directamente de TMDb)"));
     QCommandLineOption uiTest(QStringLiteral("ui-test"), QStringLiteral("Acción de prueba tras cargar: collection | menu | markconfirm"), QStringLiteral("nombre"));
-    parser.addOptions({uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption adminTab(QStringLiteral("admin-tab"), QStringLiteral("Pestaña inicial de Administración (prueba)"), QStringLiteral("pestaña"));
+    QCommandLineOption multi(QStringLiteral("multi"), QStringLiteral("Permite varias instancias (por defecto solo una)"));
+    parser.addOptions({multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
+    // Instancia única (specs/01 §5): una segunda ejecución avisa a la primera, que se trae al frente, y termina.
+    QLocalServer instanceServer;
+    if (!parser.isSet(multi) && !parser.isSet(selftest) && !parser.isSet(catShot)) {
+        const QString name = QStringLiteral("cinemalove-qt6-instancia");
+        QLocalSocket probe;
+        probe.connectToServer(name);
+        if (probe.waitForConnected(300)) {
+            probe.write("raise\n");
+            probe.waitForBytesWritten(500);
+            return 0;
+        }
+        QLocalServer::removeServer(name); // resto de un cierre brusco
+        instanceServer.listen(name);
+    }
     BackendLauncher backend; // declarado antes que el motor: debe sobrevivirle (los bindings QML lo leen al destruirse)
     QQmlApplicationEngine engine;
     const QString devData = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../../../.dev-data"));
@@ -116,6 +136,7 @@ int main(int argc, char *argv[])
     args["homeScroll"] = parser.value(scrollOpt).toInt();
     args["adminScan"] = parser.isSet(adminScan);
     args["uiTest"] = parser.value(uiTest);
+    args["adminTab"] = parser.value(adminTab);
     args["search"] = parser.value(searchOpt);
     args["sub"] = parser.value(subFile);
     args["db"] = parser.isSet(dataDb) ? parser.value(dataDb) : QDir::cleanPath(devData + QStringLiteral("/cinemalove.sqlite"));
@@ -142,6 +163,35 @@ int main(int argc, char *argv[])
         }, Qt::DirectConnection);
         QObject::connect(win, &QQuickWindow::sceneGraphError, win, [](QQuickWindow::SceneGraphError, const QString &m) {
             qCritical("sceneGraphError: %s", qPrintable(m));
+        });
+    }
+    // Ventana: posición/tamaño persistentes (se descarta si quedaría fuera de toda pantalla) y «traer al frente» desde otra instancia.
+    if (auto *win = qobject_cast<QQuickWindow *>(engine.rootObjects().value(0))) {
+        const bool testing = parser.isSet(selftest) || parser.isSet(catShot);
+        QSettings st(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QStringLiteral("/window.ini"), QSettings::IniFormat);
+        static QRect lastNormal;
+        if (!testing) {
+            const QRect r = st.value(QStringLiteral("geometry")).toRect();
+            if (r.isValid() && r.width() >= win->minimumWidth() && r.height() >= win->minimumHeight() && QGuiApplication::screenAt(r.center()))
+                win->setGeometry(r);
+            if (st.value(QStringLiteral("maximized")).toBool()) win->showMaximized();
+        }
+        lastNormal = win->geometry();
+        auto remember = [win]() { if (win->visibility() == QWindow::Windowed) lastNormal = win->geometry(); };
+        for (auto sig : {&QWindow::xChanged, &QWindow::yChanged, &QWindow::widthChanged, &QWindow::heightChanged})
+            QObject::connect(win, sig, win, remember);
+        QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [win, testing]() {
+            if (testing) return;
+            QSettings out(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QStringLiteral("/window.ini"), QSettings::IniFormat);
+            out.setValue(QStringLiteral("geometry"), lastNormal);
+            out.setValue(QStringLiteral("maximized"), win->visibility() == QWindow::Maximized);
+            out.sync();
+        });
+        QObject::connect(&instanceServer, &QLocalServer::newConnection, win, [win, &instanceServer]() {
+            while (QLocalSocket *c = instanceServer.nextPendingConnection()) { c->deleteLater(); }
+            if (win->visibility() == QWindow::Minimized) win->showNormal();
+            win->raise();
+            win->requestActivate();
         });
     }
     return app.exec();

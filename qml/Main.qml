@@ -321,6 +321,12 @@ Window {
 
     ItemMenu { id: itemMenu }
 
+    AboutDialog {
+        id: aboutDialog
+        mpvVersion: (player.stats()["mpv-version"] || "").replace(/^mpv /, "")
+        ffmpegVersion: player.stats()["ffmpeg-version"] || ""
+    }
+
     Modal {
         id: markConfirm
         heading: root.markTarget.estado === "visto" ? "Marcar como vista" : "Marcar como no vista"
@@ -423,6 +429,14 @@ Window {
         TapHandler { acceptedButtons: Qt.LeftButton; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
         Row {
             anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+            Rectangle {
+                visible: !root.playing
+                width: 46; height: titleBar.height; color: aboutHover.hovered ? "#33ffffff" : "transparent"
+                Text { anchors.centerIn: parent; text: "ⓘ"; color: "white"; font.pixelSize: 15 }
+                HoverHandler { id: aboutHover; cursorShape: Qt.PointingHandCursor }
+                TapHandler { onTapped: aboutDialog.open() }
+                Accessible.role: Accessible.Button; Accessible.name: "Acerca de"
+            }
             Repeater {
                 model: [ { t: "–", a: "min" }, { t: root.visibility === Window.Maximized ? "❐" : "□", a: "max" }, { t: "✕", a: "close" } ]
                 delegate: Rectangle {
@@ -554,6 +568,7 @@ Window {
         if (spikeArgs.uiTest === "collection") collectionsView.open(collectionsView.collections[0])
         else if (spikeArgs.uiTest === "special") collectionsView.open({ special: true })
         else if (spikeArgs.uiTest === "menu") root.openItemMenu({ id: movies.get(2).id, kind: "movie", title: movies.get(2).title }, 420, 330)
+        else if (spikeArgs.uiTest === "about") aboutDialog.open()
         else if (spikeArgs.uiTest === "orphans") adminView.testOrphans()
         else if (spikeArgs.uiTest === "tmdb") adminView.testTmdb()
         else if (spikeArgs.uiTest === "markconfirm") root.confirmMark("x", 3, "noVisto", "Banshee") } }
