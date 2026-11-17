@@ -21,6 +21,11 @@ Window {
     property string notice: ""
     // Sección principal: «home» (Inicio), «catalog» (Películas), «series», «collections» o «admin» (Administración). Las pruebas del catálogo arrancan en «catalog».
     property string section: spikeArgs.section || ((spikeArgs.catalogShot || spikeArgs.progressTest || spikeArgs.openFirst) ? "catalog" : "home")
+    // Barra lateral: visible salvo durante la reproducción y el asistente; compacta (solo iconos) en ventanas estrechas.
+    readonly property bool navVisible: !playing && !(wizardActive || !dataReady)
+    readonly property bool navCompact: width < 1100
+    property int navWidth: navVisible ? (navCompact ? 72 : 232) : 0
+    Behavior on navWidth { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
     property var detail: null   // ficha abierta (película de MovieModel o serie de SeriesCatalog, con kind === "series") o null
     readonly property bool seriesOpen: detail !== null && detail.kind === "series"
     readonly property bool movieOpen: detail !== null && detail.kind !== "series"
@@ -277,8 +282,12 @@ Window {
 
     CatalogView {
         id: catalog
-        anchors.fill: parent
-        visible: !root.playing && !root.detail && root.section === "catalog"
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && !root.detail && root.section === "catalog"
+        opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         model: movies
         total: movies.total
         error: movies.error
@@ -289,8 +298,12 @@ Window {
 
     CatalogView {
         id: seriesCatalog
-        anchors.fill: parent
-        visible: !root.playing && !root.detail && root.section === "series"
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && !root.detail && root.section === "series"
+        opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         model: seriesCat
         total: seriesCat.total
         error: seriesCat.error
@@ -304,8 +317,12 @@ Window {
 
     AdminView {
         id: adminView
-        anchors.fill: parent
-        visible: !root.playing && !root.detail && root.section === "admin"
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && !root.detail && root.section === "admin"
+        opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         api: api
         backendState: root.backendNote !== "" ? "error" : backend.state
         backendError: root.backendNote !== "" ? root.backendNote : backend.error
@@ -316,8 +333,12 @@ Window {
 
     CollectionsView {
         id: collectionsView
-        anchors.fill: parent
-        visible: !root.playing && !root.detail && root.section === "collections"
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && !root.detail && root.section === "collections"
+        opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         api: api
         backendReady: backend.state === "listo"
         onOpenItem: (it) => root.openCollectionItem(it)
@@ -363,15 +384,23 @@ Window {
         anchors.fill: parent
         api: api
         wizard: root.wizardActive
-        visible: root.wizardActive || !root.dataReady
+        readonly property bool pageActive: root.wizardActive || !root.dataReady
+        opacity: pageActive ? 1 : 0
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
         onFinished: { root.wizardActive = false; movies.reload(); seriesCat.reload() }
         onChooseAnotherFolder: { dataFolder.forget(); backend.stop(); root.wizardActive = true; startup.step = 1 }
     }
 
     HomeView {
         id: homeView
-        anchors.fill: parent
-        visible: !root.playing && !root.detail && root.section === "home"
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && !root.detail && root.section === "home"
+        opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         model: movies
         series: seriesCat
         onOpenDetail: (it) => root.openItemDetail(it)
@@ -381,8 +410,12 @@ Window {
 
     SeriesDetailView {
         id: seriesDetailView
-        anchors.fill: parent
-        visible: !root.playing && root.seriesOpen
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && root.seriesOpen
+        opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         series: root.seriesOpen ? root.detail : ({})
         catalog: seriesCat
         onBack: root.closeDetail()
@@ -392,8 +425,12 @@ Window {
 
     DetailView {
         id: detailView
-        anchors.fill: parent
-        visible: !root.playing && root.movieOpen
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && root.movieOpen
+        opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         movie: root.movieOpen ? root.detail : ({})
         onBack: root.closeDetail()
         onPlay: (start) => root.openMovie(root.detail, start)
@@ -410,6 +447,19 @@ Window {
 
     Timer { id: hideTimer; interval: 30000; onTriggered: root.controlsVisible = false }
 
+    Sidebar {
+        id: sidebar
+        z: 150                       // sobre las vistas, bajo la barra de título
+        anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+        width: root.navWidth
+        visible: root.navWidth > 0
+        clip: true
+        compact: root.navCompact
+        section: root.section
+        onNavigate: (k) => { root.detail = null; root.section = k }
+        onAboutRequested: aboutDialog.open()
+    }
+
     // --- Barra de título propia (ventana sin marco) ---
     readonly property bool fullscreen: root.visibility === Window.FullScreen
     Rectangle {
@@ -419,11 +469,11 @@ Window {
         height: 36
         visible: (!root.playing || root.controlsVisible) && !root.fullscreen
         gradient: Gradient {
-            GradientStop { position: 0.0; color: root.playing ? "#E6000000" : Tokens.bg }
-            GradientStop { position: 1.0; color: root.playing ? "#00000000" : Tokens.bg }
+            GradientStop { position: 0.0; color: root.playing ? "#E6000000" : "#B30E0D11" }
+            GradientStop { position: 1.0; color: "#000E0D11" }
         }
         Row {
-            anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
+            anchors { left: parent.left; leftMargin: root.navWidth + 16; verticalCenter: parent.verticalCenter }
             spacing: 12
             Text {
                 visible: root.playing || root.detail !== null
@@ -431,30 +481,12 @@ Window {
                 HoverHandler { id: backHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: root.playing ? root.closeMovie() : root.closeDetail() }
             }
-            Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
-            Repeater {
-                model: root.playing || root.detail || startup.visible ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" }, { k: "collections", t: "Colecciones" }, { k: "admin", t: "Administración" } ]
-                delegate: Text {
-                    leftPadding: 12
-                    text: modelData.t; font.pixelSize: 13; font.weight: Font.Medium
-                    color: root.section === modelData.k ? Tokens.text : (navHover.hovered ? Tokens.text : Tokens.textMuted)
-                    HoverHandler { id: navHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: root.section = modelData.k }
-                }
-            }
+            Text { visible: root.playing || root.navWidth === 0; text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
         }
         DragHandler { target: null; onActiveChanged: if (active) root.startSystemMove() }
         TapHandler { acceptedButtons: Qt.LeftButton; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
         Row {
             anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
-            Rectangle {
-                visible: !root.playing
-                width: 46; height: titleBar.height; color: aboutHover.hovered ? "#33ffffff" : "transparent"
-                Text { anchors.centerIn: parent; text: "ⓘ"; color: "white"; font.pixelSize: 15 }
-                HoverHandler { id: aboutHover; cursorShape: Qt.PointingHandCursor }
-                TapHandler { onTapped: aboutDialog.open() }
-                Accessible.role: Accessible.Button; Accessible.name: "Acerca de"
-            }
             Repeater {
                 model: [ { t: "–", a: "min" }, { t: root.visibility === Window.Maximized ? "❐" : "□", a: "max" }, { t: "✕", a: "close" } ]
                 delegate: Rectangle {
@@ -583,8 +615,10 @@ Window {
     Timer { id: pt3; interval: 14500; onTriggered: { root.closeMovie()
         console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
     Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
+    Timer { id: fadeShotTimer; interval: 110; onTriggered: player.grabWindowTo(spikeArgs.catalogShot.replace(/\.png$/, "-mid.png")) }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
-        if (spikeArgs.uiTest === "wizard0") { root.wizardActive = true; startup.step = 0 }
+        if (spikeArgs.uiTest === "fade") { root.section = "series"; fadeShotTimer.start() }
+        else if (spikeArgs.uiTest === "wizard0") { root.wizardActive = true; startup.step = 0 }
         else if (spikeArgs.uiTest === "wizard1") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir + "/../bk-test" }
         else if (spikeArgs.uiTest === "wizard1locked") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir }
         else if (spikeArgs.uiTest === "wizard1new") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir + "/../carpeta-nueva-prueba" }

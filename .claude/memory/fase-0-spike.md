@@ -154,3 +154,8 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Verificado: la distribución se ejecuta desde su carpeta con PATH mínimo (sin Qt, Node ni npm), levanta el backend incluido, hace el respaldo y no deja procesos huérfanos.
 - NO verificado: instalación en una máquina limpia real (sin Visual C++ Redistributable ni drivers OpenGL actualizados), Linux (AppImage/tar.gz), firma del ejecutable.
 - Para correr desde la distribución sin pasar por el asistente: no hace falta; sin `config.yaml` junto al exe se muestra el asistente.
+
+## Barra lateral, fundido y hero (17/11/2026)
+- `Sidebar.qml` + `NavIcon.qml` (iconos dibujados con Canvas, sin fuentes): Inicio · Películas · Series · Colecciones arriba; Administración y Acerca de abajo; ancha (232 px, con etiquetas) o compacta (72 px, solo iconos) si la ventana mide < 1100 px; se oculta durante la reproducción y el asistente (`root.navWidth` animado). Las vistas se desplazan con `leftMargin: root.navWidth`. La barra de título ya no lleva pestañas (solo «‹ volver», título al reproducir y controles de ventana, sobre un degradado sutil).
+- Fundido entre secciones: cada vista usa `pageActive` → `opacity` con `Behavior` (220 ms), `visible: opacity > 0`, `enabled: pageActive` (no es `shown`: CatalogView ya tiene esa propiedad). Verificado con captura a mitad de transición (`--ui-test fade` genera `<shot>-mid.png`).
+- Hero/backdrops: `verticalAlignment: Image.AlignTop` → si hay que recortar, se recorta por abajo (los rostros suelen estar arriba).

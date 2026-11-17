@@ -43,6 +43,7 @@ Rectangle {
             Image {
                 anchors.fill: parent
                 source: Images.src(view.movie.backdropUrl)
+                verticalAlignment: Image.AlignTop   // si hay que recortar, se recorta por abajo (rostros arriba)
                 asynchronous: true
                 fillMode: Image.PreserveAspectCrop
                 sourceSize.width: 1280

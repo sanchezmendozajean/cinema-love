@@ -55,6 +55,7 @@ Rectangle {
             Image {
                 anchors.fill: parent
                 source: view.featured ? Images.src(view.featured.backdropUrl) : ""
+                verticalAlignment: Image.AlignTop   // si hay que recortar, se recorta por abajo (rostros arriba)
                 asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 1280
                 opacity: status === Image.Ready ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 400 } }
@@ -94,7 +95,7 @@ Rectangle {
                         color: ph.hovered ? Tokens.accentSoft : Tokens.accent
                         Behavior on color { ColorAnimation { duration: Tokens.durFast } }
                         Text { id: heroPlay; anchors.centerIn: parent; color: "white"; font.pixelSize: 15; font.weight: Font.DemiBold
-                               text: view.heroContinue ? "▶  Continuar" + ((view.featured && view.featured.kind === "episode") ? " " + view.featured.label : "") + " · quedan " + view.dur(view.featured.duration - view.featured.progressPos) : "▶  Reproducir" }
+                               text: view.heroContinue && view.featured ? "▶  Continuar" + ((view.featured && view.featured.kind === "episode") ? " " + view.featured.label : "") + " · quedan " + view.dur(view.featured.duration - view.featured.progressPos) : "▶  Reproducir" }
                         HoverHandler { id: ph; cursorShape: Qt.PointingHandCursor }
                         TapHandler { onTapped: view.playMovie(view.featured) }
                     }

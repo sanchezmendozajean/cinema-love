@@ -67,6 +67,7 @@ Rectangle {
             Image {
                 anchors.fill: parent
                 source: Images.src(view.series.backdropUrl)
+                verticalAlignment: Image.AlignTop   // si hay que recortar, se recorta por abajo (rostros arriba)
                 asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 1280
                 opacity: status === Image.Ready ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 300 } }
