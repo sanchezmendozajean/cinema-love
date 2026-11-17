@@ -254,6 +254,20 @@ export function rutasAdmin(app: FastifyInstance, ctx: Contexto): void {
 
   // ------------------------------------------------------------- ajustes
 
+  /** Estilo de subtítulos compartido con las otras versiones (claves heredadas): tamaño y separación del borde inferior, en las unidades de Flutter. */
+  const leerNum = (clave: string, defecto: number): number => {
+    const n = Number(ctx.auth.ajuste(clave))
+    return Number.isFinite(n) && n > 0 ? n : defecto
+  }
+  app.get('/api/v1/admin/ajustes/subtitulos', async () => ({ tamano: leerNum('subtitle_font_size', 32), posicion: leerNum('subtitle_vertical_offset', 24) }))
+  app.put('/api/v1/admin/ajustes/subtitulos', envolver(async (req) => {
+    const b = (req.body ?? {}) as { tamano?: unknown; posicion?: unknown }
+    const ok = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 500
+    if (b.tamano !== undefined) { if (!ok(b.tamano)) throw new ErrorAdmin('tamano inválido.'); ctx.auth.guardarAjuste('subtitle_font_size', String(b.tamano)) }
+    if (b.posicion !== undefined) { if (!ok(b.posicion)) throw new ErrorAdmin('posicion inválida.'); ctx.auth.guardarAjuste('subtitle_vertical_offset', String(b.posicion)) }
+    return { tamano: leerNum('subtitle_font_size', 32), posicion: leerNum('subtitle_vertical_offset', 24) }
+  }))
+
   app.get('/api/v1/admin/ajustes/tmdb', async () => {
     const k = ctx.auth.ajuste(CLAVE_TMDB)
     return { configurada: !!k?.trim(), mascara: enmascarar(k?.trim() ?? null) }

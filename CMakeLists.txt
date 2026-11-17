@@ -73,6 +73,15 @@ qt_add_qml_module(cinemalove
 
 target_include_directories(cinemalove PRIVATE src/player src/catalog src/backend)
 
+# Linux: inhibir el apagado de pantalla vía D-Bus (org.freedesktop.ScreenSaver).
+if(UNIX AND NOT APPLE)
+    find_package(Qt6 6.8 QUIET COMPONENTS DBus)
+    if(Qt6DBus_FOUND)
+        target_link_libraries(cinemalove PRIVATE Qt6::DBus)
+        target_compile_definitions(cinemalove PRIVATE CL_HAVE_QTDBUS=1)
+    endif()
+endif()
+
 target_link_libraries(cinemalove PRIVATE
     Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::OpenGL Qt6::Sql Qt6::Network Qt6::QuickControls2
     mpv::libmpv

@@ -19,6 +19,8 @@ Item {
     property bool nextCancelled: false      // el usuario canceló el salto automático al siguiente episodio
     property bool exitArmed: false          // primera pulsación de Esc dada
     property bool showRemaining: false
+    property var api                        // ApiClient del backend local
+    property bool shared: false             // Modo Local: el estilo de subtítulos vive en la base (claves heredadas); en Modo Cliente, solo en este equipo
 
     signal closeRequested()
     signal nextRequested()
@@ -79,7 +81,24 @@ Item {
         player.volume = Number(player.setting("volume", 100))
         subSize = Number(player.setting("subSize", 55)); subPos = Number(player.setting("subPos", 100))
         player.setSubtitleStyle(subSize, subPos)
+        loadShared()
     }
+    // Equivalencias con las claves heredadas de Flutter (tamaño 32 y separación 24 por defecto) ↔ mpv (sub-font-size 55, sub-pos 100).
+    function fromShared(d) { subSize = Math.round(d.tamano * 55 / 32); subPos = Math.max(40, Math.min(100, Math.round(100 - (d.posicion - 24) / 7.2))); player.setSubtitleStyle(subSize, subPos) }
+    function saveSubStyle() {
+        player.setSetting("subSize", subSize); player.setSetting("subPos", subPos)
+        if (shared && api && api.ready) sharedSave.restart()
+    }
+    property bool sharedLoaded: false
+    function loadShared() {
+        if (!shared || sharedLoaded || !api || !api.ready) return
+        sharedLoaded = true
+        api.request("GET", "/api/v1/admin/ajustes/subtitulos", null, (st, d) => { if (st === 200 && d) fromShared(d) })
+    }
+    onSharedChanged: { sharedLoaded = false; loadShared() }
+    Connections { target: ov.api; function onConfigChanged() { ov.loadShared() } }
+    Timer { id: sharedSave; interval: 700; onTriggered: ov.api.request("PUT", "/api/v1/admin/ajustes/subtitulos",
+        { tamano: Math.round(ov.subSize * 32 / 55), posicion: Math.round(24 + (100 - ov.subPos) * 7.2) }, () => {}) }
     Timer { id: saveVol; interval: 600; onTriggered: ov.player.setSetting("volume", Math.round(ov.player.volume)) }
     Connections { target: ov.player; function onVolumeChanged() { saveVol.restart() } }
 
@@ -271,18 +290,18 @@ Item {
                     Text { width: parent.width - 60; text: "Tamaño"; color: Tokens.text; font.pixelSize: 14 }
                     Text { text: Math.round(ov.subSize); color: Tokens.textMuted; font.pixelSize: 14 } }
                 FlatSlider { width: parent.width; from: 20; to: 100; value: ov.subSize
-                             onMoved: (v) => { ov.subSize = Math.round(v); ov.player.setSubtitleStyle(ov.subSize, ov.subPos); ov.player.setSetting("subSize", ov.subSize) } }
+                             onMoved: (v) => { ov.subSize = Math.round(v); ov.player.setSubtitleStyle(ov.subSize, ov.subPos); ov.saveSubStyle() } }
             }
             Column { width: parent.width; spacing: 6
                 Row { width: parent.width
                     Text { width: parent.width - 60; text: "Posición vertical"; color: Tokens.text; font.pixelSize: 14 }
                     Text { text: Math.round(ov.subPos) + " %"; color: Tokens.textMuted; font.pixelSize: 14 } }
                 FlatSlider { width: parent.width; from: 40; to: 100; value: ov.subPos
-                             onMoved: (v) => { ov.subPos = Math.round(v); ov.player.setSubtitleStyle(ov.subSize, ov.subPos); ov.player.setSetting("subPos", ov.subPos) } }
+                             onMoved: (v) => { ov.subPos = Math.round(v); ov.player.setSubtitleStyle(ov.subSize, ov.subPos); ov.saveSubStyle() } }
                 Text { text: "100 % = parte baja de la pantalla"; color: Tokens.textFaint; font.pixelSize: 12 }
             }
             Row { anchors.right: parent.right; spacing: 10
-                AdminButton { text: "Restablecer"; onClicked: { ov.subSize = 55; ov.subPos = 100; ov.player.setSubtitleStyle(55, 100); ov.player.setSetting("subSize", 55); ov.player.setSetting("subPos", 100) } }
+                AdminButton { text: "Restablecer"; onClicked: { ov.subSize = 55; ov.subPos = 100; ov.player.setSubtitleStyle(55, 100); ov.saveSubStyle() } }
                 AdminButton { text: "Listo"; primary: true; onClicked: subSettings.close() }
             }
         }

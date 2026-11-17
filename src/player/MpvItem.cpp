@@ -18,6 +18,10 @@
 
 #ifdef Q_OS_WIN
 #include <windows.h>
+#elif defined(CL_HAVE_QTDBUS)
+#include <QDBusConnection>
+#include <QDBusInterface>
+#include <QDBusReply>
 #endif
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
@@ -268,8 +272,22 @@ void MpvItem::setKeepAwake(bool on)
 #ifdef Q_OS_WIN
     // Por hilo y persistente (ES_CONTINUOUS): se llama siempre desde el hilo de la interfaz.
     SetThreadExecutionState(on ? (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) : ES_CONTINUOUS);
+#elif defined(CL_HAVE_QTDBUS)
+    // Linux (sin probar en una máquina real): org.freedesktop.ScreenSaver.Inhibit / UnInhibit con la cookie devuelta.
+    static uint cookie = 0;
+    QDBusInterface iface(QStringLiteral("org.freedesktop.ScreenSaver"), QStringLiteral("/org/freedesktop/ScreenSaver"),
+                         QStringLiteral("org.freedesktop.ScreenSaver"), QDBusConnection::sessionBus());
+    if (iface.isValid()) {
+        if (on) {
+            const QDBusReply<uint> r = iface.call(QStringLiteral("Inhibit"), QStringLiteral("CinemaLove"), QStringLiteral("Reproduciendo"));
+            if (r.isValid()) cookie = r.value();
+        } else if (cookie) {
+            iface.call(QStringLiteral("UnInhibit"), cookie);
+            cookie = 0;
+        }
+    }
 #else
-    qInfo("keepAwake: solo implementado en Windows por ahora");   // Linux: org.freedesktop.ScreenSaver.Inhibit (pendiente)
+    qInfo("keepAwake: sin soporte en esta plataforma (falta Qt6::DBus)");
 #endif
     emit keepAwakeChanged();
 }

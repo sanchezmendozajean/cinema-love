@@ -714,6 +714,8 @@ Window {
         anchors.fill: parent
         visible: root.playing
         player: player
+        api: api
+        shared: !root.clientMode
         title: root.movieTitle
         isEpisode: root.nowPlaying !== null && root.nowPlaying.kind === "episode"
         hasNext: root.nextEpisodeId !== ""

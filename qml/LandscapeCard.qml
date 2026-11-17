@@ -29,7 +29,15 @@ Item {
             opacity: status === Image.Ready ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
         }
-        Text { anchors { fill: parent; margins: 12 } visible: img.status !== Image.Ready; text: card.title; color: Tokens.textFaint
+        Rectangle { // esqueleto de carga
+            anchors.fill: parent; radius: Tokens.radius; visible: img.status === Image.Loading; color: "white"; opacity: 0.04
+            SequentialAnimation on opacity {
+                running: img.status === Image.Loading; loops: Animation.Infinite
+                NumberAnimation { to: 0.11; duration: 700; easing.type: Easing.InOutSine }
+                NumberAnimation { to: 0.04; duration: 700; easing.type: Easing.InOutSine }
+            }
+        }
+        Text { anchors { fill: parent; margins: 12 } visible: img.status !== Image.Ready && img.status !== Image.Loading; text: card.title; color: Tokens.textFaint
                font.pixelSize: 14; font.bold: true; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
         Rectangle {
             id: menuBtn

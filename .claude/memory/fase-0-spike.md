@@ -194,3 +194,11 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Probado de extremo a extremo con un servidor local en :8099 (API key): catálogo, ficha, reproducción por streaming, progreso (en cliente_datos.sqlite con token), reconexión. Pruebas: `--client-dir .dev-data/... --client-url ... --client-key ...`.
 - Trampa: `ApiClient.request` recibía objetos JS anidados envueltos en QJSValue y mandaba `{}`; ahora se desenvuelven.
 - Pendiente de Modo Cliente: mDNS (lista «En tu red»), HTTPS autofirmado/huella solo probado en backend, conexión «solo para la sesión» desde Modo Local, banner de pérdida de conexión en caliente, conexión con usuario/contraseña (no probada en UI), tarjeta de episodios con progreso remoto.
+
+## Cierre del reproductor y acabado (17/11/2026)
+- Estilo de subtítulos compartido con config heredada: `GET/PUT /api/v1/admin/ajustes/subtitulos` ({tamano, posicion} en unidades Flutter: 32 y 24 por defecto) ↔ mpv (sub-font-size 55, sub-pos 100): `mpv = flutter*55/32`; `subPos = 100-(offset-24)/7.2`. Solo en Modo Local; en Modo Cliente queda en window.ini.
+- Evitar apagado de pantalla: `MpvItem.keepAwake` (Windows: SetThreadExecutionState; Linux: D-Bus org.freedesktop.ScreenSaver, SIN PROBAR, requiere Qt6::DBus).
+- Ventana: `window.ini` no guarda geometrías del tamaño de la pantalla (Qt las trata como pantalla completa → sin barra de título).
+- `scripts/dist-linux.sh` escrito SIN PROBAR; necesita Node y libmpv para Linux en third_party/.
+- Teclado en Inicio: Tab/Intro/Menú, las filas se desplazan a la tarjeta enfocada; esqueleto de carga también en tarjetas horizontales.
+- La «miniatura al pasar el cursor» de la spec es el TIEMPO bajo el cursor (ya hecho), no una imagen.

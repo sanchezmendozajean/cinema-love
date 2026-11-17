@@ -38,6 +38,12 @@ Rectangle {
     function dur(sec) { const m = Math.round(sec / 60), h = Math.floor(m / 60); return h > 0 ? h + " h " + (m % 60) + " min" : m + " min" }
 
     function scrollTo(y) { flick.contentY = y }
+    function ensureVisible(item) {   // la tarjeta enfocada con Tab/flechas siempre queda a la vista
+        const p = item.mapToItem(flick.contentItem, 0, 0)
+        const top = p.y - 70, bottom = p.y + item.height + 24
+        if (top < flick.contentY) flick.contentY = Math.max(0, top)
+        else if (bottom > flick.contentY + flick.height) flick.contentY = bottom - flick.height
+    }
 
     Flickable {
         id: flick
@@ -117,10 +123,10 @@ Rectangle {
             y: hero.height - 40
             width: parent.width
             spacing: 24
-            HomeRow { width: parent.width; title: "Continuar viendo"; items: view.cont; landscape: true; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
-            HomeRow { width: parent.width; title: "Próximas a ver"; items: view.queue; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
-            HomeRow { width: parent.width; title: "Agregados recientemente"; items: view.recent; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
-            HomeRow { width: parent.width; title: "Vistos recientemente"; items: view.watched; onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
+            HomeRow { width: parent.width; title: "Continuar viendo"; items: view.cont; landscape: true; onCardFocused: (c) => view.ensureVisible(c); onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
+            HomeRow { width: parent.width; title: "Próximas a ver"; items: view.queue; onCardFocused: (c) => view.ensureVisible(c); onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
+            HomeRow { width: parent.width; title: "Agregados recientemente"; items: view.recent; onCardFocused: (c) => view.ensureVisible(c); onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
+            HomeRow { width: parent.width; title: "Vistos recientemente"; items: view.watched; onCardFocused: (c) => view.ensureVisible(c); onChosen: (it) => view.openDetail(it); onMenuRequested: (it, x, y) => view.menuRequested(it, x, y) }
         }
     }
     SmoothWheel { flickable: flick }
