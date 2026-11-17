@@ -1,6 +1,6 @@
 # 05 · Empaquetado y licencias
 
-Requisito heredado: **build autocontenido**, sin dependencias externas en runtime (`electron-version/specs/00`, principios). Nada de instalar Qt, mpv, Node ni ffmpeg.
+Requisito heredado: **build autocontenido**, sin dependencias externas en runtime (`specs/heredadas/00`, principios). Nada de instalar Qt, mpv, Node ni ffmpeg.
 
 ## 1. Windows (x64)
 
@@ -32,7 +32,7 @@ Preferir una compilación **LGPL** de libmpv (ver §4). Para Windows existen bui
 | Node.js | MIT | Incluir aviso |
 | Material Symbols / fuentes | Apache 2.0 / OFL | Incluir avisos |
 
-- La pantalla «Acerca de» (`electron-version/specs/20` Fase 7) lista todas las licencias y las versiones de Qt, libmpv, ffmpeg y Node.
+- La pantalla «Acerca de» (`specs/heredadas/20` Fase 7) lista todas las licencias y las versiones de Qt, libmpv, ffmpeg y Node.
 - No es asesoría legal: validar el cumplimiento antes de una distribución pública.
 
 ## 5. Scripts previstos

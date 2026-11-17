@@ -1,13 +1,13 @@
 # 04 · Interfaz en QML
 
-> Aplica a la opción A de `00` §4.1 (QML nativa). Si se elige la híbrida (web embebida), este documento se sustituye por la descripción del puente `QWebChannel` y la UI sigue siendo la de `electron-version/specs/design/`.
+> Aplica a la opción A de `00` §4.1 (QML nativa). Si se elige la híbrida (web embebida), este documento se sustituye por la descripción del puente `QWebChannel` y la UI sigue siendo la de `specs/heredadas/design/`.
 
-Las pantallas, componentes y el sistema de diseño **no cambian**: `electron-version/specs/design/10-sistema-de-diseno.md`, `11-pantallas.md` y `12-componentes.md` siguen siendo la fuente de verdad. Aquí solo se define cómo se traducen a Qt Quick.
+Las pantallas, componentes y el sistema de diseño **no cambian**: `specs/heredadas/design/10-sistema-de-diseno.md`, `11-pantallas.md` y `12-componentes.md` siguen siendo la fuente de verdad. Aquí solo se define cómo se traducen a Qt Quick.
 
 ## 1. Tokens y tema
 
 - `qml/theme/Tokens.qml` es un **singleton** (`pragma Singleton`) con todos los tokens de `design/10`: colores, radios, espaciados, duraciones y curvas de animación, tamaños de tipografía. Es el único sitio donde viven (equivale a `tokens.css`).
-- El tema por modo (identidad violeta en Modo Cliente, ver `electron-version/specs/03` §6) se resuelve con una propiedad `Tokens.modo` y *bindings*; ningún componente conoce colores sueltos.
+- El tema por modo (identidad violeta en Modo Cliente, ver `specs/heredadas/03` §6) se resuelve con una propiedad `Tokens.modo` y *bindings*; ningún componente conoce colores sueltos.
 - Fuentes: cargadas con `FontLoader` o `QFontDatabase::addApplicationFont` desde recursos. Iconos: Material Symbols Rounded como fuente de iconos; componente `Icono { nombre, tamano, relleno }`.
 - Estilo base de `QtQuick.Controls`: **`Basic`**, con cada control personalizado (`background`, `contentItem`). No se usa el estilo nativo de la plataforma.
 
@@ -35,7 +35,7 @@ Las pantallas, componentes y el sistema de diseño **no cambian**: `electron-ver
 ## 4. Rendimiento (criterio de aceptación: 60 fps con 2 000 pósters)
 
 - **Delegados baratos**: un `Image` y un par de `Text`; nada de `Layout` anidados ni `ShaderEffect` por tarjeta. Sombras/hover con un solo recurso precomputado.
-- **Imágenes** con un `QQuickImageProvider` asíncrono (`requestImageResponse`): decodificación en `QThreadPool`, escalado al tamaño de destino (`sourceSize`) y miniaturas `w342` para grillas; caché LRU en memoria y caché en disco compartida con `images/` (`electron-version/specs/02` §8).
+- **Imágenes** con un `QQuickImageProvider` asíncrono (`requestImageResponse`): decodificación en `QThreadPool`, escalado al tamaño de destino (`sourceSize`) y miniaturas `w342` para grillas; caché LRU en memoria y caché en disco compartida con `images/` (`specs/heredadas/02` §8).
 - `GridView.cacheBuffer` moderado y `reuseItems: true` en `ListView`/`GridView`.
 - Evitar `clip: true` anidado; evitar propiedades que fuercen *layer* innecesariamente.
 - Medir con el *Qt Quick Scene Graph visualizer* (`QSG_VISUALIZE`) y el perfilador de QML en cada fase.
@@ -43,7 +43,7 @@ Las pantallas, componentes y el sistema de diseño **no cambian**: `electron-ver
 ## 5. Accesibilidad y teclado
 
 - Foco visible y navegación con flechas en grillas y filas (`KeyNavigation`, `focus`, `activeFocusOnTab`).
-- Atajos globales con `Shortcut`; los del reproductor, solo activos dentro de `PlayerView` (`electron-version/specs/05` §5).
+- Atajos globales con `Shortcut`; los del reproductor, solo activos dentro de `PlayerView` (`specs/heredadas/05` §5).
 - `Accessible.name/role` en controles propios para lectores de pantalla.
 
 ## 6. Ventana y arranque sin parpadeos
@@ -54,4 +54,4 @@ Las pantallas, componentes y el sistema de diseño **no cambian**: `electron-ver
 
 ## 7. Pantallas
 
-Se implementan todas las de `electron-version/specs/design/11` y las funciones RF-xx de `electron-version/specs/07`, en el mismo orden de prioridad que `electron-version/specs/20` (Fases 3, 5 y 6). La única pantalla que cambia en comportamiento es el **reproductor** (`02`).
+Se implementan todas las de `specs/heredadas/design/11` y las funciones RF-xx de `specs/heredadas/07`, en el mismo orden de prioridad que `specs/heredadas/20` (Fases 3, 5 y 6). La única pantalla que cambia en comportamiento es el **reproductor** (`02`).

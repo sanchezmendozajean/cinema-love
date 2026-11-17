@@ -6,7 +6,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcessEnvironment>
-#include <QStandardPaths>
 
 BackendLauncher::BackendLauncher(QObject *parent) : QObject(parent)
 {
@@ -28,14 +27,14 @@ QString BackendLauncher::findScript()
 
 QString BackendLauncher::findNode()
 {
-    const QString env = qEnvironmentVariable("CL_NODE");
-    if (!env.isEmpty() && QFileInfo::exists(env)) return env;
+    // Solo el Node incluido con la aplicación (autocontenida: nunca el del sistema ni el PATH).
     const QDir app(QCoreApplication::applicationDirPath());
-    for (const QString &rel : {QStringLiteral("backend/node.exe"), QStringLiteral("backend/node")}) {
-        const QString p = app.absoluteFilePath(rel);
-        if (QFileInfo::exists(p)) return p; // runtime empaquetado: la app no depende del Node del sistema
+    for (const QString &rel : {QStringLiteral("backend/node.exe"), QStringLiteral("backend/node"),                     // instalada
+                               QStringLiteral("../../../third_party/node/node.exe"), QStringLiteral("../../../third_party/node/node")}) { // desarrollo
+        const QString p = QDir::cleanPath(app.absoluteFilePath(rel));
+        if (QFileInfo::exists(p)) return p;
     }
-    return QStandardPaths::findExecutable(QStringLiteral("node")); // solo desarrollo
+    return {};
 }
 
 void BackendLauncher::setState(const QString &s, const QString &err)
@@ -71,8 +70,8 @@ void BackendLauncher::launch()
 {
     const QString script = findScript(), node = findNode();
     if (script.isEmpty() || node.isEmpty()) {
-        setState(QStringLiteral("error"), script.isEmpty() ? tr("No se encuentra backend/main.cjs (ejecuta «npm run build» en backend/).")
-                                                           : tr("No se encuentra Node.js."));
+        setState(QStringLiteral("error"), script.isEmpty() ? tr("No se encuentra backend/dist/main.cjs (ejecuta scripts/build-backend.ps1).")
+                                                           : tr("No se encuentra el Node incluido (third_party/node/node.exe)."));
         return;
     }
     setState(QStringLiteral("iniciando"));

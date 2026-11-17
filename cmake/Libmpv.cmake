@@ -1,6 +1,6 @@
 # Localiza libmpv y define el destino importado mpv::libmpv.
 #
-# Windows: espera third_party/libmpv/{include/mpv/*.h, libmpv-2.dll} (ver el script fetch de dependencias).
+# Windows: espera third_party/libmpv/{include/mpv/*.h, libmpv-2.dll} (incluido en la carpeta, ver third_party/README.md).
 #          MSVC necesita una biblioteca de importación .lib: se genera a partir de las exportaciones de la DLL.
 # Linux:   usa libmpv del sistema (pkg-config).
 
@@ -10,7 +10,7 @@ if(WIN32)
     set(MPV_ROOT "${CMAKE_SOURCE_DIR}/third_party/libmpv")
     set(MPV_DLL "${MPV_ROOT}/libmpv-2.dll")
     if(NOT EXISTS "${MPV_DLL}")
-        message(FATAL_ERROR "No se encontró ${MPV_DLL}. Descomprime mpv-dev-x86_64 en third_party/libmpv.")
+        message(FATAL_ERROR "No se encontró ${MPV_DLL}. La carpeta third_party/libmpv debe incluir libmpv-2.dll y include/ (ver third_party/README.md).")
     endif()
 
     set(MPV_LIB "${CMAKE_BINARY_DIR}/mpvlib/mpv.lib")

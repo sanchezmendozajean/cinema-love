@@ -1,6 +1,6 @@
 # 02 · Reproductor con libmpv
 
-Reemplaza a `electron-version/specs/05-reproductor.md` §1 (motor híbrido). El resto de ese documento (controles, atajos, OSD, subtítulos, progreso, ids de pista compatibles con mpv) **se mantiene**, con las adaptaciones de abajo.
+Reemplaza a `specs/heredadas/05-reproductor.md` §1 (motor híbrido). El resto de ese documento (controles, atajos, OSD, subtítulos, progreso, ids de pista compatibles con mpv) **se mantiene**, con las adaptaciones de abajo.
 
 ## 1. Modelo de reproducción
 
@@ -38,9 +38,9 @@ Propiedades: `posicion`, `duracion`, `pausado`, `volumen` (0–150), `silenciado
 Métodos: `cargar(PlaybackRequest)`, `reproducirPausar()`, `buscar(segundos, relativo)`, `siguientePista…`, `elegirAudio(id)`, `elegirSubtitulo(id|"no")`, `detener()`.
 Señales: `eventoGuardarProgreso(motivo)`, `finDeArchivo()`, `errorReproduccion(mensaje)`.
 
-## 3. Cambios respecto a `electron-version/specs/05`
+## 3. Cambios respecto a `specs/heredadas/05`
 
-| `electron-version/specs/05` | En esta alternativa |
+| `specs/heredadas/05` | En esta alternativa |
 |---|---|
 | Direct/Remux/Transcode, matriz Chromium, `caps` del cliente | No aplica: mpv reproduce todo. Se conserva el campo informativo «modo» como `Directo (mpv)` + `hwdec` activo |
 | Timeline «real» con `offsetSegundos` | No aplica: `time-pos` ya es la posición real |
@@ -55,21 +55,21 @@ Señales: `eventoGuardarProgreso(motivo)`, `finDeArchivo()`, `errorReproduccion(
 
 ## 4. Subtítulos y pistas
 
-- **Ids de pista = ids de mpv** (como ya exigía `electron-version/specs/05` §3 para compatibilidad con Flutter): 1-based por tipo, `auto` y `no`. Aquí no hay mapeo: son los de mpv directamente. Los subtítulos externos se cargan con `sub-add` y mpv los numera después de los internos, igual que en la versión Flutter.
+- **Ids de pista = ids de mpv** (como ya exigía `specs/heredadas/05` §3 para compatibilidad con Flutter): 1-based por tipo, `auto` y `no`. Aquí no hay mapeo: son los de mpv directamente. Los subtítulos externos se cargan con `sub-add` y mpv los numera después de los internos, igual que en la versión Flutter.
 - **Subtítulos**: mpv los dibuja (`sub-ass`, `sub-font`, `sub-border-size`, `sub-shadow-offset`). Se mapean las claves heredadas `subtitle_font_size` y `subtitle_vertical_offset` a `sub-font-size` y `sub-pos`. El estilo por defecto sigue siendo texto blanco con contorno y sombra, sin recuadro.
 - Los subtítulos de imagen (PGS, VobSub) **ya no fuerzan transcode**: se muestran tal cual.
-- El modal «Configuración de subtítulos» mantiene el comportamiento de `electron-version/specs/05` §2: vista previa sobre el video real.
+- El modal «Configuración de subtítulos» mantiene el comportamiento de `specs/heredadas/05` §2: vista previa sobre el video real.
 - Subtítulos externos junto al archivo (`pelicula.es.srt`, `pelicula.forced.srt`): mpv los detecta con `sub-auto=fuzzy`; el backend sigue pudiendo listarlos para la ficha.
 
 ## 5. Progreso y reanudación
 
-Igual que `electron-version/specs/05` §4: guardar **solo** en pausa, seek, cierre, cambio de pista y al superar el 95 % (→ `visto`). Nunca periódico.
+Igual que `specs/heredadas/05` §4: guardar **solo** en pausa, seek, cierre, cambio de pista y al superar el 95 % (→ `visto`). Nunca periódico.
 
 Al reanudar: `loadfile` con `start=<segundos>`, y reselección **una sola vez** de audio y subtítulo guardados cuando llegue el evento `track-list` (aquí sí hace falta esperar a ese evento; en Flutter se usaba un temporizador de 800 ms, que no hay que replicar).
 
 ## 6. Controles, atajos y OSD
 
-Se mantienen **íntegros** los de `electron-version/specs/05` §5 (teclado, ratón, volumen hasta 150 %, OSD, barra de controles, fin de reproducción), implementados en QML:
+Se mantienen **íntegros** los de `specs/heredadas/05` §5 (teclado, ratón, volumen hasta 150 %, OSD, barra de controles, fin de reproducción), implementados en QML:
 
 - Los atajos se capturan en `Keys` del `PlayerView`, nunca por las teclas por defecto de mpv (`input-default-bindings=no`).
 - La barra de controles, el OSD y el overlay de «Esc de nuevo» son `Item`s QML por encima del `MpvItem`.

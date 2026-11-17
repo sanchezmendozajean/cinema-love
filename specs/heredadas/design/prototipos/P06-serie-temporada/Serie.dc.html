@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha de serie</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: 1440px; height: 900px">
+  <header class="titlebar" style="background: rgba(14,13,17,.28)">
+    <div class="wordmark"><i></i>CinemaLove</div>
+    <button class="tb-btn" aria-label="Atrás"><span class="ms s20">arrow_back</span></button>
+    <button class="tb-btn dis" aria-label="Adelante"><span class="ms s20">arrow_forward</span></button>
+    <a class="tb-search" href="Dlg-Paleta.dc.html"><span class="ms s18">search</span><span>Buscar</span><span class="kbd">Ctrl K</span></a>
+    <div class="tb-right">
+      <span class="mode-chip"><span class="dot green"></span>Compartiendo en 192.168.0.115:8080</span>
+      <div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div>
+    </div>
+  </header>
+  <nav class="sidebar" aria-label="Principal">
+    <a class="nav" href="Inicio.dc.html"><span class="ms">home</span><span class="lbl">Inicio</span></a>
+    <a class="nav on" href="Main.dc.html"><span class="ms">grid_view</span><span class="lbl">Catálogo</span></a>
+    <a class="nav" href="Bibliotecas.dc.html"><span class="ms">video_library</span><span class="lbl">Bibliotecas</span></a>
+    <a class="nav" href="Colecciones.dc.html"><span class="ms">collections_bookmark</span><span class="lbl">Colecciones</span></a>
+    <div class="side-sub">
+      <a href="Coleccion-Detalle.dc.html">Clásicos de terror</a>
+      <a href="Coleccion-Detalle.dc.html">Maratón Coppola</a>
+      <a href="Coleccion-Detalle.dc.html">Cine latinoamericano</a>
+      <a href="Coleccion-Detalle.dc.html">Para ver con los chicos</a>
+    </div>
+    <a class="nav" href="Proximas.dc.html"><span class="ms">bookmark</span><span class="lbl">Próximas a ver</span></a>
+    <div class="side-foot"><a class="nav" href="Ajustes.dc.html"><span class="ms">settings</span><span class="lbl">Ajustes</span></a></div>
+  </nav>
+
+  <main class="content">
+    <section class="hero" style="height: 504px">
+      <div class="bd" style="background: radial-gradient(30% 50% at 70% 30%, hsl(190 45% 34% / .8), transparent 70%), radial-gradient(50% 60% at 85% 70%, hsl(160 30% 14%), transparent 70%), linear-gradient(170deg, #0b1a20 0%, #08120f 60%, #05080b 100%)"></div>
+      <div class="bd" style="background: repeating-linear-gradient(90deg, rgba(5,10,10,.75) 0 6px, transparent 6px 46px, rgba(5,10,10,.55) 46px 50px, transparent 50px 83px); -webkit-mask-image: linear-gradient(180deg, transparent 20%, #000 60%); mask-image: linear-gradient(180deg, transparent 20%, #000 60%); opacity: .8"></div>
+      <div class="bd" style="background: radial-gradient(6% 10% at 72% 44%, rgba(255,240,200,.55), transparent 70%)"></div>
+      <div class="grain"></div>
+      <div class="shade"></div>
+      <div style="position: absolute; left: 40px; right: 40px; bottom: 32px; display: flex; gap: 40px; align-items: flex-end">
+        <div class="poster" style="width: 200px; flex: none; box-shadow: 0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(245,243,247,.08)">
+          <div class="art" style="background: linear-gradient(180deg, transparent 56%, hsl(190 40% 7%) 56.4%), radial-gradient(60% 34% at 50% 56%, hsl(190 62% 40%), transparent 70%), linear-gradient(180deg, hsl(230 52% 18%), hsl(30 30% 8%))"></div>
+          <span class="tag-serie">SERIE</span>
+          <div class="pt" style="font-size: 30px; line-height: 32px; left: 16px; bottom: 20px"><small>2017</small>Dark</div>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding-bottom: 4px">
+          <h1 class="d-xl">Dark</h1>
+          <div class="meta-line"><span>2017–2020</span><i></i><span>3 temporadas · 26 episodios</span><i></i><span class="pill">DE</span><span class="pill">4K</span></div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+            <a class="chip glass" href="Main.dc.html">Ciencia ficción</a><a class="chip glass" href="Main.dc.html">Misterio</a><a class="chip glass" href="Main.dc.html">Drama</a>
+            <span class="b-s muted" style="margin-left: 8px">Wiedemann &amp; Berg Television</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start; margin-top: 8px">
+            <a class="btn-play" href="Reproductor.dc.html">
+              <span class="btn pri lg"><span class="ms fill">play_arrow</span>Continuar T2 · E4 — <i style="font-weight: 500">Los viajeros</i></span>
+              <span class="pb"><i style="width: 40%"></i></span>
+            </a>
+            <button class="btn glass lg ic on" aria-label="En Próximas a ver"><span class="ms">bookmark</span></button>
+            <a class="btn glass lg" href="Dlg-Coleccion.dc.html"><span class="ms">add</span>Colección</a>
+            <button class="btn glass lg ic" aria-label="Marcar serie como vista"><span class="ms">check_circle</span></button>
+            <button class="btn glass lg ic" aria-label="Más acciones"><span class="ms">more_horiz</span></button>
+          </div>
+          <p class="b-s muted tnum" style="display: flex; align-items: center; gap: 8px"><span class="ms s16" style="color: #4CAF7D">check_circle</span>13 de 26 episodios vistos</p>
+        </div>
+      </div>
+    </section>
+
+    <div style="padding: 24px 40px 40px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 56px">
+      <section>
+        <div class="sec-h"><h2 class="t-l">Temporadas</h2></div>
+        <div style="display: flex; gap: 20px">
+          <sc-for list="{{seasons}}" as="s" hint-placeholder-count="3">
+            <a class="pc {{s.cls}}" href="Temporada.dc.html" style="width: 160px; flex: none">
+              <div class="poster">
+                <div class="art" style="background: {{s.art}}"></div>
+                <div class="pt"><small>Dark</small>{{s.name}}</div>
+                <sc-if value="{{s.done}}" hint-placeholder-val="{{ false }}"><div class="ind"><span class="ind-seen"><span class="ms">check_circle</span></span></div></sc-if>
+                <sc-if value="{{s.hasProg}}" hint-placeholder-val="{{ false }}"><div class="pbar"><i style="width: {{s.prog}}%"></i></div></sc-if>
+                <div class="hover-ui"><span class="play-c"><span class="ms">play_arrow</span></span></div>
+              </div>
+              <div class="meta"><b>{{s.name}}</b><span class="tnum">{{s.eps}}</span></div>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+      <section style="display: flex; flex-direction: column; gap: 14px">
+        <h2 class="over faint">Sinopsis</h2>
+        <p class="body" style="color: #D9D4DE">La desaparición de dos niños en el pequeño pueblo alemán de Winden expone las relaciones rotas, las dobles vidas y el pasado oculto de cuatro familias, en un misterio que abarca tres generaciones.</p>
+        <dl style="margin: 0; display: grid; grid-template-columns: 96px minmax(0, 1fr); row-gap: 8px; font-size: 13px; line-height: 18px">
+          <dt class="faint">Creación</dt><dd style="margin: 0">Baran bo Odar, Jantje Friese</dd>
+          <dt class="faint">Reparto</dt><dd style="margin: 0">Louis Hofmann, Lisa Vicari, Oliver Masucci, Karoline Eichhorn</dd>
+        </dl>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["local","cliente"],"default":"local"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const art = (h) => 'linear-gradient(180deg, transparent 56%, hsl(' + h + ' 40% 7%) 56.4%), radial-gradient(60% 34% at 50% 56%, hsl(' + h + ' 55% 40%), transparent 70%), linear-gradient(180deg, hsl(' + ((h + 40) % 360) + ' 45% 18%), hsl(' + ((h + 200) % 360) + ' 30% 8%))';
+    return {
+      modo: this.props.modo ?? 'local',
+      seasons: [
+        { name: 'Temporada 1', eps: '10 episodios · vista', art: art(190), done: true, hasProg: false, prog: 100, cls: '' },
+        { name: 'Temporada 2', eps: '8 episodios · 3 vistos', art: art(30), done: false, hasProg: true, prog: 40, cls: 'hov' },
+        { name: 'Temporada 3', eps: '8 episodios', art: art(280), done: false, hasProg: false, prog: 0, cls: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

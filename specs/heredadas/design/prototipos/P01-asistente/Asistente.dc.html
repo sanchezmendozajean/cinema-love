@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Asistente de bienvenida</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: 1440px; height: 900px">
+  <!-- Collage de fondo -->
+  <div style="position: absolute; inset: -80px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; transform: rotate(-6deg) scale(1.1); opacity: .5; filter: blur(3px) saturate(.8)">
+    <sc-for list="{{tiles}}" as="t" hint-placeholder-count="24">
+      <div style="aspect-ratio: 16/9; border-radius: 12px; background: {{t}}"></div>
+    </sc-for>
+  </div>
+  <div style="position: absolute; inset: 0; background: radial-gradient(60% 70% at 50% 50%, rgba(14,13,17,.7), #0E0D11 90%)"></div>
+  <div style="position: absolute; inset: 0; background: radial-gradient(40% 40% at 50% 40%, var(--accent-tint), transparent 70%)"></div>
+
+  <header class="titlebar" style="background: transparent; border: 0; backdrop-filter: none">
+    <div class="tb-right"><div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div></div>
+  </header>
+
+  <!-- PASOS CON TARJETA -->
+  <sc-if value="{{withCard}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: {{cardW}}px; display: flex; flex-direction: column; align-items: center; gap: 28px">
+      <div class="wordmark" style="font-size: 22px; margin: 0"><i style="width: 10px; height: 10px"></i>CinemaLove</div>
+
+      <section class="raised" style="width: 100%; border-radius: 24px; padding: 36px 40px 28px; display: flex; flex-direction: column; gap: 24px; background: rgba(34,31,40,.92); backdrop-filter: blur(20px)">
+        <sc-if value="{{showSteps}}" hint-placeholder-val="{{ true }}">
+          <ol aria-label="Pasos" style="list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; align-items: center">
+            <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+              <li style="display: flex; align-items: center; gap: 8px; flex: 1">
+                <span style="width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 600 11px/1 var(--ff); flex: none; {{s.dot}}">{{s.mark}}</span>
+                <span class="cap" style="color: {{s.color}}; white-space: nowrap">{{s.label}}</span>
+                <span style="flex: 1; height: 1px; background: #3D3846; min-width: 8px"></span>
+              </li>
+            </sc-for>
+          </ol>
+        </sc-if>
+
+        <!-- Paso: elegir modo -->
+        <sc-if value="{{pModo}}" hint-placeholder-val="{{ true }}">
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 8px">
+            <h1 class="d-l">Bienvenido a CinemaLove</h1>
+            <p class="body muted">¿Cómo quieres usar CinemaLove en este equipo?</p>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+            <button style="text-align: left; padding: 24px; border-radius: 18px; background: rgba(226,63,82,.14); border: 1.5px solid #E23F52; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position: relative">
+              <span style="position: absolute; top: 18px; right: 18px; width: 22px; height: 22px; border-radius: 50%; background: #E23F52; display: flex; align-items: center; justify-content: center"><span class="ms s16" style="color: #fff">check</span></span>
+              <span style="width: 52px; height: 52px; border-radius: 14px; background: rgba(226,63,82,.2); color: #F2707F; display: flex; align-items: center; justify-content: center"><span class="ms s32">video_library</span></span>
+              <span class="t-m">Mi colección en este equipo</span>
+              <span class="b-s muted">Cataloga las películas y series de tus carpetas, con pósters y sinopsis. Si quieres, compártelas con otros equipos de tu casa.</span>
+            </button>
+            <a href="Asis-Servidor.dc.html" style="text-align: left; padding: 24px; border-radius: 18px; background: #19181E; border: 1.5px solid #2E2A35; display: flex; flex-direction: column; gap: 12px">
+              <span style="width: 52px; height: 52px; border-radius: 14px; background: rgba(149,25,174,.18); color: #BA6ACA; display: flex; align-items: center; justify-content: center"><span class="ms s32">lan</span></span>
+              <span class="t-m">Conectarme a otro CinemaLove</span>
+              <span class="b-s muted">Mira la colección que comparte otro equipo de tu red. No necesitas carpetas ni configurar nada más.</span>
+            </a>
+          </div>
+        </sc-if>
+
+        <!-- A1 carpeta de datos -->
+        <sc-if value="{{pCarpeta}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h1 class="t-l">¿Dónde guardamos tus datos?</h1><p class="body muted">Aquí viven tu catálogo, tu progreso y las imágenes descargadas. Tus películas no se mueven.</p></div>
+          <div><span class="label">Carpeta de datos</span>
+            <div style="display: flex; gap: 10px"><div class="field ro" style="flex: 1"><span class="ms">folder</span><span class="mono ell" style="font-size: 13px">D:\CinemaLove\datos</span></div><button class="btn sec">Elegir carpeta…</button></div></div>
+          <div style="display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 14px; background: rgba(76,175,125,.1); border: 1px solid rgba(76,175,125,.35)">
+            <div style="display: grid; grid-template-columns: repeat(3, 28px); gap: 4px; flex: none">
+              <sc-for list="{{mini}}" as="m" hint-placeholder-count="6"><span style="height: 42px; border-radius: 4px; background: {{m}}"></span></sc-for>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <span style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #7FD1A6"><span class="ms s20 fill">check_circle</span>Encontramos una colección existente</span>
+              <span class="b-s muted tnum">431 títulos · 4 bibliotecas · 2 usuarios · actualizada hace 3 días</span>
+              <span class="b-s">La usaremos tal cual: no perderás tu progreso.</span>
+            </div>
+          </div>
+          <a class="b-s acc" href="#" style="font-weight: 500">Usar los datos de mi versión anterior…</a>
+        </sc-if>
+
+        <!-- A2 TMDb -->
+        <sc-if value="{{pTmdb}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h1 class="t-l">Conecta con TMDb</h1><p class="body muted">Con una clave gratuita de The Movie Database descargamos pósters, sinopsis en español y el reparto de cada título.</p></div>
+          <div><span class="label">Clave de API</span>
+            <div style="display: flex; gap: 10px"><label class="field ok" style="flex: 1"><span class="ms">key</span><input type="password" value="eyJhbGciOiJIUzI1NiJ9.a8f3" aria-label="Clave de API" readonly><button class="x" style="width: 28px; height: 28px" aria-label="Mostrar clave"><span class="ms s20">visibility</span></button></label><button class="btn sec">Probar</button></div>
+            <p class="help ok" style="display: flex; align-items: center; gap: 4px"><span class="ms s16 fill">check_circle</span>Clave válida · los textos llegarán en español (es-MX)</p></div>
+          <a class="b-s acc" href="#" style="font-weight: 500; display: flex; align-items: center; gap: 4px"><span class="ms s18">help</span>¿Cómo obtengo una clave?</a>
+        </sc-if>
+
+        <!-- A3 primera biblioteca -->
+        <sc-if value="{{pBib}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h1 class="t-l">Agrega tu primera biblioteca</h1><p class="body muted">Una biblioteca es una carpeta con películas o con series. Puedes agregar más después.</p></div>
+          <div><span class="label">Nombre</span><label class="field focused"><input value="Películas" aria-label="Nombre"></label></div>
+          <div><span class="label">Tipo</span><div class="seg full"><span class="on"><span class="ms">movie</span>Películas</span><span><span class="ms">tv</span>Series</span></div></div>
+          <div><span class="label">Carpeta</span><div style="display: flex; gap: 10px"><div class="field ro" style="flex: 1"><span class="ms">folder</span><span class="mono" style="font-size: 13px">D:\Media\Películas</span></div><button class="btn sec">Elegir…</button></div>
+            <p class="help">Encontramos 312 archivos de video en esta carpeta.</p></div>
+        </sc-if>
+
+        <!-- B1 elegir servidor -->
+        <sc-if value="{{pServ}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h1 class="t-l">Elige un servidor</h1><p class="body muted">Buscamos otros equipos con CinemaLove que estén compartiendo en tu red.</p></div>
+          <div class="card" style="padding: 8px; background: #19181E">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 8px 10px 10px">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="14" r="3" fill="#BA6ACA"></circle><circle cx="14" cy="14" r="8" stroke="#BA6ACA" stroke-opacity=".5" stroke-width="1.5"></circle><circle cx="14" cy="14" r="13" stroke="#BA6ACA" stroke-opacity=".22" stroke-width="1.5"></circle></svg>
+              <span class="over faint" style="flex: 1">En tu red</span><span class="cap faint">Buscando…</span>
+            </div>
+            <sc-for list="{{servers}}" as="sv" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; {{sv.style}}">
+                <span style="width: 40px; height: 40px; border-radius: 10px; background: #221F28; display: flex; align-items: center; justify-content: center; color: #BA6ACA"><span class="ms">{{sv.icon}}</span></span>
+                <span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 600">{{sv.name}}</span><span class="b-s muted mono" style="font-size: 12px">{{sv.addr}}</span></span>
+                <span class="ms s20" style="color: {{sv.lockColor}}" title="{{sv.lockTitle}}">{{sv.lock}}</span>
+                <sc-if value="{{sv.sel}}" hint-placeholder-val="{{ false }}"><span class="ms s20 fill" style="color: #BA6ACA">radio_button_checked</span></sc-if>
+                <sc-if value="{{sv.notSel}}" hint-placeholder-val="{{ true }}"><span class="ms s20 faint">radio_button_unchecked</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px" class="b-s faint"><span style="flex: 1; height: 1px; background: #2E2A35"></span>o<span style="flex: 1; height: 1px; background: #2E2A35"></span></div>
+          <div><span class="label">Dirección del servidor</span><label class="field"><span class="ms">link</span><input placeholder="https://192.168.0.10:8443" aria-label="Dirección del servidor"></label></div>
+        </sc-if>
+
+        <!-- B2 certificado -->
+        <sc-if value="{{pCert}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 16px; align-items: flex-start">
+            <span style="width: 48px; height: 48px; border-radius: 14px; background: rgba(224,166,58,.14); color: #E0A63A; display: flex; align-items: center; justify-content: center; flex: none"><span class="ms">gpp_maybe</span></span>
+            <div style="display: flex; flex-direction: column; gap: 6px"><h1 class="t-l">Verifica el certificado</h1><p class="body muted"><i>Sala de estar</i> usa un certificado propio (autofirmado). Compara esta huella con la que aparece en el otro equipo, en Ajustes › Servidor.</p></div>
+          </div>
+          <div class="card" style="padding: 16px 18px; background: #0E0D11; display: flex; gap: 16px; align-items: flex-start">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px"><span class="over faint">Huella SHA-256</span>
+              <p class="mono" style="font-size: 14px; line-height: 24px; letter-spacing: .06em; color: #F5F3F7; word-spacing: 6px">4F2A 9C1E 77B0 D3A8 15E6 0BC9 8E42 F17D A30C 6B95 2E8F 41D7 C0A6 93BE 5F18 7C2D</p></div>
+            <button class="btn ghost sm ic" aria-label="Copiar huella"><span class="ms">content_copy</span></button>
+          </div>
+          <label style="display: flex; align-items: center; gap: 12px; cursor: pointer"><span class="check on"></span><span class="body">Confío en este certificado</span></label>
+        </sc-if>
+
+        <!-- B3 credencial -->
+        <sc-if value="{{pCred}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 6px"><h1 class="t-l">Conéctate a <i style="font-family: var(--ff-d); font-weight: 600">Sala de estar</i></h1><p class="body muted">Usa la cuenta que te crearon en ese equipo o un token de acceso.</p></div>
+          <div class="seg full"><span class="on"><span class="ms">person</span>Credenciales</span><span><span class="ms">key</span>Usar token</span></div>
+          <div><span class="label">Usuario</span><label class="field"><span class="ms">person</span><input value="ana" aria-label="Usuario"></label></div>
+          <div><span class="label">Contraseña</span><label class="field err"><span class="ms">lock</span><input type="password" value="contrasena" aria-label="Contraseña"><button class="x" style="width: 28px; height: 28px" aria-label="Mostrar contraseña"><span class="ms s20">visibility</span></button></label>
+            <p class="help err" style="display: flex; align-items: center; gap: 4px"><span class="ms s16">error</span>El usuario o la contraseña no son correctos.</p></div>
+          <label style="display: flex; align-items: center; gap: 12px"><span class="switch on"></span><span class="body">Recordar este servidor y conectarme automáticamente</span></label>
+        </sc-if>
+
+        <!-- Pie -->
+        <div style="display: flex; align-items: center; gap: 10px; padding-top: 4px">
+          <sc-if value="{{canSkip}}" hint-placeholder-val="{{ false }}"><button class="btn ghost">Omitir por ahora</button></sc-if>
+          <div style="flex: 1"></div>
+          <sc-if value="{{canBack}}" hint-placeholder-val="{{ false }}"><button class="btn ghost">Atrás</button></sc-if>
+          <a class="btn pri" href="{{nextHref}}">{{nextLabel}}<span class="ms">arrow_forward</span></a>
+        </div>
+      </section>
+    </div>
+  </sc-if>
+
+  <!-- ESTADOS DE ARRANQUE -->
+  <sc-if value="{{pConectando}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center">
+      <div class="wordmark" style="font-size: 28px; margin: 0"><i style="width: 12px; height: 12px"></i>CinemaLove</div>
+      <span class="spin" style="width: 40px; height: 40px; border-width: 3px; margin-top: 24px"></span>
+      <h1 class="t-l">Conectando a <i style="font-family: var(--ff-d)">Sala de estar</i>…</h1>
+      <p class="b-s muted mono" style="font-size: 12px">https://192.168.0.115:8080</p>
+      <button class="btn ghost">Cancelar</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{pNoConecta}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 520px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+      <span style="width: 72px; height: 72px; border-radius: 50%; background: rgba(229,72,77,.12); color: #F08A8D; display: flex; align-items: center; justify-content: center"><span class="ms s40">cloud_off</span></span>
+      <h1 class="d-l" style="font-size: 34px; line-height: 40px">No pudimos conectar con <i>Sala de estar</i></h1>
+      <p class="body muted">Revisa que el otro equipo esté encendido, con CinemaLove abierto y en la misma red que este.</p>
+      <div style="display: flex; gap: 10px; margin-top: 8px"><button class="btn pri"><span class="ms">refresh</span>Reintentar</button><button class="btn sec">Olvidar este servidor</button></div>
+      <p class="cap faint mono" style="margin-top: 8px">ECONNREFUSED 192.168.0.115:8080 · intento 3 de 3</p>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{pSinCarpeta}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 560px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+      <span style="width: 72px; height: 72px; border-radius: 50%; background: rgba(224,166,58,.12); color: #E0A63A; display: flex; align-items: center; justify-content: center"><span class="ms s40">folder_off</span></span>
+      <h1 class="d-l" style="font-size: 34px; line-height: 40px">No encontramos la carpeta de datos</h1>
+      <p class="body muted">CinemaLove guarda tu catálogo en <span class="mono" style="color: #F5F3F7">D:\CinemaLove\datos</span>. ¿Desconectaste un disco o lo renombraste?</p>
+      <div style="display: flex; gap: 10px; margin-top: 8px"><button class="btn pri"><span class="ms">refresh</span>Reintentar</button><button class="btn sec">Elegir otra carpeta…</button><button class="btn ghost">Reconfigurar…</button></div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["modo","carpeta","tmdb","biblioteca","servidor","certificado","credencial","conectando","noconecta","sincarpeta"],"default":"modo"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.paso ?? 'modo';
+    const B = ['servidor', 'certificado', 'credencial', 'conectando', 'noconecta'].includes(p);
+    const A = ['carpeta', 'tmdb', 'biblioteca'].includes(p);
+    const labels = B ? ['Modo', 'Servidor', 'Certificado', 'Credencial'] : ['Modo', 'Datos', 'TMDb', 'Biblioteca'];
+    const idx = { modo: 0, carpeta: 1, tmdb: 2, biblioteca: 3, servidor: 1, certificado: 2, credencial: 3 }[p] ?? 0;
+    const steps = labels.map((l, i) => ({
+      label: l, mark: i < idx ? '✓' : String(i + 1),
+      dot: i < idx ? 'background: var(--accent); color: #fff' : (i === idx ? 'background: var(--accent-tint); color: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent)' : 'background: #19181E; color: #6E6878; box-shadow: inset 0 0 0 1px #3D3846'),
+      color: i === idx ? '#F5F3F7' : (i < idx ? '#A7A2B0' : '#6E6878')
+    }));
+    const hues = [30, 190, 95, 210, 0, 140, 280, 45, 330, 160, 25, 230, 300, 75, 200, 350, 120, 260, 15, 180, 60, 220, 340, 100];
+    const tiles = hues.map((h) => 'radial-gradient(60% 70% at 60% 40%, hsl(' + h + ' 50% 32%), transparent 75%), linear-gradient(160deg, hsl(' + h + ' 35% 14%), hsl(' + ((h + 40) % 360) + ' 30% 6%))');
+    const mini = [30, 190, 95, 210, 0, 140].map((h) => 'linear-gradient(170deg, hsl(' + h + ' 50% 34%), hsl(' + ((h + 40) % 360) + ' 40% 12%))');
+    const next = { modo: ['Continuar', 'Asis-Carpeta.dc.html'], carpeta: ['Continuar', 'Asis-Tmdb.dc.html'], tmdb: ['Continuar', 'Asis-Biblioteca.dc.html'], biblioteca: ['Crear y escanear', 'Inicio.dc.html'], servidor: ['Continuar', 'Asis-Certificado.dc.html'], certificado: ['Continuar', 'Asis-Credencial.dc.html'], credencial: ['Conectar', 'Asis-Conectando.dc.html'] }[p] || ['Continuar', '#'];
+    return {
+      modo: B ? 'cliente' : 'local',
+      tiles, mini,
+      withCard: !['conectando', 'noconecta', 'sincarpeta'].includes(p),
+      cardW: p === 'modo' ? 720 : 640, showSteps: true, steps,
+      pModo: p === 'modo', pCarpeta: p === 'carpeta', pTmdb: p === 'tmdb', pBib: p === 'biblioteca',
+      pServ: p === 'servidor', pCert: p === 'certificado', pCred: p === 'credencial',
+      pConectando: p === 'conectando', pNoConecta: p === 'noconecta', pSinCarpeta: p === 'sincarpeta',
+      canSkip: p === 'tmdb' || p === 'biblioteca', canBack: p !== 'modo',
+      nextLabel: next[0], nextHref: next[1],
+      servers: [
+        { name: 'Sala de estar', addr: 'https://192.168.0.115:8080', icon: 'tv', lock: 'lock', lockColor: '#4CAF7D', lockTitle: 'Conexión cifrada (HTTPS)', sel: true, notSel: false, style: 'background: rgba(149,25,174,.14); box-shadow: inset 0 0 0 1.5px #9519AE' },
+        { name: 'Estudio', addr: 'http://192.168.0.42:8080', icon: 'computer', lock: 'lock_open', lockColor: '#6E6878', lockTitle: 'Sin cifrar (HTTP)', sel: false, notSel: true, style: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

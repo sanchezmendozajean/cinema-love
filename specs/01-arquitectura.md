@@ -39,7 +39,7 @@
 ```
 
 ### Decisión clave heredada: la UI siempre habla HTTP
-Igual que en `electron-version/specs/01`: en Modo Local el backend levanta un listener interno en `127.0.0.1` con token de administrador aleatorio por sesión; en Modo Cliente apunta a un servidor remoto. **Una sola implementación de la UI.** La diferencia con Electron es que el reproductor ya no necesita que esa URL sea un stream de ffmpeg: recibe una URL (o ruta) del archivo original.
+Igual que en `specs/heredadas/01`: en Modo Local el backend levanta un listener interno en `127.0.0.1` con token de administrador aleatorio por sesión; en Modo Cliente apunta a un servidor remoto. **Una sola implementación de la UI.** La diferencia con Electron es que el reproductor ya no necesita que esa URL sea un stream de ffmpeg: recibe una URL (o ruta) del archivo original.
 
 ## 3. Estructura del repositorio
 
@@ -77,7 +77,7 @@ qt6-version/                   # raíz del repositorio (el proyecto Qt se crea a
 - **ApiClient** es el único que conoce URLs y tokens. Expone métodos asíncronos que devuelven resultados por señal; los modelos los consumen.
 - **El reproductor no sabe de catálogo**: recibe `PlaybackRequest { fuente, titulo, inicioSegundos, pistaAudio, pistaSubtitulo }` y emite eventos (`posicion`, `pausa`, `finArchivo`, `error`).
 - **Todo texto visible** en español, centralizado (`qsTr` con un único contexto o un archivo de cadenas), preparado para traducir.
-- **Operaciones largas** (escaneo, metadata) son jobs del backend, con progreso por SSE o sondeo (`electron-version/specs/01` §4).
+- **Operaciones largas** (escaneo, metadata) son jobs del backend, con progreso por SSE o sondeo (`specs/heredadas/01` §4).
 - **Modales**: siempre con botón X visible; no se cierran al hacer clic afuera (`closePolicy: Popup.CloseOnEscape` como máximo si el diseño lo permite; nunca `CloseOnPressOutside`). Regla del proyecto.
 
 ## 5. Ventana
@@ -90,4 +90,4 @@ qt6-version/                   # raíz del repositorio (el proyecto Qt se crea a
 
 ## 6. Seguridad
 
-Igual que `electron-version/specs/01` §6, adaptado: validar rutas dentro de la carpeta de su biblioteca, no exponer rutas físicas al listener público, aceptar certificados autofirmados solo con huella confirmada por el usuario (`QSslConfiguration` + `sslErrors` limitado a host + huella; nunca `ignoreSslErrors()` global).
+Igual que `specs/heredadas/01` §6, adaptado: validar rutas dentro de la carpeta de su biblioteca, no exponer rutas físicas al listener público, aceptar certificados autofirmados solo con huella confirmada por el usuario (`QSslConfiguration` + `sslErrors` limitado a host + huella; nunca `ignoreSslErrors()` global).

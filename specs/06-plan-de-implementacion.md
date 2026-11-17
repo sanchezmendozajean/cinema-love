@@ -22,20 +22,20 @@ Prototipo mínimo, no el proyecto final.
 - **Aceptación**: `dist:win` y `dist:linux` producen un «hola mundo» que arranca el backend, responde `/health` y se cierra sin dejar procesos huérfanos.
 
 ## Fase 2 — Vistas de navegación
-Shell, Inicio, Catálogo, Bibliotecas (solo lectura), fichas de película/serie/temporada/persona, Colecciones, Próximas a ver, tarjetas y menú ⋯ (`electron-version/specs/20` Fase 3).
+Shell, Inicio, Catálogo, Bibliotecas (solo lectura), fichas de película/serie/temporada/persona, Colecciones, Próximas a ver, tarjetas y menú ⋯ (`specs/heredadas/20` Fase 3).
 - `ImageProvider` con caché; modelos paginados.
 - **Aceptación**: RF-01…RF-63 salvo administración; 60 fps de scroll con 2 000 pósters en una máquina de referencia; estados de carga/vacío/error presentes; foco con teclado.
 
 ## Fase 3 — Reproductor
 `02-reproductor-mpv.md` completo: controles, atajos, OSD, pistas, subtítulos, configuración de subtítulos, progreso y reanudación, siguiente episodio, pantalla final, info técnica, errores.
-- **Aceptación**: matriz de archivos de `electron-version/specs/20` Fase 4 reproducida **sin sesiones ffmpeg**; seek, cambio de pista y reanudación en todos; progreso guardado aquí se reanuda en Flutter y en Electron, y viceversa (ids de pista de mpv); 3 reproducciones de ≥ 2 h consecutivas sin pausas de recuperación.
+- **Aceptación**: matriz de archivos de `specs/heredadas/20` Fase 4 reproducida **sin sesiones ffmpeg**; seek, cambio de pista y reanudación en todos; progreso guardado aquí se reanuda en Flutter y en Electron, y viceversa (ids de pista de mpv); 3 reproducciones de ≥ 2 h consecutivas sin pausas de recuperación.
 
 ## Fase 4 — Administración
-Bibliotecas CRUD, escáner (jobs/SSE), reconciliación, huérfanos, relink, homologar, TMDb (asistente masivo, edición manual) (`electron-version/specs/20` Fase 5). En opción A solo es UI sobre endpoints existentes.
-- **Aceptación**: igual que `electron-version/specs/20` Fase 5.
+Bibliotecas CRUD, escáner (jobs/SSE), reconciliación, huérfanos, relink, homologar, TMDb (asistente masivo, edición manual) (`specs/heredadas/20` Fase 5). En opción A solo es UI sobre endpoints existentes.
+- **Aceptación**: igual que `specs/heredadas/20` Fase 5.
 
 ## Fase 5 — Servidor público y Modo Cliente
-Ajustes → Conexión, listener público, certificados, mDNS, usuarios, token, sesiones activas, QR; asistente de bienvenida; Modo Cliente (persistente y de sesión) con `cliente_datos.sqlite`, confianza por huella e identidad violeta (`electron-version/specs/20` Fase 6).
+Ajustes → Conexión, listener público, certificados, mDNS, usuarios, token, sesiones activas, QR; asistente de bienvenida; Modo Cliente (persistente y de sesión) con `cliente_datos.sqlite`, confianza por huella e identidad violeta (`specs/heredadas/20` Fase 6).
 - Reproducción en cliente por `media/<id>/direct`; indicador de `paused-for-cache` y mensaje claro si la red no alcanza.
 - **Aceptación**: dos equipos en la LAN con descubrimiento y reproducción; un cliente Flutter se conecta al servidor.
 

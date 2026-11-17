@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Inicio</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: {{W}}px; height: {{H}}px">
+
+  <header class="titlebar" style="background: rgba(14,13,17,.28)">
+    <div class="wordmark"><i></i>CinemaLove</div>
+    <button class="tb-btn dis" aria-label="Atrás"><span class="ms s20">arrow_back</span></button>
+    <button class="tb-btn dis" aria-label="Adelante"><span class="ms s20">arrow_forward</span></button>
+    <a class="tb-search" href="Dlg-Paleta.dc.html"><span class="ms s18">search</span><span>Buscar</span><span class="kbd">Ctrl K</span></a>
+    <div class="tb-right">
+      <sc-if value="{{local}}" hint-placeholder-val="{{ true }}">
+        <span class="mode-chip"><span class="dot green"></span>Compartiendo en 192.168.0.115:8080</span>
+      </sc-if>
+      <sc-if value="{{cliente}}" hint-placeholder-val="{{ false }}">
+        <span class="mode-chip"><span class="dot {{cliDot}}"></span>{{cliLabel}}</span>
+      </sc-if>
+      <div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div>
+    </div>
+  </header>
+
+  <nav class="sidebar" aria-label="Principal">
+    <a class="nav on" href="Inicio.dc.html"><span class="ms">home</span><span class="lbl">Inicio</span></a>
+    <a class="nav" href="Main.dc.html"><span class="ms">grid_view</span><span class="lbl">Catálogo</span></a>
+    <a class="nav" href="Bibliotecas.dc.html"><span class="ms">video_library</span><span class="lbl">Bibliotecas</span></a>
+    <a class="nav" href="Colecciones.dc.html"><span class="ms">collections_bookmark</span><span class="lbl">Colecciones</span></a>
+    <div class="side-sub">
+      <a href="Coleccion-Detalle.dc.html">Clásicos de terror</a>
+      <a href="Coleccion-Detalle.dc.html">Maratón Coppola</a>
+      <a href="Coleccion-Detalle.dc.html">Cine latinoamericano</a>
+      <a href="Coleccion-Detalle.dc.html">Para ver con los chicos</a>
+    </div>
+    <a class="nav" href="Proximas.dc.html"><span class="ms">bookmark</span><span class="lbl">Próximas a ver</span></a>
+    <div class="side-foot">
+      <a class="nav" href="Ajustes.dc.html"><span class="ms">settings</span><span class="lbl">Ajustes</span></a>
+    </div>
+  </nav>
+
+  <main class="content">
+
+    <sc-if value="{{offline}}" hint-placeholder-val="{{ false }}">
+      <div class="banner err" role="status" style="position: absolute; z-index: 15; top: 52px; left: 50%; transform: translateX(-50%); box-shadow: 0 16px 48px rgba(0,0,0,.6); backdrop-filter: blur(16px); background: rgba(60,20,24,.85)">
+        <span class="ms s20">cloud_off</span>
+        <span>Se perdió la conexión con <i>Sala de estar</i> · Reintentando en 8 s…</span>
+        <button class="btn sm glass" style="margin-left: 8px">Reintentar ahora</button>
+      </div>
+    </sc-if>
+
+    <!-- HÉROE -->
+    <sc-if value="{{normal}}" hint-placeholder-val="{{ true }}">
+      <section class="hero" style="height: {{heroH}}px">
+        <div class="bd" style="background: radial-gradient(34% 50% at 74% 36%, rgba(232,150,64,.55), transparent 70%), radial-gradient(18% 26% at 66% 30%, rgba(255,214,150,.35), transparent 70%), radial-gradient(60% 80% at 90% 80%, rgba(110,40,20,.6), transparent 70%), linear-gradient(100deg, #0d0806 0%, #24140b 42%, #4a2a13 68%, #1b0f08 100%)"></div>
+        <div class="bd" style="background: repeating-linear-gradient(180deg, rgba(255,214,160,.06) 0 5px, transparent 5px 17px); -webkit-mask-image: radial-gradient(26% 46% at 72% 34%, #000, transparent); mask-image: radial-gradient(26% 46% at 72% 34%, #000, transparent)"></div>
+        <div class="bd" style="background: radial-gradient(14% 30% at 58% 62%, rgba(10,6,4,.9), transparent 75%), radial-gradient(10% 22% at 84% 58%, rgba(10,6,4,.85), transparent 75%)"></div>
+        <div class="grain"></div>
+        <div class="shade"></div>
+        <div style="position: absolute; left: {{padX}}px; bottom: {{heroPadB}}px; width: {{heroTextW}}px; display: flex; flex-direction: column; gap: 14px">
+          <span class="over acc">Continuar viendo</span>
+          <h1 class="{{titleCls}}">El Padrino</h1>
+          <div class="meta-line"><span>1972</span><i></i><span>2 h 55 min</span><i></i><span>Drama, Crimen</span><span class="pill">4K</span><span class="pill">HDR10</span></div>
+          <sc-if value="{{notCompact}}" hint-placeholder-val="{{ true }}">
+            <p class="body clamp2" style="color: #D9D4DE; max-width: 520px">Don Vito Corleone, patriarca de una de las cinco familias de la mafia de Nueva York, debe decidir quién heredará el imperio cuando un atentado lo deja al borde de la muerte.</p>
+          </sc-if>
+          <div style="display: flex; gap: 12px; margin-top: 6px; align-items: flex-start">
+            <a class="btn-play" href="Reproductor.dc.html">
+              <span class="btn pri lg"><span class="ms fill">play_arrow</span>Continuar · quedan 1 h 12 min</span>
+              <span class="pb"><i style="width: 58%"></i></span>
+            </a>
+            <a class="btn glass lg" href="Ficha.dc.html"><span class="ms">info</span>Más información</a>
+          </div>
+        </div>
+        <div style="position: absolute; right: {{padX}}px; bottom: {{heroPadB}}px; display: flex; gap: 6px; align-items: center" aria-label="Destacados">
+          <span style="width: 22px; height: 6px; border-radius: 3px; background: #F5F3F7"></span>
+          <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(245,243,247,.35)"></span>
+          <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(245,243,247,.35)"></span>
+          <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(245,243,247,.35)"></span>
+          <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(245,243,247,.35)"></span>
+        </div>
+      </section>
+
+      <!-- FILAS -->
+      <div style="position: relative; margin-top: -24px; padding: 0 0 40px {{padX}}px; display: flex; flex-direction: column; gap: 40px">
+        <section style="position: relative">
+          <div class="sec-h" style="padding-right: {{padX}}px"><h2 class="t-l">Continuar viendo</h2>
+            <div class="arrows"><button class="arrow" aria-label="Anterior" style="opacity: .4"><span class="ms s20">chevron_left</span></button><button class="arrow" aria-label="Siguiente"><span class="ms s20">chevron_right</span></button></div>
+          </div>
+          <div class="row" style="overflow: hidden; padding: 6px 0 6px">
+            <sc-for list="{{cont}}" as="c" hint-placeholder-count="4">
+              <a class="lc {{c.cls}}" href="{{c.href}}">
+                <div class="still">
+                  <div class="art" style="background: {{c.art}}"></div>
+                  <span class="rem tnum">{{c.rem}}</span>
+                  <div class="pbar"><i style="width: {{c.prog}}%"></i></div>
+                  <div class="hover-ui"><span class="play-c"><span class="ms">play_arrow</span></span></div>
+                </div>
+                <div class="meta"><b>{{c.t}}</b><span>{{c.sub}}</span></div>
+              </a>
+            </sc-for>
+          </div>
+          <div class="fade-r"></div>
+        </section>
+
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+          <section style="position: relative">
+            <div class="sec-h" style="padding-right: {{padX}}px"><h2 class="t-l">{{r.title}}</h2><a class="b-s muted" href="{{r.more}}" style="margin-left: auto">Ver todo</a></div>
+            <div class="row" style="overflow: hidden; padding: 6px 0">
+              <sc-for list="{{r.items}}" as="it" hint-placeholder-count="8">
+                <div class="pc" style="width: 160px; flex: none">
+                  <a href="{{it.href}}">
+                    <div class="poster">
+                      <div class="art" style="background: {{it.art}}"></div>
+                      <div class="pt"><small>{{it.y}}</small>{{it.t}}</div>
+                      <sc-if value="{{it.s}}" hint-placeholder-val="{{ false }}"><span class="tag-serie">SERIE</span></sc-if>
+                      <div class="ind"><sc-if value="{{it.seen}}" hint-placeholder-val="{{ false }}"><span class="ind-seen"><span class="ms">check_circle</span></span></sc-if></div>
+                      <div class="hover-ui"><span class="play-c"><span class="ms">play_arrow</span></span></div>
+                    </div>
+                    <div class="meta"><b>{{it.t}}</b><span class="tnum">{{it.y}} · {{it.g}}</span></div>
+                  </a>
+                  <button class="more" aria-label="Más acciones"><span class="ms s20">more_horiz</span></button>
+                </div>
+              </sc-for>
+            </div>
+            <div class="fade-r"></div>
+          </section>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- CARGANDO -->
+    <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}">
+      <section style="position: relative; height: {{heroH}}px; background: #141318">
+        <div style="position: absolute; left: {{padX}}px; bottom: 72px; display: flex; flex-direction: column; gap: 14px; width: 520px">
+          <div class="sk line" style="width: 140px; height: 10px"></div>
+          <div class="sk" style="width: 380px; height: 52px"></div>
+          <div class="sk line" style="width: 260px"></div>
+          <div class="sk line" style="width: 480px"></div>
+          <div class="sk line" style="width: 420px"></div>
+          <div style="display: flex; gap: 12px; margin-top: 8px"><div class="sk" style="width: 280px; height: 48px"></div><div class="sk" style="width: 180px; height: 48px"></div></div>
+        </div>
+      </section>
+      <div style="padding: 16px 0 0 {{padX}}px; display: flex; flex-direction: column; gap: 16px">
+        <div class="sk line" style="width: 200px; height: 18px"></div>
+        <div class="row" style="overflow: hidden"><div class="sk" style="width: 300px; height: 169px; flex: none"></div><div class="sk" style="width: 300px; height: 169px; flex: none"></div><div class="sk" style="width: 300px; height: 169px; flex: none"></div><div class="sk" style="width: 300px; height: 169px; flex: none"></div></div>
+      </div>
+    </sc-if>
+
+    <!-- VACÍO -->
+    <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+      <div class="empty" style="position: absolute; inset: 0; justify-content: center; padding-bottom: 40px; background: radial-gradient(50% 40% at 50% 42%, var(--accent-tint), transparent 70%)">
+        <svg width="148" height="120" viewBox="0 0 148 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M38 66 V34 a14 14 0 0 1 14 -14 h44 a14 14 0 0 1 14 14 V66"></path><path d="M26 64 h96 a6 6 0 0 1 6 6 v14 a6 6 0 0 1 -6 6 h-96 a6 6 0 0 1 -6 -6 v-14 a6 6 0 0 1 6 -6 z"></path><path d="M20 70 a8 8 0 0 0 -8 8 v10"></path><path d="M128 70 a8 8 0 0 1 8 8 v10"></path><path d="M44 90 L40 108 M104 90 L108 108"></path><path d="M60 38 h28 M60 48 h28" opacity=".5"></path></svg>
+        <sc-if value="{{local}}" hint-placeholder-val="{{ true }}">
+          <h1 class="d-l">Agrega tu primera biblioteca</h1>
+          <p class="body muted" style="max-width: 460px">Elige la carpeta donde guardas tus películas o series. CinemaLove buscará pósters, sinopsis y reparto por ti.</p>
+          <a class="btn pri lg" href="Dialogos.dc.html"><span class="ms">add</span>Agregar biblioteca</a>
+        </sc-if>
+        <sc-if value="{{cliente}}" hint-placeholder-val="{{ false }}">
+          <h1 class="d-l">Este servidor aún no tiene contenido</h1>
+          <p class="body muted" style="max-width: 460px">Cuando <i>Sala de estar</i> agregue bibliotecas, sus películas y series aparecerán aquí.</p>
+        </sc-if>
+      </div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["local","cliente"],"default":"local"},"estado":{"editor":"enum","options":["normal","cargando","vacio","sinconexion"],"default":"normal"},"compacto":{"editor":"boolean","default":false},"completo":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const P = this.props;
+    const modo = P.modo ?? 'local';
+    const estado = P.estado ?? 'normal';
+    const compact = !!P.compacto;
+    const W = compact ? 1024 : 1440, H = compact ? 640 : (P.completo ? 1760 : 900);
+    const art = (h, k) => {
+      const a = 'hsl(' + h + ' 62% 46%)', b = 'hsl(' + ((h + 40) % 360) + ' 52% 22%)', c = 'hsl(' + ((h + 200) % 360) + ' 30% 9%)';
+      return [
+        'radial-gradient(70% 45% at 50% 30%, ' + a + ' 0%, transparent 70%), linear-gradient(170deg, ' + b + ', ' + c + ')',
+        'radial-gradient(42% 28% at 68% 24%, hsl(' + h + ' 85% 72% / .9) 0%, transparent 62%), radial-gradient(120% 70% at 20% 100%, ' + a + ', transparent 60%), linear-gradient(180deg, ' + c + ', ' + b + ')',
+        'linear-gradient(180deg, transparent 56%, hsl(' + h + ' 40% 7%) 56.4%), radial-gradient(60% 34% at 50% 56%, ' + a + ', transparent 70%), linear-gradient(180deg, ' + b + ', ' + c + ')',
+        'conic-gradient(from 210deg at 62% 38%, ' + b + ', ' + a + ' 18%, ' + c + ' 45%, ' + b + ')'
+      ][k % 4];
+    };
+    const P2 = (t, y, g, h, k, s, seen) => ({ t, y, g, art: art(h, k), s: !!s, seen: !!seen, href: s ? 'Serie.dc.html' : 'Ficha.dc.html' });
+    const cont = [
+      { t: 'El Padrino', sub: 'Película · 1972', rem: 'quedan 1 h 12 min', prog: 58, art: art(30, 2), href: 'Reproductor.dc.html', cls: '' },
+      { t: 'Dark', sub: 'T2 · E4', rem: 'quedan 31 min', prog: 40, art: art(190, 2), href: 'Rep-Siguiente.dc.html', cls: 'hov' },
+      { t: 'Breaking Bad', sub: 'T3 · E7 · Un minuto', rem: 'quedan 12 min', prog: 74, art: art(75, 0), href: 'Reproductor.dc.html', cls: '' },
+      { t: 'El caballero de la noche', sub: 'Película · 2008', rem: 'quedan 1 h 53 min', prog: 22, art: art(215, 3), href: 'Reproductor.dc.html', cls: '' },
+      { t: 'Narcos', sub: 'T1 · E2 · La espada de Simón Bolívar', rem: 'quedan 40 min', prog: 18, art: art(50, 1), href: 'Reproductor.dc.html', cls: '' }
+    ];
+    const rows = [
+      { title: 'Próximas a ver', more: 'Proximas.dc.html', items: [P2('Roma', 2018, 'Drama', 230, 2), P2('El secreto de sus ojos', 2009, 'Drama', 15, 0), P2('Chernóbil', 2019, 'Drama', 80, 2, 1), P2('La llegada', 2016, 'Ciencia ficción', 200, 2), P2('Relatos salvajes', 2014, 'Comedia', 45, 3), P2('El viaje de Chihiro', 2001, 'Animación', 170, 1), P2('Ciudad de Dios', 2002, 'Crimen', 35, 2), P2('Mindhunter', 2017, 'Crimen', 120, 0, 1)] },
+      { title: 'Agregados recientemente', more: 'Main.dc.html', items: [P2('Blade Runner 2049', 2017, 'Ciencia ficción', 25, 2), P2('Coco', 2017, 'Animación', 300, 1), P2('El juego del calamar', 2021, 'Suspenso', 330, 3, 1), P2('Gladiador', 2000, 'Acción', 32, 1), P2('Y tu mamá también', 2001, 'Drama', 190, 0), P2('Los otros', 2001, 'Terror', 180, 0), P2('Whiplash: Música y obsesión', 2014, 'Drama', 40, 1), P2('Toy Story', 1995, 'Animación', 205, 1)] },
+      { title: 'Vistos recientemente', more: 'Main.dc.html', items: [P2('Parásitos', 2019, 'Suspenso', 95, 2, 0, 1), P2('Interestelar', 2014, 'Ciencia ficción', 210, 1, 0, 1), P2('Volver al futuro', 1985, 'Aventura', 25, 1, 0, 1), P2('Matrix', 1999, 'Ciencia ficción', 130, 3, 0, 1), P2('Psicosis', 1960, 'Terror', 210, 2, 0, 1), P2('Chernóbil', 2019, 'Drama', 80, 2, 1, 1), P2('Amores perros', 2000, 'Drama', 0, 3, 0, 1), P2('Intensa-Mente', 2015, 'Animación', 280, 1, 0, 1)] }
+    ];
+    const offline = estado === 'sinconexion';
+    return {
+      W, H, modo, local: modo === 'local', cliente: modo === 'cliente',
+      cliDot: offline ? 'red' : 'violet', cliLabel: offline ? 'Sin conexión con Sala de estar' : 'Conectado a Sala de estar',
+      offline, normal: estado === 'normal' || offline, loading: estado === 'cargando', empty: estado === 'vacio',
+      padX: compact ? 24 : 40, heroH: compact ? 422 : 594, heroPadB: compact ? 48 : 72, heroTextW: compact ? 560 : 640,
+      titleCls: compact ? 'd-l' : 'd-xl', notCompact: !compact,
+      cont, rows
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Catálogo</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: {{W}}px; height: {{H}}px">
+
+  <!-- Barra de título -->
+  <header class="titlebar">
+    <div class="wordmark"><i></i>CinemaLove</div>
+    <button class="tb-btn" aria-label="Atrás"><span class="ms s20">arrow_back</span></button>
+    <button class="tb-btn dis" aria-label="Adelante"><span class="ms s20">arrow_forward</span></button>
+    <a class="tb-search" href="Dlg-Paleta.dc.html"><span class="ms s18">search</span><span>Buscar</span><span class="kbd">Ctrl K</span></a>
+    <div class="tb-right">
+      <sc-if value="{{local}}" hint-placeholder-val="{{ true }}">
+        <a class="task-chip" href="Dlg-Tareas.dc.html"><span class="spin"></span>1 tarea</a>
+        <span class="mode-chip"><span class="dot green"></span>Compartiendo en 192.168.0.115:8080</span>
+      </sc-if>
+      <sc-if value="{{cliente}}" hint-placeholder-val="{{ false }}">
+        <span class="mode-chip"><span class="dot violet"></span>Conectado a Sala de estar</span>
+      </sc-if>
+      <div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div>
+    </div>
+  </header>
+
+  <!-- Barra lateral -->
+  <nav class="sidebar" aria-label="Principal">
+    <a class="nav" href="Inicio.dc.html"><span class="ms">home</span><span class="lbl">Inicio</span></a>
+    <a class="nav {{navCat}}" href="Main.dc.html"><span class="ms">grid_view</span><span class="lbl">Catálogo</span></a>
+    <a class="nav {{navBib}}" href="Bibliotecas.dc.html"><span class="ms">video_library</span><span class="lbl">Bibliotecas</span></a>
+    <a class="nav" href="Colecciones.dc.html"><span class="ms">collections_bookmark</span><span class="lbl">Colecciones</span></a>
+    <div class="side-sub">
+      <a href="Coleccion-Detalle.dc.html">Clásicos de terror</a>
+      <a href="Coleccion-Detalle.dc.html">Maratón Coppola</a>
+      <a href="Coleccion-Detalle.dc.html">Cine latinoamericano</a>
+      <a href="Coleccion-Detalle.dc.html">Para ver con los chicos</a>
+    </div>
+    <a class="nav" href="Proximas.dc.html"><span class="ms">bookmark</span><span class="lbl">Próximas a ver</span></a>
+    <div class="side-foot">
+      <a class="nav" href="Ajustes.dc.html"><span class="ms">settings</span><span class="lbl">Ajustes</span></a>
+    </div>
+  </nav>
+
+  <main class="content">
+
+    <!-- Cabecera de biblioteca (variante) -->
+    <sc-if value="{{isBib}}" hint-placeholder-val="{{ false }}">
+      <section style="position: relative; height: 252px; overflow: hidden">
+        <div style="position: absolute; inset: -40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); filter: blur(28px) saturate(1.2); opacity: .55">
+          <div style="background: radial-gradient(60% 60% at 40% 40%, #C0742E, transparent 70%), linear-gradient(160deg, #3A1F12, #120B0A)"></div>
+          <div style="background: radial-gradient(60% 60% at 60% 40%, #2E7FA8, transparent 70%), linear-gradient(160deg, #0F2433, #0A0E14)"></div>
+          <div style="background: radial-gradient(60% 60% at 50% 50%, #4F8F3A, transparent 70%), linear-gradient(160deg, #172A14, #0B0F0A)"></div>
+        </div>
+        <div style="position: absolute; inset: 0; background: linear-gradient(0deg, #0E0D11 0%, rgba(14,13,17,.35) 70%, rgba(14,13,17,.6) 100%)"></div>
+        <div style="position: absolute; left: {{padX}}px; right: {{padX}}px; bottom: 28px; display: flex; align-items: flex-end; gap: 24px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+            <span class="over acc" style="display: flex; align-items: center; gap: 6px"><span class="ms s16">movie</span>Biblioteca de películas</span>
+            <h1 class="d-l">Películas 4K</h1>
+            <div class="meta-line"><span class="tnum">64 películas</span><i></i><span style="color: #E0A63A">3 sin metadatos</span><i></i><span>Escaneada hace 2 días</span></div>
+          </div>
+          <sc-if value="{{local}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; gap: 10px">
+              <button class="btn sec"><span class="ms">refresh</span>Escanear</button>
+              <button class="btn sec"><span class="ms">auto_fix_high</span>Metadatos<span class="ms" style="margin-left: -2px">expand_more</span></button>
+              <button class="btn sec ic" aria-label="Editar biblioteca"><span class="ms">edit</span></button>
+            </div>
+          </sc-if>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- Encabezado de página -->
+    <sc-if value="{{showHead}}" hint-placeholder-val="{{ true }}">
+      <div style="padding: {{headTop}}px {{padX}}px 0; display: flex; align-items: flex-end; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h1 class="d-l">Catálogo</h1>
+          <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><div class="sk line" style="width: 96px; margin-top: 4px"></div></sc-if>
+          <sc-if value="{{notLoading}}" hint-placeholder-val="{{ true }}">
+            <p class="b-s muted tnum"><sc-if value="{{filtered}}" hint-placeholder-val="{{ false }}"><b style="color: #F5F3F7; font-weight: 600">{{count}}</b> de 431 títulos</sc-if><sc-if value="{{unfiltered}}" hint-placeholder-val="{{ true }}"><b style="color: #F5F3F7; font-weight: 600">{{total}}</b> títulos</sc-if></p>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Barra de filtros -->
+    <section style="{{barStyle}}">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+        <label class="field {{searchCls}}" style="flex: 1 1 280px; max-width: 440px">
+          <span class="ms">search</span>
+          <input type="search" aria-label="Buscar por título" placeholder="Buscar por título…" value="{{q}}" onChange="{{onQ}}">
+          <sc-if value="{{hasQ}}" hint-placeholder-val="{{ false }}"><button class="x" style="width: 28px; height: 28px" aria-label="Limpiar búsqueda" onClick="{{clearQ}}"><span class="ms s18">close</span></button></sc-if>
+        </label>
+        <sc-if value="{{scrolled}}" hint-placeholder-val="{{ false }}">
+          <span style="display: flex; gap: 8px">
+            <button class="dd {{genCls}}" onClick="{{openGen}}">Géneros<sc-if value="{{hasGen}}" hint-placeholder-val="{{ false }}"><span class="n">{{genN}}</span></sc-if><span class="ms">expand_more</span></button>
+            <button class="dd {{libCls}}" onClick="{{openLib}}">Bibliotecas<sc-if value="{{hasLib}}" hint-placeholder-val="{{ false }}"><span class="n">{{libN}}</span></sc-if><span class="ms">expand_more</span></button>
+            <button class="dd {{decCls}}" onClick="{{openDec}}">Año<span class="ms">expand_more</span></button>
+          </span>
+        </sc-if>
+        <div style="flex: 1 0 0"></div>
+        <div class="seg" role="group" aria-label="Tipo">
+          <button class="{{tipoTodo}}" onClick="{{setTodo}}">Todo</button>
+          <button class="{{tipoPel}}" onClick="{{setPel}}"><span class="ms">movie</span>Películas</button>
+          <button class="{{tipoSer}}" onClick="{{setSer}}"><span class="ms">tv</span>Series</button>
+        </div>
+        <span style="position: relative">
+          <button class="dd {{ordCls}}" onClick="{{openOrd}}"><span class="ms" style="margin-left: -4px">swap_vert</span>{{ordLabel}}<span class="ms">expand_more</span></button>
+          <sc-if value="{{popOrd}}" hint-placeholder-val="{{ false }}">
+            <div class="pop menu" style="left: auto; right: 0; width: 260px">
+              <div class="mhead">Ordenar por</div>
+              <sc-for list="{{ordOpts}}" as="o" hint-placeholder-count="4">
+                <button class="mi" style="border: 0; background: none; width: 100%; text-align: left" onClick="{{o.pick}}">{{o.label}}<sc-if value="{{o.on}}" hint-placeholder-val="{{ false }}"><span class="ms s20 acc" style="margin-left: auto; color: var(--accent-soft)">check</span></sc-if></button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </span>
+        <div class="seg" role="group" aria-label="Densidad de grilla">
+          <button class="{{dS}}" style="padding: 0 9px" aria-label="Pequeña" onClick="{{setS}}"><span class="ms">density_small</span></button>
+          <button class="{{dM}}" style="padding: 0 9px" aria-label="Media" onClick="{{setM}}"><span class="ms">density_medium</span></button>
+          <button class="{{dL}}" style="padding: 0 9px" aria-label="Grande" onClick="{{setL}}"><span class="ms">density_large</span></button>
+        </div>
+        <sc-if value="{{scrolled}}" hint-placeholder-val="{{ false }}">
+          <span class="b-s muted tnum" style="margin-left: 6px"><b style="color: #F5F3F7">{{count}}</b> de 431</span>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{notScrolled}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px">
+          <span style="position: relative">
+            <button class="dd {{genCls}}" onClick="{{openGen}}">Géneros<sc-if value="{{hasGen}}" hint-placeholder-val="{{ false }}"><span class="n">{{genN}}</span></sc-if><span class="ms">expand_more</span></button>
+            <sc-if value="{{popGen}}" hint-placeholder-val="{{ false }}">
+              <div class="pop menu" style="width: 300px; padding: 8px">
+                <label class="field" style="height: 36px; margin: 2px 2px 6px"><span class="ms s18">search</span><input aria-label="Buscar género" placeholder="Buscar género…"></label>
+                <div style="max-height: 360px; overflow: hidden; display: flex; flex-direction: column">
+                  <sc-for list="{{genOpts}}" as="g" hint-placeholder-count="10">
+                    <button class="mi" style="border: 0; background: none; width: 100%; text-align: left; height: 34px" onClick="{{g.pick}}"><span class="check {{g.cls}}"></span><span style="flex: 1">{{g.name}}</span><span class="b-s faint tnum">{{g.n}}</span></button>
+                  </sc-for>
+                </div>
+                <div class="msep"></div>
+                <div style="display: flex; justify-content: space-between; padding: 2px 2px 0">
+                  <button class="btn ghost sm" onClick="{{genAll}}">Seleccionar todo</button>
+                  <button class="btn ghost sm" onClick="{{genNone}}">Ninguno</button>
+                </div>
+              </div>
+            </sc-if>
+          </span>
+          <span style="position: relative">
+            <button class="dd {{libCls}}" onClick="{{openLib}}">Bibliotecas<sc-if value="{{hasLib}}" hint-placeholder-val="{{ false }}"><span class="n">{{libN}}</span></sc-if><span class="ms">expand_more</span></button>
+            <sc-if value="{{popLib}}" hint-placeholder-val="{{ false }}">
+              <div class="pop menu" style="width: 290px; padding: 8px">
+                <sc-for list="{{libOpts}}" as="l" hint-placeholder-count="4">
+                  <button class="mi" style="border: 0; background: none; width: 100%; text-align: left; height: 38px" onClick="{{l.pick}}"><span class="check {{l.cls}}"></span><span class="ms s20">{{l.icon}}</span><span style="flex: 1">{{l.name}}</span><span class="b-s faint tnum">{{l.n}}</span></button>
+                </sc-for>
+                <div class="msep"></div>
+                <div style="display: flex; justify-content: space-between; padding: 2px 2px 0">
+                  <button class="btn ghost sm" onClick="{{libAll}}">Seleccionar todo</button>
+                  <button class="btn ghost sm" onClick="{{libNone}}">Ninguno</button>
+                </div>
+              </div>
+            </sc-if>
+          </span>
+          <span style="position: relative">
+            <button class="dd {{decCls}}" onClick="{{openDec}}">Año<sc-if value="{{hasDec}}" hint-placeholder-val="{{ false }}"><span class="b-s muted tnum">· {{yMin}}–{{yMax}}</span></sc-if><span class="ms">expand_more</span></button>
+            <sc-if value="{{popDec}}" hint-placeholder-val="{{ false }}">
+              <div class="pop menu" style="width: 340px; padding: 16px 16px 14px; gap: 14px">
+                <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="over faint">Año de estreno</span><span class="b-s tnum">{{yMin}} – {{yMax}}</span></div>
+                <div class="slider" style="margin: 0 8px">
+                  <span class="tr"></span><span class="fi" style="left: {{yA}}%; right: {{yB}}%"></span>
+                  <span class="th" style="left: {{yA}}%"></span><span class="th" style="left: {{yBl}}%"></span>
+                </div>
+                <div class="b-s faint tnum" style="display: flex; justify-content: space-between; margin-top: -6px"><span>1950</span><span>2026</span></div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                  <sc-for list="{{decOpts}}" as="d" hint-placeholder-count="7">
+                    <button class="chip {{d.cls}}" onClick="{{d.pick}}">{{d.label}}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </span>
+          <sc-if value="{{showEstado}}" hint-placeholder-val="{{ true }}">
+            <span style="position: relative">
+              <button class="dd {{estCls}}" onClick="{{openEst}}">Estado<sc-if value="{{hasEst}}" hint-placeholder-val="{{ false }}"><span class="b-s muted">· {{estLabel}}</span></sc-if><span class="ms">expand_more</span></button>
+              <sc-if value="{{popEst}}" hint-placeholder-val="{{ false }}">
+                <div class="pop menu" style="width: 230px">
+                  <sc-for list="{{estOpts}}" as="o" hint-placeholder-count="4">
+                    <button class="mi" style="border: 0; background: none; width: 100%; text-align: left" onClick="{{o.pick}}"><span class="ms s20">{{o.icon}}</span>{{o.label}}<sc-if value="{{o.on}}" hint-placeholder-val="{{ false }}"><span class="ms s20" style="margin-left: auto; color: var(--accent-soft)">check</span></sc-if></button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </span>
+          </sc-if>
+          <sc-if value="{{anyFilter}}" hint-placeholder-val="{{ false }}">
+            <span style="width: 1px; height: 24px; background: #2E2A35; margin: 0 4px"></span>
+            <sc-for list="{{chips}}" as="c" hint-placeholder-count="2">
+              <button class="chip on x" onClick="{{c.remove}}" aria-label="Quitar filtro {{c.label}}">{{c.label}}<span class="ms">close</span></button>
+            </sc-for>
+            <button class="btn ghost sm" style="margin-left: auto" onClick="{{clearAll}}">Limpiar filtros</button>
+          </sc-if>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Grilla -->
+    <div style="padding: 24px {{padX}}px 40px; margin-top: {{gridMt}}px">
+      <sc-if value="{{showGrid}}" hint-placeholder-val="{{ true }}">
+        <div class="grid {{dens}}">
+          <sc-for list="{{items}}" as="it" hint-placeholder-count="12">
+            <div class="pc {{it.cls}}">
+              <a href="{{it.href}}">
+                <div class="poster">
+                  <div class="art" style="background: {{it.art}}"></div>
+                  <div class="pt"><small>{{it.y}}</small>{{it.ptitle}}</div>
+                  <sc-if value="{{it.s}}" hint-placeholder-val="{{ false }}"><span class="tag-serie">SERIE</span></sc-if>
+                  <div class="ind">
+                    <sc-if value="{{it.seen}}" hint-placeholder-val="{{ false }}"><span class="ind-seen" title="Visto"><span class="ms">check_circle</span></span></sc-if>
+                    <sc-if value="{{it.hasUnseen}}" hint-placeholder-val="{{ false }}"><span class="ind-count tnum" title="Episodios sin ver">{{it.unseen}}</span></sc-if>
+                    <sc-if value="{{it.nometa}}" hint-placeholder-val="{{ false }}"><span class="ind-nometa" title="Sin metadatos"><span class="ms">question_mark</span></span></sc-if>
+                  </div>
+                  <sc-if value="{{it.hasProg}}" hint-placeholder-val="{{ false }}"><div class="pbar"><i style="width: {{it.prog}}%"></i></div></sc-if>
+                  <div class="hover-ui"><span class="play-c"><span class="ms">play_arrow</span></span></div>
+                </div>
+                <div class="meta"><b>{{it.t}}</b><span class="tnum">{{it.y}} · {{it.sub}}</span></div>
+              </a>
+              <button class="more" aria-label="Más acciones"><span class="ms s20">more_horiz</span></button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}">
+        <div class="grid {{dens}}">
+          <sc-for list="{{skels}}" as="s" hint-placeholder-count="12">
+            <div class="pc" style="cursor: default">
+              <div class="poster sk"></div>
+              <div style="display: flex; flex-direction: column; gap: 6px"><div class="sk line" style="width: 80%"></div><div class="sk line" style="width: 40%; height: 10px"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{noResults}}" hint-placeholder-val="{{ false }}">
+        <div class="empty" style="padding-top: 72px">
+          <svg width="120" height="100" viewBox="0 0 120 100" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="16" y="40" width="88" height="50" rx="6"></rect><path d="M16 40 L100 25 L97 11 L13 26 Z"></path><path d="M31 23.5 L38 36 M51 20 L58 32.5 M71 16.5 L78 29"></path><path d="M16 52 H104"></path><circle cx="60" cy="71" r="10"></circle><path d="M56.5 66.5 L65 71 L56.5 75.5 Z"></path></svg>
+          <h2 class="t-l">No encontramos nada para «{{q}}»</h2>
+          <p class="body muted" style="max-width: 420px">con estos filtros. Prueba con otra búsqueda o quita algunos filtros.</p>
+          <button class="btn sec" onClick="{{clearAll}}"><span class="ms">filter_alt_off</span>Limpiar filtros</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+        <div class="empty" style="padding-top: 64px">
+          <svg width="128" height="104" viewBox="0 0 128 104" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="50" cy="50" r="34"></circle><circle cx="50" cy="50" r="6"></circle><circle cx="50" cy="29" r="8"></circle><circle cx="50" cy="71" r="8"></circle><circle cx="29" cy="50" r="8"></circle><circle cx="71" cy="50" r="8"></circle><path d="M50 84 H112 V64"></path><path d="M80 84 V76 M92 84 V76 M104 84 V76"></path></svg>
+          <h2 class="t-l">Aún no hay nada por aquí</h2>
+          <sc-if value="{{local}}" hint-placeholder-val="{{ true }}">
+            <p class="body muted" style="max-width: 440px">Agrega una biblioteca y CinemaLove catalogará tus películas y series con pósters, sinopsis y reparto.</p>
+            <a class="btn pri" href="Dialogos.dc.html"><span class="ms">add</span>Agregar biblioteca</a>
+          </sc-if>
+          <sc-if value="{{cliente}}" hint-placeholder-val="{{ false }}">
+            <p class="body muted" style="max-width: 440px">Este servidor aún no tiene contenido. Cuando Sala de estar agregue bibliotecas, aparecerán aquí.</p>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["local","cliente"],"default":"local"},"estado":{"editor":"enum","options":["normal","cargando","sinresultados","vacio"],"default":"normal"},"densidad":{"editor":"enum","options":["S","M","L"],"default":"M"},"popover":{"editor":"enum","options":["ninguno","generos","bibliotecas","anio","orden","estado"],"default":"ninguno"},"variante":{"editor":"enum","options":["catalogo","biblioteca"],"default":"catalogo"},"desplazado":{"editor":"boolean","default":false},"compacto":{"editor":"boolean","default":false},"hover":{"editor":"boolean","default":true},"generos":{"editor":"text","default":""},"bibliotecas":{"editor":"text","default":""},"decadas":{"editor":"text","default":""},"busqueda":{"editor":"text","default":""},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  g(k, d) { return this.state && this.state[k] !== undefined ? this.state[k] : d; }
+  renderVals() {
+    const P = this.props;
+    const split = (s) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+    const modo = P.modo ?? 'local';
+    const estado = P.estado ?? 'normal';
+    const compact = !!P.compacto;
+    const W = compact ? 1024 : 1440, H = compact ? 640 : 900;
+    const padX = compact ? 24 : 40;
+    const isBib = (P.variante ?? 'catalogo') === 'biblioteca';
+    const scrolled = !!P.desplazado;
+
+    const q = this.g('q', P.busqueda ?? (estado === 'sinresultados' ? 'padrino' : ''));
+    const gen = this.g('gen', split(P.generos ?? (estado === 'sinresultados' ? 'Animación' : '')));
+    const lib = this.g('lib', split(P.bibliotecas ?? '').concat(isBib ? ['Películas 4K'] : []));
+    const dec = this.g('dec', split(P.decadas ?? '').map(Number));
+    const tipo = this.g('tipo', 'todo');
+    const est = this.g('est', '');
+    const ord = this.g('ord', 'titulo');
+    const dens = this.g('dens', P.densidad ?? (isBib ? 'L' : 'M'));
+    const pop = this.g('pop', P.popover ?? 'ninguno');
+    const set = (o) => this.setState(o);
+
+    const GEN = [['Drama',210],['Comedia',96],['Crimen',74],['Ciencia ficción',61],['Suspenso',58],['Acción',55],['Aventura',48],['Terror',31],['Animación',29],['Romance',27],['Fantasía',25],['Misterio',22],['Familia',18],['Documental',14],['Historia',12],['Música',9]];
+    const LIB = [['Películas','movie',312],['Películas 4K','movie',64],['Series','tv',41],['Infantil','movie',14]];
+    const D = [
+      ['El Padrino',1972,'Drama,Crimen','Películas',0,30,0,58],
+      ['Dark',2017,'Ciencia ficción,Misterio,Drama','Series',1,190,2,0,0,6],
+      ['Parásitos',2019,'Suspenso,Drama,Comedia','Películas',0,95,2,0,1],
+      ['El laberinto del fauno',2006,'Fantasía,Drama','Películas 4K',0,140,1],
+      ['Amores perros',2000,'Drama,Suspenso','Películas',0,0,3],
+      ['Interestelar',2014,'Ciencia ficción,Aventura,Drama','Películas 4K',0,210,1,0,1],
+      ['Breaking Bad',2008,'Drama,Crimen','Series',1,75,2,40,0,0],
+      ['Roma',2018,'Drama','Películas',0,230,2],
+      ['El secreto de sus ojos',2009,'Drama,Misterio,Crimen','Películas',0,15,0],
+      ['Volver al futuro',1985,'Aventura,Comedia,Ciencia ficción','Películas',0,25,1,0,1],
+      ['El viaje de Chihiro',2001,'Animación,Fantasía,Familia','Infantil',0,170,1],
+      ['La casa de papel',2017,'Crimen,Acción,Suspenso','Series',1,355,3,0,0,12],
+      ['Relatos salvajes',2014,'Comedia,Drama,Suspenso','Películas',0,45,3],
+      ['Ciudad de Dios',2002,'Crimen,Drama','Películas',0,35,2],
+      ['Coco',2017,'Animación,Familia,Música','Infantil',0,300,1],
+      ['Matrix',1999,'Ciencia ficción,Acción','Películas 4K',0,130,3,0,1],
+      ['Chernóbil',2019,'Drama,Historia','Series',1,80,2,0,1],
+      ['Y tu mamá también',2001,'Drama,Comedia,Romance','Películas',0,190,0],
+      ['El caballero de la noche',2008,'Acción,Crimen,Drama','Películas 4K',0,215,3,22],
+      ['Narcos',2015,'Crimen,Drama','Series',1,50,0,0,0,20],
+      ['La llegada',2016,'Ciencia ficción,Drama,Misterio','Películas 4K',0,200,2],
+      ['Tiempos violentos',1994,'Crimen,Suspenso','Películas',0,48,3],
+      ['Mad Max: Furia en el camino',2015,'Acción,Aventura,Ciencia ficción','Películas 4K',0,28,1],
+      ['Stranger Things',2016,'Ciencia ficción,Terror,Drama','Series',1,350,1,0,0,4],
+      ['El resplandor',1980,'Terror,Suspenso','Películas',0,10,2],
+      ['Whiplash: Música y obsesión',2014,'Drama,Música','Películas',0,40,1],
+      ['Intensa-Mente',2015,'Animación,Comedia,Familia','Infantil',0,280,1],
+      ['Blade Runner 2049',2017,'Ciencia ficción,Drama','Películas 4K',0,25,2],
+      ['Club de Cuervos',2015,'Comedia,Drama','Series',1,345,0],
+      ['Alien: El octavo pasajero',1979,'Terror,Ciencia ficción','Películas',0,160,0],
+      ['La La Land: Una historia de amor',2016,'Romance,Música,Comedia','Películas',0,260,1],
+      ['El juego del calamar',2021,'Suspenso,Drama,Acción','Series',1,330,3,0,0,9],
+      ['Psicosis',1960,'Terror,Suspenso,Misterio','Películas',0,210,2,0,1],
+      ['Los otros',2001,'Terror,Misterio','Películas',0,180,0],
+      ['Gladiador',2000,'Acción,Drama,Aventura','Películas 4K',0,32,1],
+      ['Toy Story',1995,'Animación,Familia,Comedia','Infantil',0,205,1],
+      ['La.Sociedad.De.La.Nieve.2023.1080p',2023,'','Películas 4K',0,220,0,0,0,0,1]
+    ];
+    const art = (h, k, nm) => {
+      if (nm) return 'linear-gradient(160deg, hsl(' + h + ' 18% 22%), hsl(' + ((h + 40) % 360) + ' 14% 11%))';
+      const a = 'hsl(' + h + ' 62% 46%)', b = 'hsl(' + ((h + 40) % 360) + ' 52% 22%)', c = 'hsl(' + ((h + 200) % 360) + ' 30% 9%)';
+      return [
+        'radial-gradient(70% 45% at 50% 30%, ' + a + ' 0%, transparent 70%), linear-gradient(170deg, ' + b + ', ' + c + ')',
+        'radial-gradient(42% 28% at 68% 24%, hsl(' + h + ' 85% 72% / .9) 0%, transparent 62%), radial-gradient(120% 70% at 20% 100%, ' + a + ', transparent 60%), linear-gradient(180deg, ' + c + ', ' + b + ')',
+        'linear-gradient(180deg, transparent 56%, hsl(' + h + ' 40% 7%) 56.4%), radial-gradient(60% 34% at 50% 56%, ' + a + ', transparent 70%), linear-gradient(180deg, ' + b + ', ' + c + ')',
+        'conic-gradient(from 210deg at 62% 38%, ' + b + ', ' + a + ' 18%, ' + c + ' 45%, ' + b + ')'
+      ][k % 4];
+    };
+    const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    let all = D.map((r, i) => ({ t: r[0], y: r[1], g: r[2] ? r[2].split(',') : [], lib: r[3], s: !!r[4], h: r[5], k: r[6], prog: r[7] || 0, seen: !!r[8], unseen: r[9] || 0, nometa: !!r[10], i }));
+    let list = all.filter((x) => {
+      if (q && !norm(x.t).includes(norm(q))) return false;
+      if (gen.length && !x.g.some((gg) => gen.includes(gg))) return false;
+      if (lib.length && !lib.includes(x.lib)) return false;
+      if (dec.length && !dec.includes(Math.floor(x.y / 10) * 10)) return false;
+      if (tipo === 'pel' && x.s) return false;
+      if (tipo === 'ser' && !x.s) return false;
+      if (est === 'nv' && (x.seen || x.prog)) return false;
+      if (est === 'ep' && !x.prog) return false;
+      if (est === 'v' && !x.seen) return false;
+      return true;
+    });
+    const sorters = { titulo: (a, b) => a.t.localeCompare(b.t, 'es'), anio: (a, b) => b.y - a.y, agregado: (a, b) => a.i - b.i, reproducido: (a, b) => (b.prog - a.prog) || (a.i - b.i) };
+    list.sort(sorters[ord]);
+    const hoverIdx = P.hover === false ? -1 : 2;
+    const items = list.map((x, n) => ({
+      t: x.nometa ? x.t : x.t, ptitle: x.nometa ? 'Sin metadatos' : x.t, y: x.y, s: x.s, seen: x.seen,
+      hasUnseen: x.unseen > 0, unseen: x.unseen, nometa: x.nometa, hasProg: x.prog > 0, prog: x.prog,
+      sub: x.nometa ? 'Sin metadatos' : (x.s ? 'Serie · ' + x.g[0] : x.g[0]),
+      art: art(x.h, x.k, x.nometa), href: x.s ? 'Serie.dc.html' : 'Ficha.dc.html',
+      cls: n === hoverIdx ? 'hov' : ''
+    }));
+
+    const anyFilter = !!(gen.length || lib.length || dec.length || est || tipo !== 'todo');
+    const filtered = anyFilter || !!q;
+    const chips = []
+      .concat(gen.map((x) => ({ label: x, remove: () => set({ gen: gen.filter((y) => y !== x) }) })))
+      .concat(lib.map((x) => ({ label: x, remove: () => set({ lib: lib.filter((y) => y !== x) }) })))
+      .concat(dec.length ? [{ label: Math.min(...dec) + '–' + (Math.max(...dec) + 9), remove: () => set({ dec: [] }) }] : [])
+      .concat(est ? [{ label: { nv: 'No vistas', ep: 'En progreso', v: 'Vistas' }[est], remove: () => set({ est: '' }) }] : []);
+    const toggle = (arr, v) => arr.includes(v) ? arr.filter((x) => x !== v) : arr.concat([v]);
+    const openPop = (k) => () => set({ pop: pop === k ? 'ninguno' : k });
+    const yMin = dec.length ? Math.min(...dec) : 1950, yMax = dec.length ? Math.min(Math.max(...dec) + 9, 2026) : 2026;
+    const pct = (y) => Math.round((y - 1950) / 76 * 100);
+    const ORD = [['titulo','Título A–Z'],['anio','Año (reciente primero)'],['agregado','Agregado recientemente'],['reproducido','Reproducido recientemente']];
+    const EST = [['','Todos','select_all'],['nv','No vistas','visibility_off'],['ep','En progreso','timelapse'],['v','Vistas','check_circle']];
+
+    const loading = estado === 'cargando';
+    const isEmpty = estado === 'vacio';
+    const noResults = !loading && !isEmpty && items.length === 0;
+    const headTop = isBib ? 4 : (compact ? 60 : 76);
+    const barStyle = scrolled
+      ? 'position: absolute; left: 0; right: 0; top: 40px; z-index: 10; padding: 12px ' + padX + 'px; background: rgba(14,13,17,.78); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-bottom: 1px solid #2E2A35'
+      : 'position: relative; z-index: 10; padding: ' + (isBib ? 0 : 20) + 'px ' + padX + 'px 0';
+    const ordLabel = ORD.find((o) => o[0] === ord)[1];
+
+    return {
+      W, H, padX, modo, local: modo === 'local', cliente: modo === 'cliente',
+      navCat: isBib ? '' : 'on', navBib: isBib ? 'on' : '',
+      isBib, showHead: !isBib && !scrolled, headTop, scrolled, notScrolled: !scrolled,
+      loading, notLoading: !loading, isEmpty, noResults, showGrid: !loading && !isEmpty && !noResults,
+      barStyle, gridMt: scrolled ? -96 : 0, dens,
+      q, hasQ: !!q, searchCls: q ? 'focused' : '',
+      onQ: (e) => set({ q: e.target.value }), clearQ: () => set({ q: '' }),
+      count: items.length, total: 431, filtered, unfiltered: !filtered,
+      tipoTodo: tipo === 'todo' ? 'on' : '', tipoPel: tipo === 'pel' ? 'on' : '', tipoSer: tipo === 'ser' ? 'on' : '',
+      setTodo: () => set({ tipo: 'todo' }), setPel: () => set({ tipo: 'pel' }), setSer: () => set({ tipo: 'ser' }),
+      dS: dens === 'S' ? 'on' : '', dM: dens === 'M' ? 'on' : '', dL: dens === 'L' ? 'on' : '',
+      setS: () => set({ dens: 'S' }), setM: () => set({ dens: 'M' }), setL: () => set({ dens: 'L' }),
+      genCls: (pop === 'generos' ? 'open ' : '') + (gen.length ? 'on' : ''), hasGen: gen.length > 0, genN: gen.length, popGen: pop === 'generos', openGen: openPop('generos'),
+      genOpts: GEN.map((x) => ({ name: x[0], n: x[1], cls: gen.includes(x[0]) ? 'on' : '', pick: () => set({ gen: toggle(gen, x[0]) }) })),
+      genAll: () => set({ gen: GEN.map((x) => x[0]) }), genNone: () => set({ gen: [] }),
+      libCls: (pop === 'bibliotecas' ? 'open ' : '') + (lib.length ? 'on' : ''), hasLib: lib.length > 0, libN: lib.length, popLib: pop === 'bibliotecas', openLib: openPop('bibliotecas'),
+      libOpts: LIB.map((x) => ({ name: x[0], icon: x[1], n: x[2], cls: lib.includes(x[0]) ? 'on' : '', pick: () => set({ lib: toggle(lib, x[0]) }) })),
+      libAll: () => set({ lib: LIB.map((x) => x[0]) }), libNone: () => set({ lib: [] }),
+      decCls: (pop === 'anio' ? 'open ' : '') + (dec.length ? 'on' : ''), hasDec: dec.length > 0, popDec: pop === 'anio', openDec: openPop('anio'),
+      yMin, yMax, yA: pct(yMin), yB: 100 - pct(yMax), yBl: pct(yMax),
+      decOpts: [1960, 1970, 1980, 1990, 2000, 2010, 2020].map((d) => ({ label: d < 2000 ? String(d).slice(2) + 's' : d + 's', cls: dec.includes(d) ? 'on' : '', pick: () => set({ dec: toggle(dec, d) }) })),
+      showEstado: true, estCls: (pop === 'estado' ? 'open ' : '') + (est ? 'on' : ''), hasEst: !!est, estLabel: est ? EST.find((e) => e[0] === est)[1] : '', popEst: pop === 'estado', openEst: openPop('estado'),
+      estOpts: EST.map((e) => ({ label: e[1], icon: e[2], on: est === e[0], pick: () => set({ est: e[0], pop: 'ninguno' }) })),
+      ordCls: pop === 'orden' ? 'open' : '', ordLabel, popOrd: pop === 'orden', openOrd: openPop('orden'),
+      ordOpts: ORD.map((o) => ({ label: o[1], on: o[0] === ord, pick: () => set({ ord: o[0], pop: 'ninguno' }) })),
+      anyFilter, chips, clearAll: () => set({ q: '', gen: [], lib: [], dec: [], est: '', tipo: 'todo' }),
+      items, skels: Array.from({ length: 18 }, (_, i) => ({ i }))
+    };
+  }
+}
+</script>
+</body>
+</html>

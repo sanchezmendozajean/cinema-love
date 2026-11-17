@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Componentes de CinemaLove</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: 1440px; height: 2600px; padding: 64px; display: flex; flex-direction: column; gap: 44px">
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <span class="over acc">12 · Componentes</span>
+    <h1 class="d-l">Hoja de componentes</h1>
+    <p class="body muted">Variantes y estados. Los nombres coinciden con <span class="mono" style="font-size: 13px">renderer/src/components/</span>.</p>
+  </header>
+
+  <!-- Botones -->
+  <section style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="over faint">Button · PlayButton · IconToggle</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+      <button class="btn pri"><span class="ms">add</span>Primario</button>
+      <button class="btn pri hov"><span class="ms">add</span>Hover</button>
+      <button class="btn pri focus"><span class="ms">add</span>Foco</button>
+      <button class="btn pri"><span class="spin" style="border-top-color: #fff"></span>Cargando</button>
+      <button class="btn pri dis" disabled>Deshabilitado</button>
+      <button class="btn sec">Secundario</button>
+      <button class="btn sec hov">Hover</button>
+      <button class="btn ghost">Ghost</button>
+      <button class="btn dan"><span class="ms">delete</span>Peligro</button>
+      <button class="btn sec ic" aria-label="Más"><span class="ms">more_horiz</span></button>
+      <button class="btn pri sm">32</button><button class="btn pri">40</button><button class="btn pri lg">48 · héroe</button>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start">
+      <span class="btn-play"><span class="btn pri lg"><span class="ms fill">play_arrow</span>Reproducir</span></span>
+      <span class="btn-play"><span class="btn pri lg"><span class="ms fill">play_arrow</span>Continuar · quedan 1 h 12 min</span><span class="pb"><i style="width: 58%"></i></span></span>
+      <span class="btn-play"><span class="btn pri lg"><span class="ms">replay</span>Volver a ver</span></span>
+      <span style="width: 24px"></span>
+      <button class="btn glass lg ic" aria-label="Agregar a Próximas a ver"><span class="ms">bookmark</span></button>
+      <button class="btn glass lg ic on" aria-label="En Próximas a ver"><span class="ms">bookmark</span></button>
+      <button class="btn glass lg ic" aria-label="Marcar como visto"><span class="ms">check_circle</span></button>
+      <button class="btn glass lg ic" aria-label="Visto" style="color: #4CAF7D"><span class="ms fill">check_circle</span></button>
+    </div>
+  </section>
+
+  <!-- Shell -->
+  <section style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="over faint">TitleBar · ModeChip · Sidebar</h2>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="position: relative; height: 40px; border-radius: 10px; overflow: hidden; border: 1px solid #2E2A35"><div class="titlebar" style="position: absolute"><div class="wordmark"><i></i>CinemaLove</div><span class="tb-btn"><span class="ms s20">arrow_back</span></span><span class="tb-btn dis"><span class="ms s20">arrow_forward</span></span><span class="tb-search"><span class="ms s18">search</span>Buscar<span class="kbd">Ctrl K</span></span><div class="tb-right"><span class="mode-chip"><span class="dot gray"></span>Local</span><div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div></div></div></div>
+      <div style="position: relative; height: 40px; border-radius: 10px; overflow: hidden; border: 1px solid #2E2A35"><div class="titlebar" style="position: absolute"><div class="wordmark"><i></i>CinemaLove</div><span class="tb-btn"><span class="ms s20">arrow_back</span></span><span class="tb-btn dis"><span class="ms s20">arrow_forward</span></span><span class="tb-search"><span class="ms s18">search</span>Buscar<span class="kbd">Ctrl K</span></span><div class="tb-right"><span class="task-chip"><span class="spin"></span>1 tarea</span><span class="mode-chip"><span class="dot green"></span>Compartiendo en 192.168.0.115:8080</span><div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div></div></div></div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap"><span class="mode-chip"><span class="dot gray"></span>Local</span><span class="mode-chip"><span class="dot green"></span>Compartiendo en 192.168.0.115:8080</span><span class="mode-chip"><span class="dot violet"></span>Conectado a Sala de estar</span><span class="mode-chip"><span class="dot red"></span>Sin conexión con Sala de estar</span></div>
+    </div>
+    <div style="display: flex; gap: 20px">
+      <div style="position: relative; width: 232px; height: 380px; border-radius: 12px; overflow: hidden; border: 1px solid #2E2A35">
+        <nav class="sidebar" style="padding-top: 16px" aria-label="Sidebar expandida">
+          <span class="nav"><span class="ms">home</span><span class="lbl">Inicio</span></span>
+          <span class="nav on"><span class="ms">grid_view</span><span class="lbl">Catálogo</span></span>
+          <span class="nav" style="background: #2A2631; color: #F5F3F7"><span class="ms">video_library</span><span class="lbl">Bibliotecas · hover</span></span>
+          <span class="nav focus"><span class="ms">collections_bookmark</span><span class="lbl">Colecciones · foco</span></span>
+          <div class="side-sub"><a>Clásicos de terror</a><a>Maratón Coppola</a></div>
+          <span class="nav"><span class="ms">bookmark</span><span class="lbl">Próximas a ver</span></span>
+          <div class="side-foot"><span class="nav"><span class="ms">settings</span><span class="lbl">Ajustes</span></span></div>
+        </nav>
+      </div>
+      <div style="position: relative; width: 72px; height: 380px; border-radius: 12px; overflow: hidden; border: 1px solid #2E2A35">
+        <nav class="sidebar mini" style="padding-top: 16px" aria-label="Sidebar colapsada">
+          <span class="nav" title="Inicio"><span class="ms">home</span></span>
+          <span class="nav on" title="Catálogo"><span class="ms">grid_view</span></span>
+          <span class="nav" title="Bibliotecas"><span class="ms">video_library</span></span>
+          <span class="nav" title="Colecciones"><span class="ms">collections_bookmark</span></span>
+          <span class="nav" title="Próximas a ver"><span class="ms">bookmark</span></span>
+          <div class="side-foot"><span class="nav" title="Ajustes"><span class="ms">settings</span></span></div>
+        </nav>
+      </div>
+      <div style="position: relative; width: 72px; height: 380px; border-radius: 12px; overflow: hidden; border: 1px solid #2E2A35" data-mode="cliente" class="cl">
+        <nav class="sidebar mini" style="padding-top: 16px" aria-label="Sidebar Cliente">
+          <span class="nav"><span class="ms">home</span></span>
+          <span class="nav on"><span class="ms">grid_view</span></span>
+          <span class="nav"><span class="ms">video_library</span></span>
+          <span class="nav"><span class="ms">collections_bookmark</span></span>
+          <span class="nav"><span class="ms">bookmark</span></span>
+          <div class="side-foot"><span class="nav"><span class="ms">settings</span></span></div>
+        </nav>
+      </div>
+
+      <!-- PosterCard -->
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 10px">
+        <span class="mono faint" style="font-size: 12px">PosterCard · densidad M</span>
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+          <sc-for list="{{posters}}" as="it" hint-placeholder-count="10">
+            <div class="pc {{it.cls}}">
+              <div class="poster {{it.sk}}">
+                <sc-if value="{{it.hasArt}}" hint-placeholder-val="{{ true }}"><div class="art" style="background: {{it.art}}"></div><div class="pt" style="{{it.ptStyle}}"><small>{{it.y}}</small>{{it.t}}</div></sc-if>
+                <sc-if value="{{it.s}}" hint-placeholder-val="{{ false }}"><span class="tag-serie">SERIE</span></sc-if>
+                <div class="ind">
+                  <sc-if value="{{it.seen}}" hint-placeholder-val="{{ false }}"><span class="ind-seen"><span class="ms">check_circle</span></span></sc-if>
+                  <sc-if value="{{it.cnt}}" hint-placeholder-val="{{ false }}"><span class="ind-count">6</span></sc-if>
+                  <sc-if value="{{it.nm}}" hint-placeholder-val="{{ false }}"><span class="ind-nometa"><span class="ms">question_mark</span></span></sc-if>
+                </div>
+                <sc-if value="{{it.prog}}" hint-placeholder-val="{{ false }}"><div class="pbar"><i style="width: 58%"></i></div></sc-if>
+                <div class="hover-ui"><span class="play-c"><span class="ms">play_arrow</span></span></div>
+              </div>
+              <sc-if value="{{it.hasArt}}" hint-placeholder-val="{{ true }}"><div class="meta"><b>{{it.label}}</b><span>{{it.sub}}</span></div></sc-if>
+              <sc-if value="{{it.isSk}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-direction: column; gap: 6px"><div class="sk line" style="width: 80%"></div><div class="sk line" style="width: 40%; height: 10px"></div></div></sc-if>
+              <sc-if value="{{it.hasMore}}" hint-placeholder-val="{{ false }}"><span class="more"><span class="ms s20">more_horiz</span></span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tarjetas apaisadas, episodios, personas -->
+  <section style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px">
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <h2 class="over faint">LandscapeCard · PersonChip</h2>
+      <div class="row">
+        <div class="lc hov"><div class="still"><div class="art" style="background: {{a1}}"></div><span class="rem">quedan 31 min</span><div class="pbar"><i style="width: 40%"></i></div><div class="hover-ui"><span class="play-c"><span class="ms">play_arrow</span></span></div></div><div class="meta"><b>Dark</b><span>T2 · E4</span></div></div>
+        <div class="lc"><div class="still sk"></div><div style="display: flex; flex-direction: column; gap: 6px"><div class="sk line" style="width: 60%"></div><div class="sk line" style="width: 30%; height: 10px"></div></div></div>
+      </div>
+      <div class="row" style="gap: 20px">
+        <span class="person"><span class="avatar" style="background: linear-gradient(150deg, hsl(28 45% 38%), hsl(10 40% 16%))">MB</span><b>Marlon Brando</b><span>Don Vito Corleone</span></span>
+        <span class="person"><span class="avatar" style="background: linear-gradient(150deg, hsl(210 45% 38%), hsl(250 40% 16%))">AP</span><b>Al Pacino</b><span>Michael Corleone</span></span>
+        <span class="person"><span class="avatar focus" style="background: linear-gradient(150deg, hsl(300 45% 38%), hsl(340 40% 16%))">DK</span><b>Diane Keaton</b><span>Kay Adams · foco</span></span>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <h2 class="over faint">EpisodeRow · normal, siguiente, visto, no encontrado</h2>
+      <sc-for list="{{eps}}" as="e" hint-placeholder-count="4">
+        <div style="display: flex; gap: 16px; padding: 10px 12px; border-radius: 14px; align-items: center; {{e.row}}">
+          <div class="still" style="width: 160px; flex: none; {{e.still}}"><div class="art" style="background: {{e.art}}"></div><sc-if value="{{e.p}}" hint-placeholder-val="{{ false }}"><div class="pbar"><i style="width: 40%"></i></div></sc-if></div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><b style="font-weight: 600; font-size: 15px">{{e.t}}</b><span class="b-s muted">{{e.s}}</span></div>
+          <span class="b-s muted tnum">{{e.d}}</span>
+          <span class="ms s20 {{e.icCls}}" style="color: {{e.ic}}">{{e.icon}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Colecciones y bibliotecas -->
+  <section style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; align-items: start">
+    <h2 class="over faint" style="grid-column: 1 / -1">CollectionCard · LibraryCard</h2>
+    <div style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: 2px"><div style="background: {{p1}}"></div><div style="background: {{p2}}"></div><div style="background: {{p3}}"></div><div style="background: {{p4}}"></div></div><b class="b-s" style="font-weight: 600">Mosaico 2×2</b></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 4/3; border-radius: 16px; background: {{p1}}"></div><b class="b-s" style="font-weight: 600">1 póster</b></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 4/3; border-radius: 16px; border: 1.5px dashed #3D3846; display: flex; align-items: center; justify-content: center; color: #6E6878"><span class="ms s32">collections_bookmark</span></div><b class="b-s" style="font-weight: 600">Vacía</b></div>
+    <div style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 4/3; border-radius: 16px; background: radial-gradient(70% 70% at 30% 20%, var(--accent-tint), transparent 70%), #221F28; display: flex; align-items: center; justify-content: center"><span class="ms fill s56" style="color: var(--accent-soft)">bookmark</span></div><b class="b-s" style="font-weight: 600">Próximas a ver</b></div>
+    <div class="card" style="overflow: hidden"><div style="height: 64px; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2px; position: relative"><div style="background: {{p2}}"></div><div style="background: {{p3}}"></div><div style="background: {{p4}}"></div><div class="prog" style="position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 0"><i style="width: 56%"></i></div></div><div style="padding: 10px 12px"><b class="b-s" style="font-weight: 600">Series</b><p class="cap acc">Escaneando… 214/380</p></div></div>
+    <div style="border: 1.5px dashed #3D3846; border-radius: 16px; height: 118px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #A7A2B0"><span class="ms">add</span><span class="b-s">Agregar biblioteca</span></div>
+  </section>
+
+  <!-- Formularios -->
+  <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 32px">
+    <h2 class="over faint" style="grid-column: 1 / -1">SearchField · FilterDropdown · FilterChip · SegmentedControl · TextField</h2>
+    <label class="field"><span class="ms">search</span><input placeholder="Buscar por título…" aria-label="Buscar"></label>
+    <label class="field focused"><span class="ms">search</span><input value="padrino" aria-label="Buscar"><span class="ms s18" style="color: #A7A2B0">close</span></label>
+    <span class="tb-search" style="position: static; transform: none; width: auto"><span class="ms s18">search</span>Buscar<span class="kbd">Ctrl K</span></span>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="dd">Géneros<span class="ms">expand_more</span></button><button class="dd on">Géneros<span class="n">2</span><span class="ms">expand_more</span></button><button class="dd open">Año<span class="ms">expand_less</span></button></div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap"><span class="chip on x">Drama<span class="ms">close</span></span><span class="chip on x">Películas 4K<span class="ms">close</span></span><span class="chip">70s</span><span class="chip on">80s</span></div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap"><span class="seg"><span class="on"><span class="ms">movie</span>Películas</span><span><span class="ms">tv</span>Series</span></span><span class="seg"><span>HTTP</span><span class="on">HTTPS</span></span></div>
+    <div><span class="label">Normal</span><label class="field"><input value="Sala de estar" aria-label="Normal"></label></div>
+    <div><span class="label">Error</span><label class="field err"><input value="8O8O" aria-label="Error"></label><p class="help err">Usa solo números entre 1024 y 65535.</p></div>
+    <div><span class="label">Éxito</span><label class="field ok"><input value="Clave válida" aria-label="Éxito"><span class="ms s18 fill" style="color: #4CAF7D">check_circle</span></label></div>
+    <div><span class="label">Secreto</span><label class="field"><span class="ms">key</span><input type="password" value="secreto123" aria-label="Secreto"><span class="ms s20" style="color: #A7A2B0">visibility</span></label></div>
+    <div><span class="label">Solo lectura con copiar</span><div class="field ro" style="padding-right: 6px"><span class="mono" style="flex: 1; font-size: 13px">https://192.168.0.115:8080</span><button class="btn ghost sm ic" aria-label="Copiar"><span class="ms">content_copy</span></button></div></div>
+    <div><span class="label">Ruta con Elegir…</span><div style="display: flex; gap: 8px"><div class="field ro" style="flex: 1"><span class="ms">folder</span><span class="mono" style="font-size: 13px">D:\Media\Series</span></div><button class="btn sec">Elegir…</button></div></div>
+    <div style="display: flex; gap: 20px; align-items: center"><span class="switch"></span><span class="switch on"></span><span class="check"></span><span class="check on"></span><span class="check mixed"></span><span style="opacity: .4" class="check"></span></div>
+    <div class="slider" style="margin-top: 6px"><span class="tr"></span><span class="fi" style="left: 0; width: 60%"></span><span class="th" style="left: 60%"></span></div>
+    <div class="slider" style="margin-top: 6px"><span class="tr"></span><span class="fi" style="left: 26%; right: 30%"></span><span class="th" style="left: 26%"></span><span class="th" style="left: 70%"></span></div>
+  </section>
+
+  <!-- Overlays -->
+  <section style="display: grid; grid-template-columns: 420px 300px minmax(0, 1fr); gap: 32px; align-items: start">
+    <h2 class="over faint" style="grid-column: 1 / -1">Dialog S · Menu ⋯ · Toast · Banner · ProgressBar · JobItem</h2>
+    <div class="raised" style="border-radius: 20px">
+      <div class="dlg-h"><span class="t-m">¿Eliminar la colección <i>Clásicos de terror</i>?</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b"><p class="body muted">Las películas no se borran, solo la lista.</p></div>
+      <div class="dlg-f"><button class="btn ghost">Cancelar</button><button class="btn dan">Eliminar</button></div>
+    </div>
+    <div class="menu">
+      <div class="mi"><span class="ms">play_arrow</span>Reproducir<span class="k">P</span></div>
+      <div class="mi hov"><span class="ms">check_circle</span>Marcar como visto</div>
+      <div class="mi"><span class="ms">bookmark</span>Agregar a Próximas a ver</div>
+      <div class="mi"><span class="ms">collections_bookmark</span>Agregar a colección…</div>
+      <div class="msep"></div>
+      <div class="mi"><span class="ms">edit</span>Editar metadatos…</div>
+      <div class="mi dis" title="No disponible mientras se escanea"><span class="ms">travel_explore</span>Buscar metadatos…</div>
+      <div class="msep"></div>
+      <div class="mi danger"><span class="ms">delete</span>Quitar de la colección</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div class="toast"><span class="ms fill ok">check_circle</span><span style="flex: 1">Escaneo listo: 3 nuevas</span><button class="btn ghost sm">Ver</button></div>
+      <div class="toast"><span class="ms fill inf">info</span><span style="flex: 1">Marcaste <b>El Padrino</b> como vista</span><button class="btn ghost sm">Deshacer</button></div>
+      <div class="toast"><span class="ms fill warn">warning</span><span style="flex: 1">Transcodificando: puede tardar en empezar</span></div>
+      <div class="toast"><span class="ms fill err">error</span><span style="flex: 1">No pudimos leer E:\UHD</span><button class="btn ghost sm">Reintentar</button></div>
+      <div class="banner err"><span class="ms s20">cloud_off</span><span style="flex: 1">Se perdió la conexión con <i>Sala de estar</i> · Reintentando…</span></div>
+      <div class="banner warn"><span class="ms s20">help</span><span style="flex: 1">Este título no tiene metadatos · Buscar en TMDb</span></div>
+      <div class="banner info"><span class="ms s20 acc">visibility</span><span style="flex: 1">Solo lectura: estás viendo el catálogo de otro equipo</span></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: center; margin-top: 6px"><div class="prog"><i style="width: 62%"></i></div><div style="display: flex; flex-direction: column; gap: 4px"><div class="prog"><i style="width: 14%"></i></div><span class="cap faint tnum">57 de 412</span></div><div class="prog ind"><i></i></div></div>
+    </div>
+  </section>
+
+  <!-- Vacíos y misc -->
+  <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 200px 260px; gap: 24px; align-items: center">
+    <h2 class="over faint" style="grid-column: 1 / -1">EmptyState · Skeleton · QrCode · Fingerprint</h2>
+    <div class="empty card" style="padding: 24px"><svg width="96" height="80" viewBox="0 0 120 100" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="16" y="40" width="88" height="50" rx="6"></rect><path d="M16 40 L100 25 L97 11 L13 26 Z"></path><path d="M31 23.5 L38 36 M51 20 L58 32.5 M71 16.5 L78 29"></path><circle cx="60" cy="68" r="9"></circle></svg><b class="t-m" style="font-size: 16px">Claqueta</b><span class="b-s muted">Sin resultados</span></div>
+    <div class="empty card" style="padding: 24px"><svg width="96" height="80" viewBox="0 0 128 104" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="50" cy="50" r="34"></circle><circle cx="50" cy="50" r="6"></circle><circle cx="50" cy="29" r="8"></circle><circle cx="50" cy="71" r="8"></circle><circle cx="29" cy="50" r="8"></circle><circle cx="71" cy="50" r="8"></circle><path d="M50 84 H112 V64"></path></svg><b class="t-m" style="font-size: 16px">Rollo de película</b><span class="b-s muted">Catálogo vacío</span></div>
+    <div class="empty card" style="padding: 24px"><svg width="96" height="80" viewBox="0 0 148 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M38 66 V34 a14 14 0 0 1 14 -14 h44 a14 14 0 0 1 14 14 V66"></path><path d="M26 64 h96 a6 6 0 0 1 6 6 v14 a6 6 0 0 1 -6 6 h-96 a6 6 0 0 1 -6 -6 v-14 a6 6 0 0 1 6 -6 z"></path><path d="M44 90 L40 108 M104 90 L108 108"></path></svg><b class="t-m" style="font-size: 16px">Butaca</b><span class="b-s muted">Inicio sin bibliotecas</span></div>
+    <div style="background: #fff; border-radius: 16px; padding: 12px; display: grid; grid-template-columns: repeat(21, 8px); grid-auto-rows: 8px; justify-self: center">
+      <sc-for list="{{qr}}" as="q" hint-placeholder-count="441"><span style="background: {{q}}"></span></sc-for>
+    </div>
+    <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 8px"><span class="over faint">SHA-256</span><span class="mono" style="font-size: 13px; line-height: 20px; word-spacing: 4px">4F2A 9C1E 77B0 D3A8 15E6 0BC9 8E42 F17D A30C 6B95 2E8F 41D7 C0A6 93BE 5F18 7C2D</span><button class="btn ghost sm" style="align-self: flex-start"><span class="ms">content_copy</span>Copiar</button></div>
+  </section>
+
+  <!-- Reproductor -->
+  <section style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="over faint">Reproductor · Timeline · VolumeControl · Osd · TrackMenu · PlaybackInfoPanel · NextEpisodeCard</h2>
+    <div style="position: relative; height: 300px; border-radius: 16px; overflow: hidden; background: radial-gradient(30% 46% at 70% 34%, rgba(232,150,64,.5), transparent 70%), linear-gradient(100deg, #0a0605, #3f2410 66%, #150c07)">
+      <div style="position: absolute; left: 32px; right: 32px; top: 40px; display: flex; flex-direction: column; gap: 22px">
+        <div style="display: flex; align-items: center; gap: 12px"><span class="cap" style="width: 90px; color: rgba(255,255,255,.7)">Reposo</span><div class="timeline" style="flex: 1"><span class="tr"></span><span class="buf" style="width: 66%"></span><span class="pl" style="width: 42%"></span></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="cap" style="width: 90px; color: rgba(255,255,255,.7)">Hover</span><div class="timeline hov" style="flex: 1"><span class="tr"></span><span class="buf" style="width: 66%"></span><span class="pl" style="width: 42%"></span><span class="th" style="left: 42%"></span><span class="osd b-s tnum" style="position: absolute; left: 60%; bottom: 16px; transform: translateX(-50%); padding: 3px 8px; border-radius: 6px">1:58:12</span></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="cap" style="width: 90px; color: rgba(255,255,255,.7)">Volumen</span><div style="display: flex; align-items: center; gap: 8px"><span class="pbtn"><span class="ms">volume_up</span></span><div class="slider" style="width: 200px"><span class="tr"></span><span style="position: absolute; left: 50%; right: 0; height: 4px; background: rgba(224,166,58,.28)"></span><span class="fi" style="left: 0; width: 50%"></span><span class="fi" style="left: 50%; width: 20%; background: #E0A63A"></span><span class="th" style="left: 70%"></span></div><span class="b-s tnum" style="color: #E0A63A; font-weight: 600">140 %</span><span class="cap" style="color: rgba(255,255,255,.55); margin-left: 8px">100–200 % en tono cálido</span></div></div>
+      </div>
+      <div class="osd" style="position: absolute; left: 32px; bottom: 24px; width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center"><span class="ms s56">pause</span></div>
+      <div class="osd" style="position: absolute; left: 140px; bottom: 32px; padding: 12px 18px; border-radius: 20px; display: flex; align-items: center; gap: 8px"><span class="ms s32">replay_10</span><span class="t-l tnum">−30 s</span></div>
+      <div class="osd" style="position: absolute; left: 330px; bottom: 32px; padding: 10px 14px; border-radius: 12px; display: flex; flex-direction: column; gap: 6px; width: 260px">
+        <span style="display: flex; gap: 8px; align-items: center"><span class="dot green"></span><b style="font-size: 13px">Direct</b><span class="cap" style="color: rgba(255,255,255,.6)">sin conversión</span></span>
+        <span style="display: flex; gap: 8px; align-items: center"><span class="dot amber"></span><b style="font-size: 13px">Remux</b><span class="cap" style="color: rgba(255,255,255,.6)">cambia el contenedor/audio</span></span>
+        <span style="display: flex; gap: 8px; align-items: center"><span class="dot amber"></span><b style="font-size: 13px">Transcode</b><span class="cap" style="color: rgba(255,255,255,.6)">convierte el video</span></span>
+      </div>
+      <p class="subtitle" style="bottom: 24px; left: 620px; right: 360px; font-size: 22px; line-height: 28px; -webkit-text-stroke: 4px #000">Subtítulo con contorno, sin recuadro</p>
+      <div class="osd" style="position: absolute; right: 24px; bottom: 24px; width: 300px; border-radius: 16px; padding: 12px; display: flex; gap: 12px; align-items: center">
+        <span style="position: relative; width: 40px; height: 40px; flex: none"><svg width="40" height="40" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3"></circle><circle cx="22" cy="22" r="19" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="119.4" stroke-dashoffset="43" stroke-linecap="round" transform="rotate(-90 22 22)"></circle></svg><b class="tnum" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px">8</b></span>
+        <span style="flex: 1; display: flex; flex-direction: column"><span class="cap" style="color: rgba(255,255,255,.6)">A continuación</span><b style="font-size: 14px">Dark · T2 · E5</b></span>
+        <button class="btn pri sm">Ver</button>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["local","cliente"],"default":"local"},"$preview":{"width":1440,"height":2600}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const art = (h, k) => {
+      const a = 'hsl(' + h + ' 62% 46%)', b = 'hsl(' + ((h + 40) % 360) + ' 52% 22%)', c = 'hsl(' + ((h + 200) % 360) + ' 30% 9%)';
+      return [
+        'radial-gradient(70% 45% at 50% 30%, ' + a + ' 0%, transparent 70%), linear-gradient(170deg, ' + b + ', ' + c + ')',
+        'radial-gradient(42% 28% at 68% 24%, hsl(' + h + ' 85% 72% / .9) 0%, transparent 62%), radial-gradient(120% 70% at 20% 100%, ' + a + ', transparent 60%), linear-gradient(180deg, ' + c + ', ' + b + ')',
+        'linear-gradient(180deg, transparent 56%, hsl(' + h + ' 40% 7%) 56.4%), radial-gradient(60% 34% at 50% 56%, ' + a + ', transparent 70%), linear-gradient(180deg, ' + b + ', ' + c + ')',
+        'conic-gradient(from 210deg at 62% 38%, ' + b + ', ' + a + ' 18%, ' + c + ' 45%, ' + b + ')'
+      ][k % 4];
+    };
+    const P = (o) => Object.assign({ t: '', y: '', label: '', sub: '', art: '', hasArt: true, isSk: false, sk: '', s: false, seen: false, cnt: false, nm: false, prog: false, cls: '', hasMore: false, ptStyle: '' }, o);
+    const posters = [
+      P({ t: 'Roma', y: 2018, label: 'Por defecto', sub: '2018 · Drama', art: art(230, 2) }),
+      P({ t: 'El Padrino', y: 1972, label: 'Hover', sub: 'escala, borde, play, ⋯', art: art(30, 2), cls: 'hov', hasMore: true }),
+      P({ t: 'Coco', y: 2017, label: 'Foco de teclado', sub: 'anillo accent-soft', art: art(300, 1), cls: 'foc' }),
+      P({ t: 'El caballero de la noche', y: 2008, label: 'En progreso', sub: 'barra de 4 px', art: art(215, 3), prog: true }),
+      P({ t: 'Parásitos', y: 2019, label: 'Vista', sub: 'check verde', art: art(95, 2), seen: true }),
+      P({ t: 'Dark', y: 2017, label: 'Serie', sub: '6 episodios sin ver', art: art(190, 2), s: true, cnt: true }),
+      P({ t: 'Sin metadatos', y: 2023, label: 'Sin metadatos', sub: 'ícono ámbar', art: 'linear-gradient(160deg, hsl(220 18% 22%), hsl(260 14% 11%))', nm: true }),
+      P({ t: 'Concierto de fin de año', y: '', label: 'Sin imagen', sub: 'degradado por título', art: 'linear-gradient(150deg, hsl(162 40% 30%), hsl(212 38% 12%))', ptStyle: 'top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; text-align: center' }),
+      P({ hasArt: false, isSk: true, sk: 'sk' }),
+      P({ t: 'Temporada 2', y: 'Dark', label: 'Temporada', sub: '8 episodios · 3 vistos', art: art(30, 2), prog: true })
+    ];
+    const st = (h) => 'radial-gradient(50% 70% at 60% 40%, hsl(' + h + ' 45% 34%), transparent 70%), linear-gradient(170deg, hsl(' + h + ' 40% 14%), hsl(230 30% 6%))';
+    const eps = [
+      { t: '5. Perdidos y encontrados', s: 'Normal', d: '51 min', art: st(280), p: false, icon: 'more_horiz', ic: '#A7A2B0', icCls: '', row: '', still: '' },
+      { t: '4. Los viajeros', s: 'Siguiente · quedan 31 min', d: '50 min', art: st(200), p: true, icon: 'play_circle', ic: 'var(--accent-soft)', icCls: 'fill', row: 'background: var(--accent-tint)', still: '' },
+      { t: '3. Fantasmas', s: 'Visto', d: '51 min', art: st(30), p: false, icon: 'check_circle', ic: '#4CAF7D', icCls: 'fill', row: '', still: '' },
+      { t: '6. Un ciclo sin fin', s: 'Archivo no encontrado', d: '53 min', art: st(15), p: false, icon: 'error', ic: '#F08A8D', icCls: '', row: '', still: 'filter: grayscale(1); opacity: .5' }
+    ];
+    const N = 21, qr = [];
+    const finder = (r, c) => {
+      const f = (r0, c0) => { const y = r - r0, x = c - c0; if (y < 0 || x < 0 || y > 6 || x > 6) return null; return (y === 0 || y === 6 || x === 0 || x === 6 || (y >= 2 && y <= 4 && x >= 2 && x <= 4)); };
+      const a = f(0, 0), b = f(0, 14), d = f(14, 0);
+      return a !== null ? a : b !== null ? b : d !== null ? d : null;
+    };
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      let on = finder(r, c);
+      if (on === null) {
+        const sep = (r <= 7 && c <= 7) || (r <= 7 && c >= 13) || (r >= 13 && c <= 7);
+        on = sep ? false : (r === 6 || c === 6) ? ((r + c) % 2 === 0) : (((r * 31 + c * 17 + r * c * 7) % 11) < 5);
+      }
+      qr.push(on ? '#0E0D11' : '#fff');
+    }
+    return {
+      modo: this.props.modo ?? 'local', posters, eps, qr,
+      a1: st(190), p1: art(10, 2), p2: art(160, 0), p3: art(210, 2), p4: art(180, 1)
+    };
+  }
+}
+</script>
+</body>
+</html>

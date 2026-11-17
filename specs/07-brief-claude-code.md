@@ -2,15 +2,15 @@
 
 ## Prompt de arranque (copiar y pegar)
 
-> Vamos a construir la **alternativa Qt 6 + libmpv** de CinemaLove en la raíz de `qt6-version/`. Lee primero `CLAUDE.md` de esta carpeta, luego `specs/README.md` y todos los documentos que enlaza; las specs de `../electron-version/specs/` se heredan salvo lo que `specs/` de aquí cambia. La versión Electron (`../electron-version/`, incluido su backend en `src/main`) y la de Flutter (`../flutter-version/`) son referencia: no las modifiques. Trabaja por fases según `specs/06-plan-de-implementacion.md`, **empezando por la Fase 0 (spike)**. Al terminar cada fase, verifica sus criterios y resume qué quedó hecho y qué no. No continúes tras la Fase 0 si no pasa su aceptación: avísame con los resultados.
+> Vamos a construir la **alternativa Qt 6 + libmpv** de CinemaLove en la raíz de `qt6-version/`. Lee primero `CLAUDE.md` de esta carpeta, luego `specs/README.md` y todos los documentos que enlaza; las specs de `specs/heredadas/` se heredan salvo lo que `specs/` de aquí cambia. La versión Electron (`../electron-version/`, incluido su backend en `src/main`) y la de Flutter (`../flutter-version/`) son referencia: no las modifiques. Trabaja por fases según `specs/06-plan-de-implementacion.md`, **empezando por la Fase 0 (spike)**. Al terminar cada fase, verifica sus criterios y resume qué quedó hecho y qué no. No continúes tras la Fase 0 si no pasa su aceptación: avísame con los resultados.
 
 ## Reglas de trabajo
 
 1. **Idioma**: español en la UI, commits, comentarios razonables y respuestas.
-2. **Aislamiento**: todo el código nuevo vive en `qt6-version/`. No tocar `../electron-version/`, `../flutter-version/` ni los datos reales del usuario.
-3. **Fuente de verdad**: `../electron-version/specs/` para datos, API, funcionalidades y diseño; `specs/` (de aquí) para lo que cambia (reproductor, arquitectura, empaquetado). Si algo contradice las specs, avisar antes de seguir.
-4. **Datos del usuario**: trabajar solo con copias en `.dev-data/`; cambios de esquema solo aditivos (`electron-version/specs/02`). Nunca perder datos: toda operación destructiva pide confirmación y ofrece antes una alternativa no destructiva.
-5. **API v1 compatible** con los clientes Flutter (`electron-version/specs/04`).
+2. **Aislamiento**: todo el código nuevo vive en `qt6-version/`. Este proyecto es independiente: no depende de ninguna otra carpeta ni la modifica; tampoco se tocan los datos reales del usuario.
+3. **Fuente de verdad**: `specs/heredadas/` para datos, API, funcionalidades y diseño; `specs/` (de aquí) para lo que cambia (reproductor, arquitectura, empaquetado). Si algo contradice las specs, avisar antes de seguir.
+4. **Datos del usuario**: trabajar solo con copias en `.dev-data/`; cambios de esquema solo aditivos (`specs/heredadas/02`). Nunca perder datos: toda operación destructiva pide confirmación y ofrece antes una alternativa no destructiva.
+5. **API v1 compatible** con los clientes Flutter (`specs/heredadas/04`).
 6. **Modales**: siempre con botón X visible; nunca se cierran al hacer clic afuera.
 7. **Calidad visual**: implementar los diseños con fidelidad; señalar y proponer mejoras si algo queda mediocre. Verificar lo visual con capturas antes de dar algo por terminado.
 8. **Autocontenido**: sin dependencias externas en runtime; cada librería vendorizada con checksum y licencia revisada (`05`).

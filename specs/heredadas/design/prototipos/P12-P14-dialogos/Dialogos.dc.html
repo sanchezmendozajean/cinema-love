@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Diálogos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: 1440px; height: 900px">
+
+  <!-- Fondo: app detrás -->
+  <sc-if value="{{withBg}}" hint-placeholder-val="{{ true }}">
+    <header class="titlebar">
+      <div class="wordmark"><i></i>CinemaLove</div>
+      <button class="tb-btn" aria-label="Atrás"><span class="ms s20">arrow_back</span></button>
+      <button class="tb-btn dis" aria-label="Adelante"><span class="ms s20">arrow_forward</span></button>
+      <span class="tb-search"><span class="ms s18">search</span><span>Buscar</span><span class="kbd">Ctrl K</span></span>
+      <div class="tb-right">
+        <sc-if value="{{showTask}}" hint-placeholder-val="{{ true }}"><span class="task-chip {{taskCls}}"><span class="spin"></span>2 tareas</span></sc-if>
+        <sc-if value="{{local}}" hint-placeholder-val="{{ true }}"><span class="mode-chip"><span class="dot gray"></span>Local</span></sc-if>
+        <sc-if value="{{cliente}}" hint-placeholder-val="{{ false }}"><span class="mode-chip"><span class="dot violet"></span>Conectado a Sala de estar</span></sc-if>
+        <div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div>
+      </div>
+    </header>
+    <nav class="sidebar" aria-label="Principal">
+      <span class="nav"><span class="ms">home</span><span class="lbl">Inicio</span></span>
+      <span class="nav"><span class="ms">grid_view</span><span class="lbl">Catálogo</span></span>
+      <span class="nav on"><span class="ms">video_library</span><span class="lbl">Bibliotecas</span></span>
+      <span class="nav"><span class="ms">collections_bookmark</span><span class="lbl">Colecciones</span></span>
+      <span class="nav"><span class="ms">bookmark</span><span class="lbl">Próximas a ver</span></span>
+      <div class="side-foot"><span class="nav"><span class="ms">settings</span><span class="lbl">Ajustes</span></span></div>
+    </nav>
+    <main class="content">
+      <div class="page">
+        <h1 class="d-l" style="margin-bottom: 28px">{{bgTitle}}</h1>
+        <div class="grid">
+          <sc-for list="{{bg}}" as="b" hint-placeholder-count="12">
+            <div class="pc"><div class="poster"><div class="art" style="background: {{b}}"></div></div><div class="meta"><b style="background: #19181E; color: transparent; border-radius: 4px; width: 70%">·</b></div></div>
+          </sc-for>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+  <sc-if value="{{withScrim}}" hint-placeholder-val="{{ true }}"><div class="scrim"></div></sc-if>
+
+  <!-- 1 · Agregar biblioteca -->
+  <sc-if value="{{dBib}}" hint-placeholder-val="{{ true }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Agregar biblioteca" style="width: 560px">
+      <div class="dlg-h"><span class="t-m">Agregar biblioteca</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b">
+        <div><span class="label">Nombre</span><label class="field focused"><input value="Documentales" aria-label="Nombre"></label></div>
+        <div><span class="label">Tipo</span><div class="seg full"><span class="on"><span class="ms">movie</span>Películas</span><span><span class="ms">tv</span>Series</span></div><p class="help">No podrás cambiar el tipo cuando la biblioteca tenga títulos.</p></div>
+        <div><span class="label">Carpeta</span><div style="display: flex; gap: 10px"><div class="field ro" style="flex: 1"><span class="ms">folder</span><span class="mono" style="font-size: 13px; color: #F5F3F7">D:\Media\Documentales</span></div><button class="btn sec">Elegir…</button></div><p class="help ok" style="display: flex; align-items: center; gap: 4px"><span class="ms s16 fill">check_circle</span>Encontramos 14 archivos de video</p></div>
+      </div>
+      <div class="dlg-f"><button class="btn ghost">Cancelar</button><button class="btn pri"><span class="ms">add</span>Agregar y escanear</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 2 · Confirmación destructiva -->
+  <sc-if value="{{dConf}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-label="Eliminar biblioteca" style="width: 500px">
+      <div class="dlg-h" style="align-items: center"><span style="width: 44px; height: 44px; border-radius: 50%; background: rgba(229,72,77,.14); color: #F08A8D; display: flex; align-items: center; justify-content: center; flex: none"><span class="ms">warning</span></span><span class="t-m" style="padding-top: 0">¿Eliminar la biblioteca <i>Películas 4K</i>?</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b" style="gap: 14px">
+        <div style="display: flex; gap: 12px"><span class="ms s20" style="color: #F08A8D">remove_circle</span><p class="body"><b style="font-weight: 600">Se pierde:</b> la catalogación de 64 películas, su progreso de reproducción y su lugar en 3 colecciones.</p></div>
+        <div style="display: flex; gap: 12px"><span class="ms s20" style="color: #4CAF7D">check_circle</span><p class="body"><b style="font-weight: 600">No se borra:</b> ningún archivo de tu disco. La carpeta <span class="mono" style="font-size: 13px">E:\UHD\Películas 4K</span> queda intacta.</p></div>
+        <div style="margin-top: 6px"><span class="label">Escribe <b style="color: #F5F3F7">Películas 4K</b> para confirmar</span><label class="field focused" style="border-color: #E5484D; box-shadow: 0 0 0 3px rgba(229,72,77,.14)"><input value="Películas 4K" aria-label="Nombre de la biblioteca"></label></div>
+      </div>
+      <div class="dlg-f"><button class="btn ghost">Cancelar</button><button class="btn dan"><span class="ms">delete</span>Eliminar biblioteca</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 3 · Metadatos · progreso -->
+  <sc-if value="{{dMetaP}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Asistente de metadatos" style="width: 560px">
+      <div class="dlg-h"><span class="t-m">Buscando metadatos faltantes</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b">
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="b-s muted">Películas 4K y Películas</span><span class="t-m tnum">57 <span class="muted" style="font-weight: 500">de 412</span></span></div>
+          <div class="prog" style="height: 6px"><i style="width: 14%"></i></div>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: center; padding: 12px; border-radius: 12px; background: #19181E">
+          <span class="poster" style="width: 40px; flex: none; background: conic-gradient(from 210deg at 62% 38%, hsl(40 52% 22%), hsl(0 62% 46%) 18%, hsl(200 30% 9%) 45%, hsl(40 52% 22%))"></span>
+          <div style="flex: 1; display: flex; flex-direction: column"><span class="b-s faint">Buscando en TMDb</span><span style="font-weight: 500">Amores perros (2000)</span></div>
+          <span class="spin"></span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <div class="card" style="padding: 12px 14px"><span class="b-s muted" style="display: flex; gap: 6px; align-items: center"><span class="ms s18" style="color: #4CAF7D">check_circle</span>Resueltos</span><b class="t-l tnum">49</b></div>
+          <div class="card" style="padding: 12px 14px"><span class="b-s muted" style="display: flex; gap: 6px; align-items: center"><span class="ms s18" style="color: #E0A63A">help</span>Ambiguos</span><b class="t-l tnum">5</b></div>
+          <div class="card" style="padding: 12px 14px"><span class="b-s muted" style="display: flex; gap: 6px; align-items: center"><span class="ms s18" style="color: #F08A8D">cancel</span>Sin coincidencia</span><b class="t-l tnum">3</b></div>
+        </div>
+        <p class="b-s faint">Puedes cerrar esta ventana: la tarea sigue en segundo plano.</p>
+      </div>
+      <div class="dlg-f"><button class="btn sec">Seguir en segundo plano</button><button class="btn ghost dan-o">Cancelar búsqueda</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 4 · Metadatos · resumen -->
+  <sc-if value="{{dMetaR}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Resumen de metadatos" style="width: 720px">
+      <div class="dlg-h"><span class="t-m">Búsqueda de metadatos terminada</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b">
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 4px"><span class="ms" style="color: #4CAF7D">check_circle</span><b class="d-l tnum" style="font-size: 36px; line-height: 40px">398</b><span class="b-s muted">Resueltos</span></div>
+          <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 4px; border-color: rgba(224,166,58,.4)"><span class="ms" style="color: #E0A63A">help</span><b class="d-l tnum" style="font-size: 36px; line-height: 40px">9</b><span class="b-s muted">Ambiguos · elige cuál es</span></div>
+          <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 4px"><span class="ms" style="color: #F08A8D">cancel</span><b class="d-l tnum" style="font-size: 36px; line-height: 40px">5</b><span class="b-s muted">Sin coincidencia</span></div>
+        </div>
+        <div>
+          <h3 class="over faint" style="margin-bottom: 8px">Ambiguos</h3>
+          <div class="card" style="padding: 4px 0">
+            <sc-for list="{{amb}}" as="a" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid #2E2A35">
+                <span class="ms s20" style="color: #E0A63A">help</span>
+                <span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 500">{{a.t}}</span><span class="b-s muted">{{a.opts}}</span></span>
+                <a class="btn sec sm" href="Dlg-Tmdb.dc.html">Resolver</a>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <p class="b-s muted">Sin coincidencia: <span class="mono" style="font-size: 12px">VID_20190812_181532.mp4</span>, <span class="mono" style="font-size: 12px">concierto_fin_de_año.mkv</span> y 3 más.</p>
+      </div>
+      <div class="dlg-f"><button class="btn ghost">Cerrar</button><a class="btn pri" href="Dlg-Tmdb.dc.html">Resolver ambiguos uno a uno</a></div>
+    </div>
+  </sc-if>
+
+  <!-- 5 · Buscar en TMDb -->
+  <sc-if value="{{dTmdb}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Buscar en TMDb" style="width: 720px">
+      <div class="dlg-h"><span class="t-m">Buscar en TMDb</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b" style="gap: 14px">
+        <p class="b-s muted">Archivo: <span class="mono" style="font-size: 12px; color: #F5F3F7">La.Sociedad.De.La.Nieve.2023.1080p.mkv</span></p>
+        <div style="display: flex; gap: 10px"><label class="field focused" style="flex: 1"><span class="ms">search</span><input value="la sociedad de la nieve" aria-label="Título"></label><label class="field" style="width: 110px"><input class="tnum" value="2023" aria-label="Año"></label><button class="btn sec">Buscar</button></div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <sc-for list="{{tmdb}}" as="r" hint-placeholder-count="3">
+            <div style="display: flex; gap: 14px; padding: 10px; border-radius: 12px; {{r.style}}">
+              <span class="poster" style="width: 60px; flex: none; background: {{r.art}}"></span>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+                <span style="display: flex; gap: 8px; align-items: baseline"><b style="font-weight: 600">{{r.t}}</b><span class="b-s muted tnum">{{r.y}}</span></span>
+                <span class="b-s faint">{{r.o}}</span>
+                <span class="b-s muted clamp2">{{r.s}}</span>
+              </div>
+              <sc-if value="{{r.sel}}" hint-placeholder-val="{{ false }}"><span class="ms fill" style="color: var(--accent-soft)">radio_button_checked</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="dlg-f"><button class="btn ghost">Cancelar</button><button class="btn pri">Asignar</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 6 · Editar metadatos (Archivo) -->
+  <sc-if value="{{dEdit}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Editar metadatos" style="width: 720px">
+      <div class="dlg-h"><span class="t-m">Editar · La sociedad de la nieve</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div style="display: flex; gap: 4px; padding: 14px 24px 0; border-bottom: 1px solid #2E2A35" role="tablist">
+        <button role="tab" aria-selected="false" style="height: 40px; padding: 0 14px; background: none; border: 0; color: #A7A2B0; font-weight: 500; cursor: pointer">Metadatos</button>
+        <button role="tab" aria-selected="true" style="height: 40px; padding: 0 14px; background: none; border: 0; border-bottom: 2px solid var(--accent); color: #F5F3F7; font-weight: 600; cursor: pointer">Archivo</button>
+      </div>
+      <div class="dlg-b">
+        <dl style="margin: 0; display: grid; grid-template-columns: 110px minmax(0, 1fr); row-gap: 10px; font-size: 14px">
+          <dt class="muted">Biblioteca</dt><dd style="margin: 0">Películas 4K</dd>
+          <dt class="muted">Carpeta</dt><dd style="margin: 0" class="mono">E:\UHD\Películas 4K\</dd>
+          <dt class="muted">Archivo</dt><dd style="margin: 0" class="mono">La.Sociedad.De.La.Nieve.2023.1080p.mkv</dd>
+          <dt class="muted">Tamaño</dt><dd style="margin: 0" class="tnum">9,8 GB · 1920×1080 · H.264</dd>
+        </dl>
+        <div><button class="btn sec sm"><span class="ms">drive_file_move</span>Cambiar archivo…</button></div>
+        <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px; background: #0E0D11">
+          <div style="display: flex; align-items: center; gap: 10px"><span class="ms s20 acc">auto_fix_high</span><b style="flex: 1; font-weight: 600">Homologar nombre</b><span class="cap faint">Vista previa</span></div>
+          <div style="display: grid; grid-template-columns: 56px minmax(0, 1fr); row-gap: 6px; align-items: baseline">
+            <span class="cap faint">Antes</span><span class="mono" style="font-size: 12px; color: #A7A2B0; text-decoration: line-through">La.Sociedad.De.La.Nieve.2023.1080p.mkv</span>
+            <span class="cap faint">Después</span><span class="mono" style="font-size: 12px; color: #7FD1A6">La sociedad de la nieve (2023)\La sociedad de la nieve (2023).mkv</span>
+          </div>
+          <div><button class="btn sec sm">Aplicar nombre</button></div>
+        </div>
+      </div>
+      <div class="dlg-f"><button class="btn ghost">Cancelar</button><button class="btn pri">Guardar</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 7 · Agregar a colección -->
+  <sc-if value="{{dCol}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Agregar a colección" style="width: 440px">
+      <div class="dlg-h"><span class="t-m">Agregar <i>El Padrino</i> a…</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b" style="gap: 4px; padding-top: 14px">
+        <sc-for list="{{colOpts}}" as="c" hint-placeholder-count="5">
+          <label class="mi" style="height: 44px"><span class="check {{c.cls}}"></span><span style="flex: 1">{{c.n}}</span><span class="b-s faint tnum">{{c.k}}</span></label>
+        </sc-for>
+        <div class="msep"></div>
+        <div style="display: flex; gap: 8px; padding: 4px 0"><label class="field focused" style="flex: 1; height: 36px"><span class="ms s18">add</span><input value="Imprescindibles" aria-label="Nueva colección"></label><button class="btn sec sm" style="height: 36px">Crear</button></div>
+      </div>
+      <div class="dlg-f"><button class="btn ghost">Cancelar</button><button class="btn pri">Listo</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 8 · Paleta de búsqueda -->
+  <sc-if value="{{dPal}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Buscar" style="width: 640px; top: 96px; transform: translateX(-50%)">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #2E2A35">
+        <span class="ms muted">search</span>
+        <input value="coppola" aria-label="Buscar" style="flex: 1; background: none; border: 0; outline: none; font-size: 20px; color: #F5F3F7">
+        <button class="x" aria-label="Cerrar"><span class="ms">close</span></button>
+      </div>
+      <div style="padding: 8px; display: flex; flex-direction: column">
+        <sc-for list="{{pal}}" as="g" hint-placeholder-count="3">
+          <div class="mhead">{{g.h}}</div>
+          <sc-for list="{{g.items}}" as="i" hint-placeholder-count="2">
+            <div class="mi {{i.cls}}" style="height: 52px">
+              <span style="width: {{i.w}}px; height: 40px; border-radius: {{i.r}}; background: {{i.bg}}; flex: none; display: flex; align-items: center; justify-content: center"><span class="ms s20" style="color: {{i.ic}}">{{i.icon}}</span></span>
+              <span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 500">{{i.t}}</span><span class="b-s muted">{{i.s}}</span></span>
+              <sc-if value="{{i.hint}}" hint-placeholder-val="{{ false }}"><span class="cap faint" style="display: flex; gap: 10px"><span><span class="kbd">↵</span> Abrir</span><span><span class="kbd">Ctrl ↵</span> Reproducir</span></span></sc-if>
+            </div>
+          </sc-for>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid #2E2A35" class="b-s muted"><span class="ms s18">grid_view</span><span style="flex: 1">Ver todos los resultados en Catálogo</span><span class="kbd">↵</span><span class="cap faint" style="margin-left: 12px">↑↓ para moverte</span></div>
+    </div>
+  </sc-if>
+
+  <!-- 9 · Tareas + toasts -->
+  <sc-if value="{{dTareas}}" hint-placeholder-val="{{ false }}">
+    <div class="menu" style="position: absolute; z-index: 41; top: 44px; right: 260px; width: 420px; padding: 8px">
+      <div style="display: flex; align-items: center; padding: 8px 10px 10px"><span class="t-m" style="font-size: 15px; flex: 1">Tareas</span><span class="cap faint">2 en curso</span></div>
+      <sc-for list="{{jobs}}" as="j" hint-placeholder-count="4">
+        <div style="display: flex; gap: 12px; padding: 12px 10px; border-radius: 10px; align-items: flex-start">
+          <span class="ms s20" style="color: {{j.ic}}; margin-top: 1px">{{j.icon}}</span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0">
+            <span style="font-weight: 500; font-size: 14px">{{j.t}}</span>
+            <sc-if value="{{j.running}}" hint-placeholder-val="{{ false }}"><div class="prog"><i style="width: {{j.p}}%"></i></div></sc-if>
+            <span class="b-s muted tnum">{{j.s}}</span>
+          </div>
+          <sc-if value="{{j.hasAct}}" hint-placeholder-val="{{ false }}"><button class="btn ghost sm">{{j.act}}</button></sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="position: absolute; right: 24px; bottom: 24px; z-index: 41; display: flex; flex-direction: column; gap: 10px; align-items: flex-end">
+      <div class="toast"><span class="ms fill inf">info</span><span style="flex: 1">Marcaste <b style="font-weight: 600">Dark · T2 · E3</b> como visto</span><button class="btn ghost sm">Deshacer</button></div>
+      <div class="toast"><span class="ms fill warn">warning</span><span style="flex: 1">TMDb responde lento. Reintentamos en 30 s.</span><button class="x" aria-label="Cerrar" style="width: 28px; height: 28px"><span class="ms s18">close</span></button></div>
+      <div class="toast"><span class="ms fill err">error</span><span style="flex: 1">No pudimos leer <span class="mono" style="font-size: 12px">E:\UHD</span></span><button class="btn ghost sm">Reintentar</button></div>
+      <div class="toast"><span class="ms fill ok">check_circle</span><span style="flex: 1">Escaneo listo: 3 nuevas en <b style="font-weight: 600">Películas</b></span><button class="btn ghost sm">Ver</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 10 · Sesión vencida -->
+  <sc-if value="{{dSesion}}" hint-placeholder-val="{{ false }}">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Sesión vencida" style="width: 440px">
+      <div class="dlg-h" style="align-items: center"><span style="width: 44px; height: 44px; border-radius: 50%; background: var(--accent-tint); color: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex: none"><span class="ms">lock_clock</span></span><span class="t-m" style="padding-top: 0">Tu sesión venció</span><button class="x" aria-label="Cerrar"><span class="ms">close</span></button></div>
+      <div class="dlg-b">
+        <p class="body muted">Vuelve a escribir la contraseña de <b style="color: #F5F3F7">ana</b> en <i>Sala de estar</i>. No perderás lo que estabas viendo.</p>
+        <div><span class="label">Contraseña</span><label class="field focused"><span class="ms">lock</span><input type="password" value="secreto" aria-label="Contraseña"><button class="x" style="width: 28px; height: 28px" aria-label="Mostrar contraseña"><span class="ms s20">visibility</span></button></label></div>
+      </div>
+      <div class="dlg-f"><button class="btn ghost">Desconectar</button><button class="btn pri">Continuar</button></div>
+    </div>
+  </sc-if>
+
+  <!-- 11 · Reconciliación (pantalla completa) -->
+  <sc-if value="{{dRec}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; z-index: 42; background: #0E0D11; display: flex; flex-direction: column">
+      <header style="display: flex; align-items: flex-start; gap: 16px; padding: 48px 64px 24px">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+          <span class="over acc">Reconciliación</span>
+          <h1 class="d-l">Películas 4K cambió de carpeta</h1>
+          <p class="body muted">Ahora apunta a <span class="mono" style="color: #F5F3F7">F:\Películas 4K</span>. Revisa cómo emparejamos los archivos antes de aplicar; tu progreso y tus metadatos se conservan.</p>
+        </div>
+        <button class="x" aria-label="Cerrar"><span class="ms">close</span></button>
+      </header>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 0 64px">
+        <div class="card" style="padding: 20px; display: flex; gap: 16px; align-items: center"><span class="ms s32" style="color: #4CAF7D">check_circle</span><div><b class="d-l tnum">58</b><p class="b-s muted">Coinciden</p></div></div>
+        <div class="card" style="padding: 20px; display: flex; gap: 16px; align-items: center; border-color: rgba(224,166,58,.4)"><span class="ms s32" style="color: #E0A63A">swap_horiz</span><div><b class="d-l tnum">4</b><p class="b-s muted">Movidos o renombrados</p></div></div>
+        <div class="card" style="padding: 20px; display: flex; gap: 16px; align-items: center; border-color: rgba(229,72,77,.35)"><span class="ms s32" style="color: #F08A8D">link_off</span><div><b class="d-l tnum">2</b><p class="b-s muted">No encontrados</p></div></div>
+      </div>
+      <div style="flex: 1; overflow: hidden; padding: 24px 64px; display: flex; flex-direction: column; gap: 18px">
+        <section>
+          <h2 class="over faint" style="margin-bottom: 8px">Movidos o renombrados · confirma el emparejamiento</h2>
+          <div class="card" style="padding: 4px 0">
+            <sc-for list="{{moved}}" as="m" hint-placeholder-count="3">
+              <div style="display: grid; grid-template-columns: 24px minmax(0, 1fr) 24px minmax(0, 1fr) 90px; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid #2E2A35">
+                <span class="check on"></span>
+                <span class="mono ell" style="font-size: 12px; color: #A7A2B0">{{m.a}}</span>
+                <span class="ms s18 faint">arrow_forward</span>
+                <span class="mono ell" style="font-size: 12px">{{m.b}}</span>
+                <span class="cap tnum" style="color: {{m.c}}; text-align: right">{{m.p}} seguro</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+        <section>
+          <h2 class="over faint" style="margin-bottom: 8px">No encontrados</h2>
+          <div class="card" style="padding: 4px 0">
+            <div style="display: flex; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid #2E2A35"><span style="flex: 1"><b style="font-weight: 500">Blade Runner 2049</b> <span class="mono faint" style="font-size: 12px">· Blade.Runner.2049.2017.2160p.mkv</span></span><button class="btn sec sm">Buscar archivo…</button><button class="btn ghost sm dan-o">Quitar del catálogo</button></div>
+            <div style="display: flex; gap: 12px; align-items: center; padding: 10px 16px"><span style="flex: 1"><b style="font-weight: 500">Gladiador</b> <span class="mono faint" style="font-size: 12px">· Gladiador (2000)\Gladiador.mkv</span></span><button class="btn sec sm">Buscar archivo…</button><button class="btn ghost sm dan-o">Quitar del catálogo</button></div>
+          </div>
+        </section>
+      </div>
+      <footer style="display: flex; justify-content: flex-end; gap: 10px; padding: 16px 64px 28px; border-top: 1px solid #2E2A35"><span class="b-s muted" style="margin-right: auto; align-self: center">58 coincidencias se aplican sin cambios.</span><button class="btn ghost">Cancelar</button><button class="btn pri">Aplicar cambios</button></footer>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dialogo":{"editor":"enum","options":["biblioteca","confirmar","metaprogreso","metaresumen","tmdb","editar","coleccion","paleta","tareas","sesion","reconciliacion"],"default":"biblioteca"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const d = this.props.dialogo ?? 'biblioteca';
+    const modo = d === 'sesion' ? 'cliente' : 'local';
+    const art = (h, k) => {
+      const a = 'hsl(' + h + ' 62% 46%)', b = 'hsl(' + ((h + 40) % 360) + ' 52% 22%)', c = 'hsl(' + ((h + 200) % 360) + ' 30% 9%)';
+      return [
+        'radial-gradient(70% 45% at 50% 30%, ' + a + ' 0%, transparent 70%), linear-gradient(170deg, ' + b + ', ' + c + ')',
+        'radial-gradient(42% 28% at 68% 24%, hsl(' + h + ' 85% 72% / .9) 0%, transparent 62%), radial-gradient(120% 70% at 20% 100%, ' + a + ', transparent 60%), linear-gradient(180deg, ' + c + ', ' + b + ')',
+        'linear-gradient(180deg, transparent 56%, hsl(' + h + ' 40% 7%) 56.4%), radial-gradient(60% 34% at 50% 56%, ' + a + ', transparent 70%), linear-gradient(180deg, ' + b + ', ' + c + ')',
+        'conic-gradient(from 210deg at 62% 38%, ' + b + ', ' + a + ' 18%, ' + c + ' 45%, ' + b + ')'
+      ][k % 4];
+    };
+    const bg = [30, 190, 95, 140, 0, 210, 75, 230, 15, 25, 170, 355].map((h, i) => art(h, i));
+    return {
+      modo, local: modo === 'local', cliente: modo === 'cliente',
+      withBg: d !== 'reconciliacion', withScrim: !['tareas', 'reconciliacion'].includes(d),
+      showTask: modo === 'local', taskCls: d === 'tareas' ? 'focus' : '',
+      bgTitle: ['tareas', 'biblioteca', 'confirmar', 'metaprogreso', 'metaresumen'].includes(d) ? 'Bibliotecas' : 'Catálogo',
+      bg,
+      dBib: d === 'biblioteca', dConf: d === 'confirmar', dMetaP: d === 'metaprogreso', dMetaR: d === 'metaresumen', dTmdb: d === 'tmdb',
+      dEdit: d === 'editar', dCol: d === 'coleccion', dPal: d === 'paleta', dTareas: d === 'tareas', dSesion: d === 'sesion', dRec: d === 'reconciliacion',
+      amb: [
+        { t: 'Solaris.mkv', opts: 'Solaris (1972) · Solaris (2002)' },
+        { t: 'Psicosis.1080p.mkv', opts: 'Psicosis (1960) · Psicosis (1998)' },
+        { t: 'Nosferatu.mkv', opts: 'Nosferatu (1922) · Nosferatu (2024)' },
+        { t: 'Ha.nacido.una.estrella.mkv', opts: 'Ha nacido una estrella (1954) · (1976) · (2018)' }
+      ],
+      tmdb: [
+        { t: 'La sociedad de la nieve', y: '2023', o: 'Society of the Snow', s: 'En 1972, un avión que transportaba a un equipo uruguayo de rugby se estrella en un glaciar en el corazón de los Andes.', art: art(205, 1), sel: true, style: 'background: var(--accent-tint); box-shadow: inset 0 0 0 1.5px var(--accent)' },
+        { t: '¡Viven!', y: '1993', o: 'Alive', s: 'Tras un accidente aéreo en la cordillera, los sobrevivientes luchan durante semanas contra el frío y el hambre.', art: art(190, 0), sel: false, style: '' },
+        { t: 'Supervivientes de los Andes', y: '1976', o: 'Supervivientes de los Andes', s: 'Primera adaptación al cine de la tragedia del vuelo 571 de la Fuerza Aérea Uruguaya.', art: art(30, 2), sel: false, style: '' }
+      ],
+      colOpts: [
+        { n: 'Clásicos de terror', k: '14', cls: '' }, { n: 'Maratón Coppola', k: '6', cls: 'on' }, { n: 'Cine latinoamericano', k: '23', cls: '' },
+        { n: 'Para ver con los chicos', k: '9', cls: '' }, { n: 'Navidad en familia', k: '1', cls: '' }
+      ],
+      pal: [
+        { h: 'Películas', items: [
+          { t: 'El Padrino', s: '1972 · Dirección: Francis Ford Coppola', bg: art(30, 2), w: 28, r: '5px', icon: '', ic: '#fff', cls: 'hov', hint: true },
+          { t: 'Apocalipsis ahora', s: '1979 · Dirección: Francis Ford Coppola', bg: art(100, 0), w: 28, r: '5px', icon: '', ic: '#fff', cls: '', hint: false } ] },
+        { h: 'Personas', items: [
+          { t: 'Francis Ford Coppola', s: 'Dirección · 4 títulos en tu colección', bg: 'linear-gradient(150deg, hsl(28 45% 38%), hsl(10 40% 16%))', w: 40, r: '50%', icon: 'person', ic: 'rgba(255,255,255,.8)', cls: '', hint: false },
+          { t: 'Sofia Coppola', s: 'Dirección · 1 título en tu colección', bg: 'linear-gradient(150deg, hsl(320 45% 38%), hsl(280 40% 16%))', w: 40, r: '50%', icon: 'person', ic: 'rgba(255,255,255,.8)', cls: '', hint: false } ] },
+        { h: 'Colecciones', items: [
+          { t: 'Maratón Coppola', s: '6 títulos', bg: '#221F28', w: 40, r: '10px', icon: 'collections_bookmark', ic: '#A7A2B0', cls: '', hint: false } ] }
+      ],
+      jobs: [
+        { t: 'Escaneando Series', s: '214 de 380 archivos · 2 min restantes', p: 56, running: true, icon: 'refresh', ic: 'var(--accent-soft)', hasAct: true, act: 'Cancelar' },
+        { t: 'Buscando metadatos · Películas 4K', s: '57 de 412 · 9 ambiguos', p: 14, running: true, icon: 'auto_fix_high', ic: 'var(--accent-soft)', hasAct: true, act: 'Cancelar' },
+        { t: 'Escaneo de Películas terminado', s: '3 nuevas · 1 actualizada · hace 5 min', p: 100, running: false, icon: 'check_circle', ic: '#4CAF7D', hasAct: true, act: 'Ver' },
+        { t: 'No se pudo escanear Películas 4K', s: 'La unidad E:\\ no está disponible · hace 1 h', p: 0, running: false, icon: 'error', ic: '#F08A8D', hasAct: true, act: 'Reintentar' }
+      ],
+      moved: [
+        { a: 'E:\\UHD\\Películas 4K\\Matrix (1999)\\Matrix.mkv', b: 'F:\\Películas 4K\\Matrix (1999)\\Matrix.1999.2160p.mkv', p: '98 %', c: '#4CAF7D' },
+        { a: 'E:\\UHD\\Películas 4K\\Interestelar.mkv', b: 'F:\\Películas 4K\\Interestelar (2014)\\Interestelar.mkv', p: '96 %', c: '#4CAF7D' },
+        { a: 'E:\\UHD\\Películas 4K\\La llegada (2016).mkv', b: 'F:\\Películas 4K\\Arrival.2016.2160p.mkv', p: '71 %', c: '#E0A63A' },
+        { a: 'E:\\UHD\\Películas 4K\\Mad Max FR.mkv', b: 'F:\\Películas 4K\\Mad Max (2015)\\Mad.Max.Fury.Road.mkv', p: '64 %', c: '#E0A63A' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

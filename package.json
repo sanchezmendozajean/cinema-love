@@ -2,11 +2,11 @@
   "name": "cinemalove-qt6",
   "private": true,
   "version": "0.1.0",
-  "description": "CinemaLove (Qt 6 + libmpv). Los scripts solo envuelven a PowerShell/CMake.",
+  "description": "CinemaLove (Qt 6 + libmpv). Los scripts solo envuelven a PowerShell/CMake; también se pueden ejecutar directamente (scripts/*.ps1).",
   "scripts": {
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1",
     "dev:debug": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 -DebugBuild",
     "configure": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 -Configure",
-    "fetch:libmpv": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fetch-libmpv.ps1"
+    "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-backend.ps1"
   }
 }

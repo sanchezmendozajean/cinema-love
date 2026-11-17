@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Bibliotecas</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: 1440px; height: 900px">
+  <header class="titlebar">
+    <div class="wordmark"><i></i>CinemaLove</div>
+    <button class="tb-btn" aria-label="Atrás"><span class="ms s20">arrow_back</span></button>
+    <button class="tb-btn dis" aria-label="Adelante"><span class="ms s20">arrow_forward</span></button>
+    <a class="tb-search" href="Dlg-Paleta.dc.html"><span class="ms s18">search</span><span>Buscar</span><span class="kbd">Ctrl K</span></a>
+    <div class="tb-right">
+      <a class="task-chip" href="Dlg-Tareas.dc.html"><span class="spin"></span>1 tarea</a>
+      <span class="mode-chip"><span class="dot gray"></span>Local</span>
+      <div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div>
+    </div>
+  </header>
+  <nav class="sidebar" aria-label="Principal">
+    <a class="nav" href="Inicio.dc.html"><span class="ms">home</span><span class="lbl">Inicio</span></a>
+    <a class="nav" href="Main.dc.html"><span class="ms">grid_view</span><span class="lbl">Catálogo</span></a>
+    <a class="nav on" href="Bibliotecas.dc.html"><span class="ms">video_library</span><span class="lbl">Bibliotecas</span></a>
+    <a class="nav" href="Colecciones.dc.html"><span class="ms">collections_bookmark</span><span class="lbl">Colecciones</span></a>
+    <div class="side-sub">
+      <a href="Coleccion-Detalle.dc.html">Clásicos de terror</a>
+      <a href="Coleccion-Detalle.dc.html">Maratón Coppola</a>
+      <a href="Coleccion-Detalle.dc.html">Cine latinoamericano</a>
+      <a href="Coleccion-Detalle.dc.html">Para ver con los chicos</a>
+    </div>
+    <a class="nav" href="Proximas.dc.html"><span class="ms">bookmark</span><span class="lbl">Próximas a ver</span></a>
+    <div class="side-foot"><a class="nav" href="Ajustes.dc.html"><span class="ms">settings</span><span class="lbl">Ajustes</span></a></div>
+  </nav>
+
+  <main class="content">
+    <div class="page">
+      <div style="display: flex; align-items: flex-end; gap: 16px; margin-bottom: 32px">
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1">
+          <h1 class="d-l">Bibliotecas</h1>
+          <p class="b-s muted tnum"><b style="color: #F5F3F7">4</b> bibliotecas · 431 títulos</p>
+        </div>
+        <a class="btn pri" href="Dialogos.dc.html"><span class="ms">add</span>Agregar biblioteca</a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+        <sc-for list="{{libs}}" as="l" hint-placeholder-count="4">
+          <a class="card {{l.cls}}" href="Catalogo-Biblioteca.dc.html" style="overflow: hidden; display: flex; flex-direction: column; position: relative; transition: box-shadow .12s">
+            <div style="height: 132px; display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2px; position: relative">
+              <div style="background: {{l.a}}"></div><div style="background: {{l.b}}"></div><div style="background: {{l.c}}"></div>
+              <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(25,24,30,0) 40%, rgba(25,24,30,.9))"></div>
+              <sc-if value="{{l.scan}}" hint-placeholder-val="{{ false }}">
+                <div class="prog" style="position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 0"><i style="width: 56%; border-radius: 0"></i></div>
+              </sc-if>
+            </div>
+            <div style="padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; align-items: center; gap: 10px">
+                <span class="ms s20 muted">{{l.icon}}</span>
+                <h2 class="t-m" style="flex: 1">{{l.name}}</h2>
+                <sc-if value="{{l.hov}}" hint-placeholder-val="{{ false }}">
+                  <span style="display: flex; gap: 4px">
+                    <button class="btn sec sm"><span class="ms">refresh</span>Escanear</button>
+                    <button class="btn ghost sm ic" aria-label="Editar"><span class="ms">edit</span></button>
+                    <button class="btn ghost sm ic" aria-label="Más acciones"><span class="ms">more_horiz</span></button>
+                  </span>
+                </sc-if>
+              </div>
+              <p class="b-s muted tnum">{{l.count}}<sc-if value="{{l.miss}}" hint-placeholder-val="{{ false }}"> · <span style="color: #E0A63A">{{l.missTxt}}</span></sc-if></p>
+              <p class="b-s faint mono ell" style="font-size: 12px">{{l.path}}</p>
+              <p class="cap {{l.statusCls}}" style="display: flex; align-items: center; gap: 6px; margin-top: 2px"><sc-if value="{{l.scan}}" hint-placeholder-val="{{ false }}"><span class="spin" style="width: 12px; height: 12px"></span></sc-if>{{l.status}}</p>
+            </div>
+          </a>
+        </sc-for>
+        <a href="Dialogos.dc.html" style="border: 1.5px dashed #3D3846; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #A7A2B0; min-height: 290px">
+          <span style="width: 48px; height: 48px; border-radius: 50%; background: #19181E; display: flex; align-items: center; justify-content: center"><span class="ms">add</span></span>
+          <span class="t-m" style="color: #F5F3F7">Agregar biblioteca</span>
+          <span class="b-s">Películas o series desde una carpeta</span>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["local","cliente"],"default":"local"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const g = (h, l) => 'radial-gradient(60% 70% at 40% 40%, hsl(' + h + ' 60% ' + l + '%), transparent 75%), linear-gradient(160deg, hsl(' + h + ' 40% 16%), hsl(' + ((h + 30) % 360) + ' 35% 8%))';
+    return {
+      modo: this.props.modo ?? 'local',
+      libs: [
+        { name: 'Películas', icon: 'movie', count: '312 películas', miss: true, missTxt: '12 sin metadatos', path: 'D:\\Media\\Películas', status: 'Escaneada hace 2 días', statusCls: 'faint', a: g(30, 40), b: g(200, 36), c: g(95, 34), cls: 'hov', hov: true, scan: false },
+        { name: 'Películas 4K', icon: 'movie', count: '64 películas', miss: true, missTxt: '3 sin metadatos', path: 'E:\\UHD\\…\\Películas 4K', status: 'Escaneada ayer', statusCls: 'faint', a: g(210, 42), b: g(25, 44), c: g(140, 30), cls: '', hov: false, scan: false },
+        { name: 'Series', icon: 'tv', count: '41 series · 1 286 episodios', miss: false, missTxt: '', path: 'D:\\Media\\Series', status: 'Escaneando… 214 de 380 archivos', statusCls: 'acc', a: g(190, 38), b: g(75, 36), c: g(355, 40), cls: '', hov: false, scan: true },
+        { name: 'Infantil', icon: 'movie', count: '14 películas', miss: false, missTxt: '', path: 'D:\\Media\\Infantil', status: 'Escaneada hace 3 semanas', statusCls: 'faint', a: g(300, 46), b: g(170, 40), c: g(280, 42), cls: '', hov: false, scan: false }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

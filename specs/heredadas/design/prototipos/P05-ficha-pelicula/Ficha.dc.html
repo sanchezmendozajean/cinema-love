@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha de película</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./cinemalove.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0;background:#0E0D11}
+a{color:inherit}a:hover{color:inherit}
+</style>
+</helmet>
+<div class="cl" data-mode="{{modo}}" style="width: {{W}}px; height: {{H}}px">
+
+  <header class="titlebar" style="background: rgba(14,13,17,.28)">
+    <div class="wordmark"><i></i>CinemaLove</div>
+    <button class="tb-btn" aria-label="Atrás"><span class="ms s20">arrow_back</span></button>
+    <button class="tb-btn dis" aria-label="Adelante"><span class="ms s20">arrow_forward</span></button>
+    <a class="tb-search" href="Dlg-Paleta.dc.html"><span class="ms s18">search</span><span>Buscar</span><span class="kbd">Ctrl K</span></a>
+    <div class="tb-right">
+      <sc-if value="{{local}}" hint-placeholder-val="{{ true }}"><span class="mode-chip"><span class="dot gray"></span>Local</span></sc-if>
+      <sc-if value="{{cliente}}" hint-placeholder-val="{{ false }}"><span class="mode-chip"><span class="dot violet"></span>Conectado a Sala de estar</span></sc-if>
+      <div class="win"><span class="ms s18">remove</span><span class="ms s16">crop_square</span><span class="ms s18">close</span></div>
+    </div>
+  </header>
+
+  <nav class="sidebar" aria-label="Principal">
+    <a class="nav" href="Inicio.dc.html"><span class="ms">home</span><span class="lbl">Inicio</span></a>
+    <a class="nav on" href="Main.dc.html"><span class="ms">grid_view</span><span class="lbl">Catálogo</span></a>
+    <a class="nav" href="Bibliotecas.dc.html"><span class="ms">video_library</span><span class="lbl">Bibliotecas</span></a>
+    <a class="nav" href="Colecciones.dc.html"><span class="ms">collections_bookmark</span><span class="lbl">Colecciones</span></a>
+    <div class="side-sub">
+      <a href="Coleccion-Detalle.dc.html">Clásicos de terror</a>
+      <a href="Coleccion-Detalle.dc.html">Maratón Coppola</a>
+      <a href="Coleccion-Detalle.dc.html">Cine latinoamericano</a>
+      <a href="Coleccion-Detalle.dc.html">Para ver con los chicos</a>
+    </div>
+    <a class="nav" href="Proximas.dc.html"><span class="ms">bookmark</span><span class="lbl">Próximas a ver</span></a>
+    <div class="side-foot"><a class="nav" href="Ajustes.dc.html"><span class="ms">settings</span><span class="lbl">Ajustes</span></a></div>
+  </nav>
+
+  <main class="content">
+
+    <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}">
+      <section style="position: relative; height: {{heroH}}px; background: #141318">
+        <div style="position: absolute; left: {{padX}}px; bottom: 32px; display: flex; gap: 40px; align-items: flex-end">
+          <div class="sk" style="width: {{posterW}}px; height: {{posterH}}px"></div>
+          <div style="display: flex; flex-direction: column; gap: 14px; padding-bottom: 6px">
+            <div class="sk" style="width: 360px; height: 52px"></div>
+            <div class="sk line" style="width: 300px"></div>
+            <div style="display: flex; gap: 8px"><div class="sk" style="width: 72px; height: 28px; border-radius: 14px"></div><div class="sk" style="width: 72px; height: 28px; border-radius: 14px"></div></div>
+            <div style="display: flex; gap: 10px; margin-top: 8px"><div class="sk" style="width: 300px; height: 48px"></div><div class="sk" style="width: 48px; height: 48px"></div><div class="sk" style="width: 48px; height: 48px"></div><div class="sk" style="width: 48px; height: 48px"></div></div>
+          </div>
+        </div>
+      </section>
+      <div style="padding: 24px {{padX}}px; display: flex; flex-direction: column; gap: 10px; max-width: 700px">
+        <div class="sk line" style="width: 100%"></div><div class="sk line" style="width: 96%"></div><div class="sk line" style="width: 60%"></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{notLoading}}" hint-placeholder-val="{{ true }}">
+      <!-- HÉROE -->
+      <section class="hero" style="height: {{heroH}}px">
+        <sc-if value="{{hasMeta}}" hint-placeholder-val="{{ true }}">
+          <div class="bd" style="background: radial-gradient(34% 50% at 74% 36%, rgba(232,150,64,.55), transparent 70%), radial-gradient(18% 26% at 66% 30%, rgba(255,214,150,.35), transparent 70%), radial-gradient(60% 80% at 90% 80%, rgba(110,40,20,.6), transparent 70%), linear-gradient(100deg, #0d0806 0%, #24140b 42%, #4a2a13 68%, #1b0f08 100%)"></div>
+          <div class="bd" style="background: repeating-linear-gradient(180deg, rgba(255,214,160,.06) 0 5px, transparent 5px 17px); -webkit-mask-image: radial-gradient(26% 46% at 72% 34%, #000, transparent); mask-image: radial-gradient(26% 46% at 72% 34%, #000, transparent)"></div>
+          <div class="bd" style="background: radial-gradient(14% 30% at 58% 62%, rgba(10,6,4,.9), transparent 75%), radial-gradient(10% 22% at 84% 58%, rgba(10,6,4,.85), transparent 75%)"></div>
+        </sc-if>
+        <sc-if value="{{noMeta}}" hint-placeholder-val="{{ false }}">
+          <div class="bd" style="background: radial-gradient(50% 70% at 70% 30%, var(--accent-tint), transparent 70%), linear-gradient(160deg, #1d1b23, #0E0D11)"></div>
+          <div class="bd" style="left: 55%; right: 5%; top: -10%; bottom: -10%; background: linear-gradient(160deg, hsl(220 18% 26%), hsl(260 14% 12%)); filter: blur(60px); opacity: .7"></div>
+        </sc-if>
+        <div class="grain"></div>
+        <div class="shade"></div>
+
+        <div style="position: absolute; left: {{padX}}px; right: {{padX}}px; bottom: 32px; display: flex; gap: 40px; align-items: flex-end">
+          <div class="poster" style="width: {{posterW}}px; flex: none; box-shadow: 0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(245,243,247,.08)">
+            <sc-if value="{{hasMeta}}" hint-placeholder-val="{{ true }}">
+              <div class="art" style="background: linear-gradient(180deg, transparent 56%, hsl(30 40% 7%) 56.4%), radial-gradient(60% 34% at 50% 56%, hsl(30 62% 46%), transparent 70%), linear-gradient(180deg, hsl(70 52% 22%), hsl(230 30% 9%))"></div>
+              <div class="pt" style="font-size: 26px; line-height: 28px; left: 16px; bottom: 20px"><small>1972</small>El Padrino</div>
+            </sc-if>
+            <sc-if value="{{noMeta}}" hint-placeholder-val="{{ false }}">
+              <div class="art" style="background: linear-gradient(160deg, hsl(220 22% 24%), hsl(262 18% 12%))"></div>
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; font-family: var(--ff-d); font-weight: 600; font-size: 22px; line-height: 26px; color: rgba(245,243,247,.85)">La sociedad de la nieve</div>
+            </sc-if>
+            <sc-if value="{{seen}}" hint-placeholder-val="{{ false }}"><div class="ind"><span class="ind-seen"><span class="ms">check_circle</span></span></div></sc-if>
+          </div>
+
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding-bottom: 4px">
+            <sc-if value="{{hasMeta}}" hint-placeholder-val="{{ true }}">
+              <h1 class="{{titleCls}}">El Padrino</h1>
+              <div class="meta-line"><span style="color: #D9D4DE">The Godfather</span><i></i><span>1972</span><i></i><span>2 h 55 min</span><i></i><span class="pill">EN</span><span class="pill">4K</span><span class="pill">HDR10</span></div>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+                <a class="chip glass" href="Main.dc.html">Drama</a><a class="chip glass" href="Main.dc.html">Crimen</a>
+                <span class="b-s muted" style="margin-left: 8px">Paramount Pictures</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{noMeta}}" hint-placeholder-val="{{ false }}">
+              <span class="over" style="color: #E0A63A; display: flex; align-items: center; gap: 6px"><span class="ms s16">help</span>Sin metadatos</span>
+              <h1 class="d-l" style="word-break: break-all">La.Sociedad.De.La.Nieve.2023.1080p</h1>
+              <div class="meta-line"><span>2023 (del nombre del archivo)</span><i></i><span>2 h 24 min</span><i></i><span class="pill">1080p</span></div>
+            </sc-if>
+
+            <div style="display: flex; gap: 10px; align-items: flex-start; margin-top: 8px; position: relative">
+              <sc-if value="{{inProgress}}" hint-placeholder-val="{{ true }}">
+                <a class="btn-play" href="Reproductor.dc.html">
+                  <span class="btn pri lg"><span class="ms fill">play_arrow</span>Continuar · 1 h 12 min restantes</span>
+                  <span class="pb"><i style="width: 58%"></i></span>
+                </a>
+                <button class="btn glass lg ic" aria-label="Empezar de nuevo" title="Empezar de nuevo"><span class="ms">replay</span></button>
+              </sc-if>
+              <sc-if value="{{seen}}" hint-placeholder-val="{{ false }}">
+                <a class="btn pri lg" href="Reproductor.dc.html"><span class="ms">replay</span>Volver a ver</a>
+              </sc-if>
+              <sc-if value="{{noMeta}}" hint-placeholder-val="{{ false }}">
+                <a class="btn pri lg" href="Reproductor.dc.html"><span class="ms fill">play_arrow</span>Reproducir</a>
+              </sc-if>
+              <button class="btn glass lg ic {{bmCls}}" aria-label="Próximas a ver" title="Quitar de Próximas a ver"><span class="ms">bookmark</span></button>
+              <a class="btn glass lg" href="Dlg-Coleccion.dc.html"><span class="ms">add</span>Colección</a>
+              <button class="btn glass lg ic" aria-label="Marcar como visto" title="Marcar como visto" style="{{seenStyle}}"><span class="ms {{seenIcon}}">check_circle</span></button>
+              <button class="btn glass lg ic {{menuBtn}}" aria-label="Más acciones"><span class="ms">more_horiz</span></button>
+              <sc-if value="{{menu}}" hint-placeholder-val="{{ false }}">
+                <div class="menu" style="position: absolute; z-index: 30; top: 56px; left: 496px; width: 280px">
+                  <div class="mi"><span class="ms">play_arrow</span>Reproducir<span class="k">P</span></div>
+                  <div class="mi"><span class="ms">replay</span>Empezar de nuevo</div>
+                  <div class="mi hov"><span class="ms">check_circle</span>Marcar como visto</div>
+                  <div class="mi"><span class="ms fill" style="color: var(--accent-soft)">bookmark</span>Quitar de Próximas a ver</div>
+                  <div class="mi"><span class="ms">collections_bookmark</span>Agregar a colección…</div>
+                  <div class="msep"></div>
+                  <div class="mhead">Administración</div>
+                  <div class="mi"><span class="ms">edit</span>Editar metadatos…</div>
+                  <div class="mi"><span class="ms">travel_explore</span>Buscar metadatos…</div>
+                  <div class="mi dis" title="Disponible al terminar el escaneo"><span class="ms">drive_file_move</span>Cambiar archivo…<span class="k">Escaneando</span></div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CUERPO -->
+      <div style="padding: 24px {{padX}}px 56px; display: flex; flex-direction: column; gap: 40px">
+        <sc-if value="{{noMetaLocal}}" hint-placeholder-val="{{ false }}">
+          <div class="banner warn" style="max-width: 760px">
+            <span class="ms s20">help</span>
+            <span style="flex: 1">Este título no tiene metadatos. Encuentra el póster, la sinopsis y el reparto en TMDb.</span>
+            <a class="btn sm sec" href="Dlg-Tmdb.dc.html"><span class="ms">travel_explore</span>Buscar en TMDb</a>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{hasMeta}}" hint-placeholder-val="{{ true }}">
+          <section style="display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 56px">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <h2 class="over faint">Sinopsis</h2>
+              <p class="body" style="max-width: 62ch; color: #D9D4DE; font-size: 16px; line-height: 26px">Don Vito Corleone, patriarca de una de las cinco familias de la mafia de Nueva York, se niega a entrar en el negocio de los narcóticos. Cuando un atentado lo deja al borde de la muerte, su hijo menor Michael —el único que quiso mantenerse al margen— se ve arrastrado a la guerra entre familias.</p>
+            </div>
+            <dl style="margin: 0; display: grid; grid-template-columns: 96px minmax(0, 1fr); row-gap: 10px; column-gap: 12px; font-size: 13px; line-height: 18px; align-content: start">
+              <dt class="faint">Dirección</dt><dd style="margin: 0"><a href="Persona.dc.html">Francis Ford Coppola</a></dd>
+              <dt class="faint">Guion</dt><dd style="margin: 0">Mario Puzo, Francis Ford Coppola</dd>
+              <dt class="faint">Producción</dt><dd style="margin: 0">Albert S. Ruddy</dd>
+              <dt class="faint">Música</dt><dd style="margin: 0">Nino Rota</dd>
+              <dt class="faint">Fotografía</dt><dd style="margin: 0">Gordon Willis</dd>
+            </dl>
+          </section>
+
+          <section>
+            <div class="sec-h"><h2 class="t-l">Reparto</h2><div class="arrows"><button class="arrow" aria-label="Anterior" style="opacity: .4"><span class="ms s20">chevron_left</span></button><button class="arrow" aria-label="Siguiente"><span class="ms s20">chevron_right</span></button></div></div>
+            <div class="row" style="gap: 20px; overflow: hidden; position: relative">
+              <sc-for list="{{cast}}" as="p" hint-placeholder-count="8">
+                <a class="person" href="Persona.dc.html"><span class="avatar" style="background: {{p.bg}}">{{p.ini}}</span><b>{{p.n}}</b><span>{{p.r}}</span></a>
+              </sc-for>
+            </div>
+          </section>
+
+          <section>
+            <div class="sec-h"><h2 class="t-l">Extras</h2></div>
+            <div class="row">
+              <sc-for list="{{extras}}" as="e" hint-placeholder-count="3">
+                <a class="lc" href="Reproductor.dc.html">
+                  <div class="still"><div class="art" style="background: {{e.bg}}"></div><span class="rem tnum">{{e.d}}</span><div class="hover-ui"><span class="play-c"><span class="ms">play_arrow</span></span></div></div>
+                  <div class="meta"><b>{{e.t}}</b><span>{{e.k}}</span></div>
+                </a>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="display: flex; align-items: center; gap: 12px">
+            <span class="ms s20 muted">collections_bookmark</span>
+            <span class="body muted">Está en tus colecciones:</span>
+            <a class="chip" href="Coleccion-Detalle.dc.html">Clásicos</a><a class="chip" href="Coleccion-Detalle.dc.html">Maratón Coppola</a>
+          </section>
+
+          <section class="card" style="padding: 4px 20px; max-width: 980px">
+            <button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 56px; background: none; border: 0; padding: 0; cursor: pointer; text-align: left" aria-expanded="{{techOpen}}">
+              <span class="ms muted">{{techChevron}}</span><span class="t-m" style="font-size: 15px">Detalles técnicos</span>
+              <span class="b-s muted" style="margin-left: 8px">4K · HDR10 · HEVC · E-AC3 5.1 Latino, AAC Inglés · Subtítulos: Español, Inglés</span>
+              <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #E0A63A; background: rgba(224,166,58,.12); border-radius: 999px; padding: 4px 10px"><span class="dot amber"></span>Remux</span>
+            </button>
+            <sc-if value="{{techOpen}}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 8px 0 22px 36px; border-top: 1px solid #2E2A35">
+                <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 14px"><span class="over faint">Video</span><span class="b-s">3840 × 2160 · HDR10</span><span class="b-s muted">HEVC Main 10 · 23,976 fps · 54 Mb/s</span></div>
+                <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 14px"><span class="over faint">Audio</span><span class="b-s">Español (Latinoamérica) · E-AC3 5.1</span><span class="b-s muted">Inglés · AAC 2.0</span></div>
+                <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 14px"><span class="over faint">Subtítulos</span><span class="b-s">Español · SRT</span><span class="b-s muted">Inglés · PGS (imagen)</span></div>
+                <div style="display: flex; flex-direction: column; gap: 6px"><span class="over faint">Reproducción prevista</span><span class="b-s" style="color: #E0A63A">Remux · el audio E-AC3 se convierte a AAC</span></div>
+                <div style="display: flex; flex-direction: column; gap: 6px"><span class="over faint">Tamaño</span><span class="b-s tnum">58,4 GB · MKV</span></div>
+                <sc-if value="{{local}}" hint-placeholder-val="{{ true }}"><div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><span class="over faint">Archivo</span><span class="mono faint" style="font-size: 12px; word-break: break-all">E:\UHD\Películas 4K\El Padrino (1972)\El Padrino (1972) - 2160p.mkv</span></div></sc-if>
+              </div>
+            </sc-if>
+          </section>
+        </sc-if>
+
+        <sc-if value="{{noMeta}}" hint-placeholder-val="{{ false }}">
+          <section class="card" style="padding: 20px 24px; max-width: 760px; display: flex; flex-direction: column; gap: 8px">
+            <span class="over faint">Archivo</span>
+            <span class="mono muted" style="font-size: 12px">E:\UHD\Películas 4K\La.Sociedad.De.La.Nieve.2023.1080p.mkv</span>
+            <span class="b-s faint">1920 × 1080 · H.264 · AAC 5.1 Español · 9,8 GB · Reproducción: Direct</span>
+          </section>
+        </sc-if>
+      </div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["local","cliente"],"default":"local"},"estado":{"editor":"enum","options":["progreso","visto","menu","sinmetadatos","cargando"],"default":"progreso"},"compacto":{"editor":"boolean","default":false},"completo":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const P = this.props;
+    const modo = P.modo ?? 'local';
+    const estado = P.estado ?? 'progreso';
+    const compact = !!P.compacto;
+    const full = !!P.completo;
+    const W = compact ? 1024 : 1440, H = compact ? 640 : (full ? 1900 : 900);
+    const noMeta = estado === 'sinmetadatos';
+    const seen = estado === 'visto';
+    const grad = (h) => 'linear-gradient(150deg, hsl(' + h + ' 45% 38%), hsl(' + ((h + 50) % 360) + ' 40% 16%))';
+    const cast = [
+      ['Marlon Brando', 'Don Vito Corleone', 'MB', 28], ['Al Pacino', 'Michael Corleone', 'AP', 210], ['James Caan', 'Sonny Corleone', 'JC', 0],
+      ['Robert Duvall', 'Tom Hagen', 'RD', 140], ['Diane Keaton', 'Kay Adams', 'DK', 300], ['John Cazale', 'Fredo Corleone', 'JC', 45],
+      ['Talia Shire', 'Connie Corleone', 'TS', 330], ['Richard Castellano', 'Peter Clemenza', 'RC', 180], ['Sterling Hayden', 'Capitán McCluskey', 'SH', 90]
+    ].map((c) => ({ n: c[0], r: c[1], ini: c[2], bg: grad(c[3]) }));
+    const extras = [
+      { t: 'Tráiler original', k: 'Tráiler', d: '3:22', bg: 'radial-gradient(50% 60% at 60% 40%, rgba(232,150,64,.6), transparent 70%), linear-gradient(160deg, #2a170c, #0d0806)' },
+      { t: 'Así se filmó', k: 'Detrás de cámaras', d: '18:40', bg: 'radial-gradient(50% 60% at 30% 50%, rgba(180,170,150,.35), transparent 70%), linear-gradient(160deg, #26231f, #0f0e0c)' },
+      { t: 'Escenas eliminadas', k: 'Escenas', d: '9:05', bg: 'radial-gradient(40% 60% at 70% 60%, rgba(140,40,30,.6), transparent 70%), linear-gradient(160deg, #1d0f0c, #0b0706)' }
+    ];
+    return {
+      W, H, modo, local: modo === 'local', cliente: modo === 'cliente',
+      loading: estado === 'cargando', notLoading: estado !== 'cargando',
+      hasMeta: !noMeta, noMeta, noMetaLocal: noMeta && modo === 'local', seen,
+      inProgress: !noMeta && !seen,
+      menu: estado === 'menu', menuBtn: estado === 'menu' ? 'focus' : '',
+      bmCls: seen ? '' : 'on', seenIcon: seen ? 'fill' : '', seenStyle: seen ? 'color: #4CAF7D' : '',
+      padX: compact ? 24 : 40, heroH: compact ? 400 : 504,
+      posterW: compact ? 150 : 200, posterH: compact ? 225 : 300,
+      titleCls: compact ? 'd-l' : 'd-xl',
+      techOpen: full, techChevron: full ? 'expand_more' : 'chevron_right',
+      cast, extras
+    };
+  }
+}
+</script>
+</body>
+</html>

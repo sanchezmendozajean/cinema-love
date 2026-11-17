@@ -126,3 +126,13 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 
 ## Qué falta (resumen honesto, 16/11/2026)
 Fase 1: asistente de bienvenida/carpeta de datos (hoy solo `.dev-data` por seguridad), fuentes Fraunces/Inter locales, modo gráfico de respaldo. Fase 2: ficha de persona, skeletons, foco de teclado, 60 fps con 2000 pósters sin medir. Fase 4: re-vincular, homologar nombres, edición manual de metadata. Fase 5: Modo Cliente (conectar a otro CinemaLove), descubrimiento mDNS en la UI, sesiones activas. Fase 6: empaquetado (`dist:win`), instalación en máquina limpia, Linux, logs rotatorios, prueba de ≥ 8 h. Fase 0 pendiente: prueba larga, PGS, SMB/HTTP, Linux.
+
+
+## Proyecto autocontenido (16/11/2026) — decisión del usuario
+**Regla:** `qt6-version/` no depende de otras carpetas (electron-version, flutter-version) ni descarga nada de internet para compilar/ejecutar; la única conexión del producto es TMDb (datos y pósters). Si necesita un backend, corre con **código propio**.
+- Backend: `backend/src/{main,shared,headless.ts,platform.ts}` es código propio (ya no existe `vendor/`, ni el script de sincronización, ni el alias de `electron`; `app-core.ts` importa `../platform`). Se compila con `scripts/build-backend.ps1` (Node y esbuild incluidos). `backend/node_modules` está versionado (2.971 archivos) para no necesitar `npm install`. Los restos de «electron» en el backend son identificadores de compatibilidad (`plataforma:'electron'` en `/health`, nombre de respaldos).
+- `third_party/node/node.exe` (v24.18.0) y `third_party/libmpv/libmpv-2.dll`: incluidos en la carpeta pero NO en git (>100 MB / límite de archivo); checksums y procedencia en `third_party/README.md`. `fetch-libmpv.ps1` eliminado. `BackendLauncher` usa solo ese Node (nunca el PATH).
+- Specs heredadas copiadas a `specs/heredadas/` y las referencias se reescribieron.
+- Verificado: backend compilado y app ejecutada con un PATH SIN Node ni npm.
+- Herramientas de desarrollo externas (no son dependencias del proyecto): Qt 6.8.3 en `D:\Qt`, MSVC Build Tools, CMake.
+- Ya no valen las instrucciones previas de `npm install`/`npm run sync` en `backend/`.

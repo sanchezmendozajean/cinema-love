@@ -2,10 +2,9 @@
   "name": "cinemalove-backend",
   "private": true,
   "version": "0.1.0",
-  "description": "Sidecar de CinemaLove (Qt): el backend de la versión Electron ejecutado con Node plano, sin Electron.",
+  "description": "Backend propio de CinemaLove (Qt): API HTTP v1, escáner, TMDb y administración, ejecutado con el Node incluido en third_party/.",
   "type": "commonjs",
   "scripts": {
-    "sync": "node scripts/sync-from-electron.mjs",
     "build": "node scripts/build.mjs",
     "start": "node dist/main.cjs"
   },

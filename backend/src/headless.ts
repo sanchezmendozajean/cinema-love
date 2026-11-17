@@ -1,7 +1,7 @@
 // Entrada del sidecar: levanta AppCore (colección local + listener interno) sin ventana y avisa por stdout cuando está listo.
 // Protocolo con la app Qt (specs/03 §2): una línea `CL_READY {"baseUrl":…,"token":…}` o `CL_ERROR {…}`; se cierra al recibir
 // SIGTERM, al cerrarse stdin (la app Qt murió) o con la orden «quit» por stdin.
-import { AppCore } from './vendor/main/app-core'
+import { AppCore } from './main/app-core'
 
 const core = new AppCore()
 let cerrando = false

@@ -23,8 +23,6 @@ await build({
   format: 'cjs',
   sourcemap: true,
   logLevel: 'info',
-  // Electron no existe aquí: se sustituye por un shim mínimo (isPackaged, rutas).
-  alias: { electron: join(raiz, 'src', 'electron-shim.ts') },
   // El módulo nativo no se empaqueta: se carga desde node_modules (precompilado para esta plataforma).
   external: ['better-sqlite3']
 })

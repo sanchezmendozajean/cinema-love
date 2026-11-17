@@ -24,6 +24,10 @@ try {
         & $cmake --preset win
         if ($LASTEXITCODE) { throw 'Falló la configuración de CMake.' }
     }
+    # Backend propio: se compila (sin internet, con el Node incluido) si falta o si alguna fuente es más nueva.
+    $bundle = "$root\backend\dist\main.cjs"
+    $fuentes = Get-ChildItem "$root\backend\src" -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if (-not (Test-Path $bundle) -or ($fuentes -and $fuentes.LastWriteTime -gt (Get-Item $bundle).LastWriteTime)) { & "$root\scripts\build-backend.ps1" }
     & $cmake --build --preset $preset
     if ($LASTEXITCODE) { throw 'Falló la compilación.' }
 
