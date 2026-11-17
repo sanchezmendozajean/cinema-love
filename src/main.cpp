@@ -2,6 +2,7 @@
 
 #include <QCommandLineParser>
 #include <QDir>
+#include <QScreen>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QSettings>
@@ -236,12 +237,28 @@ int main(int argc, char *argv[])
         static QRect lastNormal;
         if (!testing) {
             const QRect r = st.value(QStringLiteral("geometry")).toRect();
-            if (r.isValid() && r.width() >= win->minimumWidth() && r.height() >= win->minimumHeight() && QGuiApplication::screenAt(r.center()))
+            // Una geometría del tamaño de la pantalla no es una ventana «normal»: Qt la trataría como pantalla completa (sin barra de título).
+            const QScreen *sc = QGuiApplication::screenAt(r.center());
+            const bool coversScreen = sc && r.width() >= sc->availableGeometry().width() && r.height() >= sc->availableGeometry().height();
+            if (r.isValid() && r.width() >= win->minimumWidth() && r.height() >= win->minimumHeight() && sc && !coversScreen)
                 win->setGeometry(r);
             if (st.value(QStringLiteral("maximized")).toBool()) win->showMaximized();
         }
-        lastNormal = win->geometry();
-        auto remember = [win]() { if (win->visibility() == QWindow::Windowed) lastNormal = win->geometry(); };
+        lastNormal = win->visibility() == QWindow::Windowed ? win->geometry() : QRect();
+        if (!lastNormal.isValid()) {   // arrancó maximizada: al restaurar, un tamaño razonable en vez de la pantalla entera
+            const QRect av = win->screen() ? win->screen()->availableGeometry() : QRect(0, 0, 1920, 1080);
+            const QSize sz(qMin(1280, av.width() * 4 / 5), qMin(720, av.height() * 4 / 5));
+            lastNormal = QRect(av.center() - QPoint(sz.width() / 2, sz.height() / 2), sz);
+        }
+        // Solo se recuerda una ventana en estado normal y más pequeña que la pantalla: al maximizar, la geometría cambia antes que el estado
+        // y se guardaba el tamaño de la pantalla, de modo que «restaurar» devolvía una ventana que Qt consideraba pantalla completa.
+        auto remember = [win]() {
+            if (win->visibility() != QWindow::Windowed) return;
+            const QScreen *sc = win->screen();
+            const QRect g = win->geometry();
+            if (sc && g.width() >= sc->availableGeometry().width() && g.height() >= sc->availableGeometry().height()) return;
+            lastNormal = g;
+        };
         for (auto sig : {&QWindow::xChanged, &QWindow::yChanged, &QWindow::widthChanged, &QWindow::heightChanged})
             QObject::connect(win, sig, win, remember);
         QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [win, testing]() {

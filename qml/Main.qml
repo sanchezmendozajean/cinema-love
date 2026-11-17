@@ -772,6 +772,7 @@ Window {
     Timer { id: wheelT2; interval: 1500; onTriggered: console.log("WHEEL 3 muescas: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px") }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
         if (spikeArgs.uiTest === "page2") { movies.page = 1; console.log("PAGE2 primera=" + movies.get(0).title + " rows=" + movies.rowCount() + " paginas=" + movies.pageCount); root.showDetail(0) }
+        else if (spikeArgs.uiTest === "maxrestore") { root.visibility = Window.Maximized; maxRestoreTimer.start() }
         else if (spikeArgs.uiTest === "person") root.openPerson(root.detail.cast[0])
         else if (spikeArgs.uiTest === "pl-ended") root.ended = true
         else if (spikeArgs.uiTest === "pl-audio") overlay.openAudioMenu(overlay.audioButton)
@@ -802,6 +803,8 @@ Window {
         else if (spikeArgs.uiTest === "markconfirm") root.confirmMark("x", 3, "noVisto", "Banshee") } }
     Timer { id: adminScanTimer; interval: 4500; onTriggered: adminView.startJob("/escanear-todo", null, "Escaneo iniciado.") }
     Timer { id: homeScrollTimer; interval: 5000; onTriggered: { if (root.seriesOpen) seriesDetailView.scrollTo(spikeArgs.homeScroll); else homeView.scrollTo(spikeArgs.homeScroll) } }
+    Timer { id: maxRestoreTimer; interval: 1500; onTriggered: { console.log("MAXRESTORE antes:", root.visibility, "titleBar visible:", titleBar.visible); root.visibility = Window.Windowed; maxLogTimer.start() } }
+    Timer { id: maxLogTimer; interval: 800; onTriggered: console.log("MAXRESTORE despues:", root.visibility, "titleBar visible:", titleBar.visible, "fullscreen:", root.fullscreen, "w:", root.width) }
     Timer { id: openTimer; interval: spikeArgs.clientAuto ? 8000 : 3000; onTriggered: {
         if (root.section === "series") {
             root.showSeriesAt(0)
