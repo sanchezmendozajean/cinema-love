@@ -28,6 +28,8 @@ class MpvItem : public QQuickFramebufferObject
     Q_PROPERTY(QString state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString info READ info NOTIFY infoChanged)
     Q_PROPERTY(bool muted READ muted WRITE setMuted NOTIFY mutedChanged)
+    /** Impide que se apaguen los monitores o se suspenda el equipo por inactividad mientras se reproduce. */
+    Q_PROPERTY(bool keepAwake READ keepAwake WRITE setKeepAwake NOTIFY keepAwakeChanged)
     Q_PROPERTY(double cached READ cached NOTIFY cachedChanged)
     Q_PROPERTY(QString errorText READ errorText NOTIFY errorTextChanged)
 
@@ -55,6 +57,8 @@ public:
 
     void setVolume(double v);
     void setMuted(bool m);
+    bool keepAwake() const { return m_keepAwake; }
+    void setKeepAwake(bool on);
 
     Q_INVOKABLE void load(const QString &source, double start = 0);
     Q_INVOKABLE void togglePause();
@@ -88,6 +92,7 @@ signals:
     void stateChanged();
     void infoChanged();
     void mutedChanged();
+    void keepAwakeChanged();
     void cachedChanged();
     void errorTextChanged();
     void endOfFile(const QString &reason);
@@ -123,6 +128,7 @@ private:
     QString m_state = QStringLiteral("inactivo");
     QString m_info;
     bool m_muted = false;
+    bool m_keepAwake = false;
     double m_cached = 0;
     QString m_errorText;
     QString m_errorBase;

@@ -333,6 +333,7 @@ Window {
 
     MpvItem {
         id: player
+        keepAwake: root.playing && !paused && !root.ended && state !== "error"   // sin apagado de pantalla mientras se ve
         anchors.fill: parent
         focus: true
         onEndOfFile: (reason) => {

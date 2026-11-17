@@ -16,6 +16,9 @@
 #include <memory>
 #include <thread>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
 
@@ -147,6 +150,7 @@ MpvItem::~MpvItem()
 
 void MpvItem::shutdown()
 {
+    setKeepAwake(false);
     if (!m_mpv)
         return;
     // 1) El contexto de render se libera en el hilo de render (con el contexto GL activo), esperando sin bloquear el bucle de eventos.
@@ -254,6 +258,20 @@ void MpvItem::setVolume(double v)
 {
     v = qBound(0.0, v, 150.0);
     mpv_set_property_async(m_mpv, 0, "volume", MPV_FORMAT_DOUBLE, &v);
+}
+
+void MpvItem::setKeepAwake(bool on)
+{
+    if (m_keepAwake == on)
+        return;
+    m_keepAwake = on;
+#ifdef Q_OS_WIN
+    // Por hilo y persistente (ES_CONTINUOUS): se llama siempre desde el hilo de la interfaz.
+    SetThreadExecutionState(on ? (ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED) : ES_CONTINUOUS);
+#else
+    qInfo("keepAwake: solo implementado en Windows por ahora");   // Linux: org.freedesktop.ScreenSaver.Inhibit (pendiente)
+#endif
+    emit keepAwakeChanged();
 }
 
 void MpvItem::setMuted(bool m)
