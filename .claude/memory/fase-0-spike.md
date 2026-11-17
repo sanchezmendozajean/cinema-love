@@ -136,3 +136,15 @@ Fase 1: asistente de bienvenida/carpeta de datos (hoy solo `.dev-data` por segur
 - Verificado: backend compilado y app ejecutada con un PATH SIN Node ni npm.
 - Herramientas de desarrollo externas (no son dependencias del proyecto): Qt 6.8.3 en `D:\Qt`, MSVC Build Tools, CMake.
 - Ya no valen las instrucciones previas de `npm install`/`npm run sync` en `backend/`.
+
+## Trampa de compilación (17/11/2026)
+La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt) tarda **> 2 minutos**. Un `timeout` ≤ 115 s la corta a medias y el `.exe` queda VIEJO sin avisar (comprobar siempre la fecha de `build/win/Release/cinemalove.exe`). Compilar con `run_in_background` y esperar al aviso; ejecutar los ejecutables de prueba por separado.
+
+
+## Datos reales: asistente, respaldo y bloqueo (17/11/2026) — decisión del usuario («sí, hazlo así»)
+- **Backend** (`backend/src/main/db/database.ts`): respaldo con `VACUUM INTO` → `cinemalove.sqlite.bak-qt-AAAAMMDD` si no hay ninguno o el último tiene > 7 días (conserva 5; copia de archivo si falla); bloqueo por PID en `cinemalove.electron.lock` (lo respeta Electron y detecta a Qt) y `cinemalove.qt.lock`; solo se sueltan los bloqueos propios. Flutter no escribe bloqueo (no detectable). `CL_READY.datos` incluye `respaldo`.
+- **Qt**: `DataFolder` (config.yaml junto al exe si es escribible, si no en AppConfigLocation; formato Flutter `database_directory`; `inspect()` cuenta películas/series y detecta bloqueo con PID vivo; `apply`/`forget`/`backups`). `BackendLauncher` expone `errorCode` (`bloqueada`|`version-antigua`|`error`) e `info`; no reintenta tras `CL_ERROR`. Los modelos leen la base SOLO cuando `backend.state==="listo"` (el backend va primero: respaldo+bloqueo+migraciones).
+- **UI**: `StartupView` (asistente: Bienvenida → Datos → Abriendo → TMDb → Biblioteca → Listo; pantalla «Abriendo…»; error «Tu colección está en uso» con Reintentar / Elegir otra carpeta), pestaña **Datos** de Administración (carpeta, respaldos, «Usar otra carpeta…»).
+- **Seguridad de pruebas**: `ProgressWriter::setRequireDevCopy` + `BackendLauncher.requireDevCopy` solo en modo de pruebas; `main.cpp` sale con código 3 si una prueba apunta fuera de `.dev-data/`. `scripts/dev.ps1` añade por defecto `--database .dev-data/cinemalove.sqlite`. Caché de imágenes de Qt ahora en CacheLocation.
+- Verificado (ejecutable nuevo): respaldo consistente (1.662 registros), bloqueos creados/retirados, segundo arranque rechazado, bloqueo REAL de otro proceso respetado sin tocar nada, recorrido «elegir carpeta → config.yaml → abrir con respaldo → Todo listo». NO verificado con clics reales: pasos TMDb/Biblioteca del asistente y «Usar otra carpeta…».
+- Pruebas: `--ui-test wizard0|wizard1|wizard1new|wizard1locked|wizard5|wizardflow` (wizardflow escribe config.yaml junto al exe: borrarlo después).

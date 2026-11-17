@@ -73,15 +73,12 @@ QVariantMap MovieModel::toMap(const Movie &m) const
 // Regla de oro de los datos: solo se escribe en copias de desarrollo. Escribir en la base real exigirá una decisión explícita.
 bool MovieModel::writable() const
 {
-    return QDir::fromNativeSeparators(m_dbPath).contains(QStringLiteral("/.dev-data/"));
+    return ProgressWriter::allowed(m_dbPath);
 }
 
 bool MovieModel::saveProgress(const QString &id, double position, const QString &state, const QString &audioId, const QString &subId)
 {
-    if (!writable()) {
-        qWarning("MovieModel: se omite guardar el progreso; la base no es una copia de .dev-data (%s)", qPrintable(m_dbPath));
-        return false;
-    }
+    if (!writable()) return false;
     const bool watched = state == QLatin1String("visto");
     const qint64 pos = watched ? 0 : qint64(std::llround(position));
     const bool ok = ProgressWriter::save(m_dbPath, id, pos, state, audioId, subId);
@@ -167,7 +164,9 @@ void MovieModel::load()
         QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
         db.setDatabaseName(m_dbPath);
         db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY")); // regla de oro de los datos: nunca escribir
-        if (!QFileInfo::exists(m_dbPath)) {
+        if (m_dbPath.isEmpty()) {
+            // aún no hay colección abierta (asistente de bienvenida): lista vacía, sin error
+        } else if (!QFileInfo::exists(m_dbPath)) {
             m_error = tr("No se encuentra la base de datos: %1").arg(m_dbPath);
         } else if (!db.open()) {
             m_error = db.lastError().text();

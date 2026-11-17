@@ -80,7 +80,7 @@ Rectangle {
                        font.family: "Georgia"; font.weight: Font.DemiBold; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
                 Text { width: parent.width; elide: Text.ElideRight; color: Tokens.textMuted; font.pixelSize: 15
                        text: { if (!view.featured) return ""; const p = []
-                               if (view.featured.kind === "episode") { p.push(view.featured.label); p.push(view.featured.episodeTitle) }
+                               if ((view.featured && view.featured.kind === "episode")) { p.push(view.featured.label); p.push(view.featured.episodeTitle) }
                                else if (view.featured.year > 0) p.push(view.featured.year)
                                if (view.featured.duration > 0) p.push(view.dur(view.featured.duration)); if (view.featured.genres) p.push(view.featured.genres.replace(/ · /g, ", "))
                                return p.join("  ·  ") } }
@@ -94,7 +94,7 @@ Rectangle {
                         color: ph.hovered ? Tokens.accentSoft : Tokens.accent
                         Behavior on color { ColorAnimation { duration: Tokens.durFast } }
                         Text { id: heroPlay; anchors.centerIn: parent; color: "white"; font.pixelSize: 15; font.weight: Font.DemiBold
-                               text: view.heroContinue ? "▶  Continuar" + (view.featured.kind === "episode" ? " " + view.featured.label : "") + " · quedan " + view.dur(view.featured.duration - view.featured.progressPos) : "▶  Reproducir" }
+                               text: view.heroContinue ? "▶  Continuar" + ((view.featured && view.featured.kind === "episode") ? " " + view.featured.label : "") + " · quedan " + view.dur(view.featured.duration - view.featured.progressPos) : "▶  Reproducir" }
                         HoverHandler { id: ph; cursorShape: Qt.PointingHandCursor }
                         TapHandler { onTapped: view.playMovie(view.featured) }
                     }

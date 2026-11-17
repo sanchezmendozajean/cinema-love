@@ -7,6 +7,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "BackendLauncher.h"
+#include "DataFolder.h"
+#include "ProgressWriter.h"
 #include "ClImageProvider.h"
 #include <QFileInfo>
 #include <QNetworkAccessManager>
@@ -105,7 +107,9 @@ int main(int argc, char *argv[])
 
     // Instancia única (specs/01 §5): una segunda ejecución avisa a la primera, que se trae al frente, y termina.
     QLocalServer instanceServer;
-    if (!parser.isSet(multi) && !parser.isSet(selftest) && !parser.isSet(catShot)) {
+    // Pruebas automatizadas: solo sobre copias de .dev-data/ y sin instancia única ni persistencia de ventana.
+    const bool testMode = parser.isSet(selftest) || parser.isSet(catShot) || parser.isSet(uiTest) || parser.isSet(progTest) || parser.isSet(adminScan);
+    if (!parser.isSet(multi) && !testMode) {
         const QString name = QStringLiteral("cinemalove-qt6-instancia");
         QLocalSocket probe;
         probe.connectToServer(name);
@@ -117,13 +121,30 @@ int main(int argc, char *argv[])
         QLocalServer::removeServer(name); // resto de un cierre brusco
         instanceServer.listen(name);
     }
+    ProgressWriter::setRequireDevCopy(testMode);
+    // Carpeta de datos: la de config.yaml (asistente de bienvenida) o, en desarrollo, la de --database.
+    DataFolder dataFolder;
+    {
+        QString override = parser.isSet(dataDb) ? parser.value(dataDb) : QString();
+        if (override.isEmpty() && testMode)
+            override = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../../../.dev-data/cinemalove.sqlite")));
+        if (!override.isEmpty()) {
+            const QFileInfo fi(override);
+            dataFolder.setOverride(fi.absolutePath(), fi.fileName());
+        }
+        if (testMode && !dataFolder.dbFile().isEmpty() && !ProgressWriter::isDevCopy(dataFolder.dbFile())) {
+            fprintf(stderr, "Modo de pruebas: la base debe estar en una carpeta .dev-data/ (nunca datos reales): %s\n", qPrintable(dataFolder.dbFile()));
+            return 3;
+        }
+    }
     BackendLauncher backend; // declarado antes que el motor: debe sobrevivirle (los bindings QML lo leen al destruirse)
+    backend.setRequireDevCopy(testMode);
     QQmlApplicationEngine engine;
-    const QString devData = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../../../.dev-data"));
     // El backend (sidecar Node) se inicia desde el arranque: las imágenes y la administración dependen de él.
     engine.rootContext()->setContextProperty(QStringLiteral("backend"), &backend);
+    engine.rootContext()->setContextProperty(QStringLiteral("dataFolder"), &dataFolder);
     engine.addImageProvider(QStringLiteral("cl"), new ClImageProvider(&backend));
-    engine.setNetworkAccessManagerFactory(new CachedNam(QDir::cleanPath(devData + QStringLiteral("/img-cache"))));
+    engine.setNetworkAccessManagerFactory(new CachedNam(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/img")));
     QVariantMap args;
     args["file"] = parser.positionalArguments().value(0);
     args["selftest"] = parser.isSet(selftest);
@@ -139,11 +160,11 @@ int main(int argc, char *argv[])
     args["adminTab"] = parser.value(adminTab);
     args["search"] = parser.value(searchOpt);
     args["sub"] = parser.value(subFile);
-    args["db"] = parser.isSet(dataDb) ? parser.value(dataDb) : QDir::cleanPath(devData + QStringLiteral("/cinemalove.sqlite"));
-    {   // Carpeta de datos del backend: solo si el archivo se llama cinemalove.sqlite (el backend siempre abre ese nombre).
-        const QFileInfo dbInfo(args["db"].toString());
-        args["dataDir"] = dbInfo.fileName() == QLatin1String("cinemalove.sqlite") ? dbInfo.absolutePath() : QString();
-    }
+    args["db"] = dataFolder.dbFile();
+    // Carpeta de datos del backend: solo si el archivo se llama cinemalove.sqlite (el backend siempre abre ese nombre).
+    args["dataDir"] = QFileInfo(dataFolder.dbFile()).fileName() == QLatin1String("cinemalove.sqlite") ? dataFolder.path() : QString();
+    args["testMode"] = testMode;
+    args["noBackend"] = parser.isSet(noBackend);
     engine.rootContext()->setContextProperty(QStringLiteral("spikeArgs"), args);
 
     {
@@ -167,7 +188,7 @@ int main(int argc, char *argv[])
     }
     // Ventana: posición/tamaño persistentes (se descarta si quedaría fuera de toda pantalla) y «traer al frente» desde otra instancia.
     if (auto *win = qobject_cast<QQuickWindow *>(engine.rootObjects().value(0))) {
-        const bool testing = parser.isSet(selftest) || parser.isSet(catShot);
+        const bool testing = testMode;
         QSettings st(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QStringLiteral("/window.ini"), QSettings::IniFormat);
         static QRect lastNormal;
         if (!testing) {

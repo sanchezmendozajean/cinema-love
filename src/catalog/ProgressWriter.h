@@ -3,8 +3,12 @@
 
 namespace ProgressWriter {
 
-/** ¿Es una copia de desarrollo? Regla de oro de los datos: solo se escribe en `.dev-data/`. */
+/** ¿Es una copia de desarrollo (carpeta `.dev-data/`)? */
 bool isDevCopy(const QString &dbPath);
+
+/** Modo de pruebas/desarrollo automatizado: solo se permite escribir en copias de `.dev-data/` (nunca en datos reales). */
+void setRequireDevCopy(bool on);
+bool allowed(const QString &dbPath);
 
 /**
  * Upsert en watch_progresses (usuario NULL), igual que escritura.ts de Electron: conserva las pistas si no llegan nuevas;

@@ -54,12 +54,16 @@ void BackendLauncher::appendLog(const QString &line)
 void BackendLauncher::start(const QString &dataDir)
 {
     if (m_proc) return;
-    // Regla de oro de los datos: el backend escribe (escáner, TMDb, progreso), así que solo se acepta una copia de desarrollo.
+    // En modo de pruebas automatizadas solo se acepta una copia de desarrollo (nunca datos reales).
     const QString norm = QDir::fromNativeSeparators(QDir(dataDir).absolutePath()) + QLatin1Char('/');
-    if (!norm.contains(QStringLiteral("/.dev-data/"))) {
-        setState(QStringLiteral("error"), tr("El backend solo se inicia sobre copias de .dev-data/ (no sobre datos reales): %1").arg(dataDir));
+    if (m_requireDev && !norm.contains(QStringLiteral("/.dev-data/"))) {
+        m_errorCode = QStringLiteral("error");
+        setState(QStringLiteral("error"), tr("En modo de pruebas el backend solo se inicia sobre copias de .dev-data/: %1").arg(dataDir));
         return;
     }
+    m_errorCode.clear();
+    m_info.clear();
+    m_failed = false;
     m_dataDir = QDir(dataDir).absolutePath();
     m_restarts = 0;
     m_stopping = false;
@@ -103,13 +107,19 @@ void BackendLauncher::onStdout()
         if (line.isEmpty()) continue;
         if (line.startsWith(QLatin1String("CL_READY "))) {
             const QJsonObject o = QJsonDocument::fromJson(line.mid(9).toUtf8()).object();
+            m_info = o.value(QStringLiteral("datos")).toObject().toVariantMap();
             m_baseUrl = o.value(QStringLiteral("baseUrl")).toString();
             m_token = o.value(QStringLiteral("token")).toString();
             appendLog(QStringLiteral("Backend listo en ") + m_baseUrl);
             emit readyChanged();
             setState(QStringLiteral("listo"));
         } else if (line.startsWith(QLatin1String("CL_ERROR "))) {
-            setState(QStringLiteral("error"), line.mid(9));
+            const QJsonObject o = QJsonDocument::fromJson(line.mid(9).toUtf8()).object();
+            const QJsonObject datos = o.value(QStringLiteral("datos")).toObject();
+            m_failed = true;
+            m_errorCode = datos.value(QStringLiteral("motivo")).toString(QStringLiteral("error"));
+            const QString msg = datos.value(QStringLiteral("mensaje")).toString(o.value(QStringLiteral("mensaje")).toString(line.mid(9)));
+            setState(QStringLiteral("error"), msg);
             appendLog(line);
         } else {
             appendLog(line);
@@ -125,6 +135,7 @@ void BackendLauncher::onFinished(int code, QProcess::ExitStatus)
     m_baseUrl.clear();
     m_token.clear();
     emit readyChanged();
+    if (m_failed) return; // conserva el estado de error con su mensaje
     if (m_stopping) {
         setState(QStringLiteral("detenido"));
         return;
@@ -135,6 +146,13 @@ void BackendLauncher::onFinished(int code, QProcess::ExitStatus)
         return;
     }
     setState(QStringLiteral("error"), tr("El backend se detuvo y no pudo reiniciarse."));
+}
+
+void BackendLauncher::restart(const QString &dataDir)
+{
+    stop();
+    m_state = QStringLiteral("detenido");
+    start(dataDir);
 }
 
 void BackendLauncher::stop()

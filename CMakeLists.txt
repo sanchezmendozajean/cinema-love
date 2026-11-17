@@ -29,6 +29,8 @@ qt_add_qml_module(cinemalove
         qml/AdminButton.qml
         qml/Modal.qml
         qml/ItemMenu.qml
+        qml/StartupView.qml
+        qml/DataPanel.qml
         qml/AboutDialog.qml
         qml/Check.qml
         qml/ServerPanel.qml
@@ -48,6 +50,8 @@ qt_add_qml_module(cinemalove
         src/catalog/ProgressWriter.cpp
         src/backend/BackendLauncher.h
         src/backend/BackendLauncher.cpp
+        src/backend/DataFolder.h
+        src/backend/DataFolder.cpp
         src/backend/ApiClient.h
         src/backend/ApiClient.cpp
         src/backend/ClImageProvider.h

@@ -68,7 +68,9 @@ void SeriesCatalog::load()
         QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
         db.setDatabaseName(m_dbPath);
         db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
-        if (!QFileInfo::exists(m_dbPath)) {
+        if (m_dbPath.isEmpty()) {
+            // aún no hay colección abierta
+        } else if (!QFileInfo::exists(m_dbPath)) {
             m_error = tr("No se encuentra la base de datos: %1").arg(m_dbPath);
         } else if (!db.open()) {
             m_error = db.lastError().text();

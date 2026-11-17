@@ -3,6 +3,7 @@
 #include <QProcess>
 #include <QQmlEngine>
 #include <QStringList>
+#include <QVariantMap>
 
 /**
  * Ciclo de vida del sidecar Node (specs/03 §2): lo lanza con la carpeta de datos, espera `CL_READY` en su salida, vigila que siga
@@ -16,6 +17,9 @@ class BackendLauncher : public QObject
     Q_PROPERTY(QString baseUrl READ baseUrl NOTIFY readyChanged)
     Q_PROPERTY(QString token READ token NOTIFY readyChanged)
     Q_PROPERTY(QString error READ error NOTIFY stateChanged)
+    Q_PROPERTY(QString errorCode READ errorCode NOTIFY stateChanged)   // bloqueada | version-antigua | error | ''
+    Q_PROPERTY(QVariantMap info READ info NOTIFY readyChanged)           // datos que informa el backend al abrir (respaldo, conteos…)
+    Q_PROPERTY(bool requireDevCopy READ requireDevCopy WRITE setRequireDevCopy NOTIFY stateChanged)
     Q_PROPERTY(QString logTail READ logTail NOTIFY logChanged)
 
 public:
@@ -26,10 +30,16 @@ public:
     QString baseUrl() const { return m_baseUrl; }
     QString token() const { return m_token; }
     QString error() const { return m_error; }
+    QString errorCode() const { return m_errorCode; }
+    QVariantMap info() const { return m_info; }
+    bool requireDevCopy() const { return m_requireDev; }
+    void setRequireDevCopy(bool on) { m_requireDev = on; }
     QString logTail() const { return m_log.join(QLatin1Char('\n')); }
 
     /** Inicia el backend sobre `dataDir` (carpeta con cinemalove.sqlite). Solo se acepta una copia de `.dev-data/`. */
     Q_INVOKABLE void start(const QString &dataDir);
+    /** Detiene el backend (si corre) y lo inicia sobre otra carpeta. */
+    Q_INVOKABLE void restart(const QString &dataDir);
     Q_INVOKABLE void stop();
 
 signals:
@@ -47,8 +57,12 @@ private:
     static QString findNode();
 
     QProcess *m_proc = nullptr;
+    QString m_errorCode;
+    QVariantMap m_info;
+    bool m_requireDev = false;
     QString m_dataDir, m_state = QStringLiteral("detenido"), m_baseUrl, m_token, m_error, m_buffer;
     QStringList m_log;
     bool m_stopping = false;
+    bool m_failed = false;   // el backend informó un error de apertura (CL_ERROR): no se reintenta
     int m_restarts = 0;
 };

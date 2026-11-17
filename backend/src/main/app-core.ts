@@ -133,6 +133,7 @@ export class AppCore {
         ok: true,
         soloLectura: this.base.soloLectura,
         aviso: this.base.aviso,
+        respaldo: this.base.respaldo,
         bibliotecas: this.repos.listarBibliotecas().length,
         peliculas: c.peliculas,
         series: this.repos.listarSeries().length,

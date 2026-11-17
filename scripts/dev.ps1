@@ -34,6 +34,8 @@ try {
     if (-not (Test-Path "$root\.dev-data\cinemalove.sqlite")) {
         Write-Warning 'Falta .dev-data\cinemalove.sqlite: copia ahí una copia de la base (nunca la real).'
     }
+    # Desarrollo: si no se indica otra base, se usa la copia de .dev-data (nunca los datos reales).
+    if (-not ($AppArgs -contains '--database') -and (Test-Path "$root\.dev-data\cinemalove.sqlite")) { $AppArgs = @('--database', "$root\.dev-data\cinemalove.sqlite") + $AppArgs }
     $env:PATH = "$env:QT_ROOT/bin;$env:PATH"
     & "$root\build\win\$config\cinemalove.exe" @AppArgs
 }

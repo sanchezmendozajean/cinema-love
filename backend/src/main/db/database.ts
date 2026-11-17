@@ -1,5 +1,5 @@
 import BetterSqlite3 from 'better-sqlite3'
-import { copyFileSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import schemaV11 from './schema-v11.sql?raw'
 import { aplicarMigraciones } from './migrations'
@@ -19,7 +19,7 @@ export class ErrorApertura extends Error {
 }
 
 export interface AbrirOpciones {
-  /** Si hay un `.bak-electron-*` previo no se vuelve a respaldar. */
+  /** `false` desactiva el respaldo automático (solo pruebas). */
   respaldar?: boolean
 }
 
@@ -29,6 +29,8 @@ export interface BaseAbierta {
   creada: boolean
   /** Aviso para mostrar al usuario (p. ej. versión Flutter más nueva). */
   aviso: string | null
+  /** Respaldo hecho al abrir (nombre de archivo) o null. */
+  respaldo: string | null
   cerrar(): void
 }
 
@@ -41,39 +43,89 @@ function procesoVivo(pid: number): boolean {
   }
 }
 
-function tomarLock(rutaLock: string): void {
-  if (existsSync(rutaLock)) {
-    const pid = Number(readFileSync(rutaLock, 'utf8').trim())
+// Bloqueo de un solo escritor entre las tres versiones. Electron crea `cinemalove.electron.lock` y comprueba solo ese
+// nombre, así que esta versión lo respeta y TAMBIÉN lo crea (para que Electron detecte que estamos abiertos), además de
+// su propio `cinemalove.qt.lock`. Flutter no escribe bloqueo: no se puede detectar, hay que no abrirlo a la vez.
+const LOCKS = ['cinemalove.electron.lock', 'cinemalove.qt.lock']
+
+function tomarLocks(carpeta: string): void {
+  for (const nombre of LOCKS) {
+    const ruta = join(carpeta, nombre)
+    if (!existsSync(ruta)) continue
+    const pid = Number(readFileSync(ruta, 'utf8').trim())
     if (Number.isInteger(pid) && pid !== process.pid && procesoVivo(pid)) {
       throw new ErrorApertura(
         'bloqueada',
-        'Otra instancia de CinemaLove (o la versión Flutter) tiene abiertos estos datos. Ciérrala e inténtalo de nuevo.'
+        'Otra instancia de CinemaLove (o una de sus otras versiones) tiene abiertos estos datos. Ciérrala e inténtalo de nuevo.'
       )
     }
   }
-  writeFileSync(rutaLock, String(process.pid), 'utf8')
+  for (const nombre of LOCKS) writeFileSync(join(carpeta, nombre), String(process.pid), 'utf8')
 }
 
-function respaldoPrevio(carpeta: string): boolean {
-  return readdirSync(carpeta).some((f) => f.startsWith('cinemalove.sqlite.bak-electron-'))
+/** Quita solo los bloqueos que son nuestros (nunca el de otra aplicación). */
+function soltarLocks(carpeta: string): void {
+  for (const nombre of LOCKS) {
+    const ruta = join(carpeta, nombre)
+    try {
+      if (existsSync(ruta) && Number(readFileSync(ruta, 'utf8').trim()) === process.pid) rmSync(ruta, { force: true })
+    } catch {
+      // carpeta ya no disponible: nada que soltar
+    }
+  }
+}
+
+const PREFIJO_RESPALDO = 'cinemalove.sqlite.bak-qt-'
+const DIAS_ENTRE_RESPALDOS = 7
+const RESPALDOS_A_CONSERVAR = 5
+
+function respaldosQt(carpeta: string): string[] {
+  return readdirSync(carpeta).filter((f) => f.startsWith(PREFIJO_RESPALDO)).sort()
 }
 
 function aaaammdd(d = new Date()): string {
   return d.toISOString().slice(0, 10).replaceAll('-', '')
 }
 
+/**
+ * Respaldo automático al abrir una base que ya existe: si no hay ninguno, o el último tiene más de 7 días, se crea
+ * `cinemalove.sqlite.bak-qt-AAAAMMDD` (copia consistente con VACUUM INTO; si falla, copia del archivo). Se conservan los
+ * últimos 5. Nunca se mueve ni se modifica la base original. Devuelve el nombre creado o null.
+ */
+function respaldarSiHaceFalta(carpeta: string, ruta: string): string | null {
+  const previos = respaldosQt(carpeta)
+  const ultimo = previos.at(-1)
+  if (ultimo) {
+    const edadDias = (Date.now() - statSync(join(carpeta, ultimo)).mtimeMs) / 86_400_000
+    if (edadDias < DIAS_ENTRE_RESPALDOS) return null
+  }
+  let nombre = `${PREFIJO_RESPALDO}${aaaammdd()}`
+  if (existsSync(join(carpeta, nombre))) nombre += `-${Date.now() % 100000}`
+  const destino = join(carpeta, nombre)
+  try {
+    const origen = new BetterSqlite3(ruta, { readonly: true })
+    try {
+      origen.exec(`VACUUM INTO '${destino.replaceAll("'", "''")}'`)
+    } finally {
+      origen.close()
+    }
+  } catch {
+    rmSync(destino, { force: true })
+    copyFileSync(ruta, destino)
+  }
+  for (const viejo of respaldosQt(carpeta).slice(0, -RESPALDOS_A_CONSERVAR)) rmSync(join(carpeta, viejo), { force: true })
+  return nombre
+}
+
 /** Abre `cinemalove.sqlite` aplicando las reglas de specs/02 §2. */
 export function abrirBase(carpeta: string, opciones: AbrirOpciones = {}): BaseAbierta {
   const ruta = join(carpeta, 'cinemalove.sqlite')
-  const rutaLock = join(carpeta, 'cinemalove.electron.lock')
   const existia = existsSync(ruta)
-  tomarLock(rutaLock)
+  tomarLocks(carpeta)
 
-  const liberar = (): void => rmSync(rutaLock, { force: true })
+  const liberar = (): void => soltarLocks(carpeta)
   try {
-    if (existia && opciones.respaldar !== false && !respaldoPrevio(carpeta)) {
-      copyFileSync(ruta, `${ruta}.bak-electron-${aaaammdd()}`)
-    }
+    const respaldo = existia && opciones.respaldar !== false ? respaldarSiHaceFalta(carpeta, ruta) : null
 
     // Primero se mira el user_version en solo lectura, antes de decidir cómo abrir.
     let soloLectura = false
@@ -114,6 +166,7 @@ export function abrirBase(carpeta: string, opciones: AbrirOpciones = {}): BaseAb
       soloLectura,
       creada: !existia,
       aviso,
+      respaldo,
       cerrar: () => {
         db.close()
         liberar()

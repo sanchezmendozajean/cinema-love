@@ -14,10 +14,14 @@ bool isDevCopy(const QString &dbPath)
     return QDir::fromNativeSeparators(dbPath).contains(QStringLiteral("/.dev-data/"));
 }
 
+static bool g_requireDev = false;
+void setRequireDevCopy(bool on) { g_requireDev = on; }
+bool allowed(const QString &dbPath) { return !g_requireDev || isDevCopy(dbPath); }
+
 bool save(const QString &dbPath, const QString &id, qint64 pos, const QString &state, const QString &audioId, const QString &subId)
 {
-    if (!isDevCopy(dbPath)) {
-        qWarning("ProgressWriter: se omite guardar; la base no es una copia de .dev-data (%s)", qPrintable(dbPath));
+    if (!allowed(dbPath)) {
+        qWarning("ProgressWriter: se omite guardar; en modo de pruebas solo se escribe en copias de .dev-data (%s)", qPrintable(dbPath));
         return false;
     }
     const bool watched = state == QLatin1String("visto");

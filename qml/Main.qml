@@ -25,13 +25,18 @@ Window {
     readonly property bool seriesOpen: detail !== null && detail.kind === "series"
     readonly property bool movieOpen: detail !== null && detail.kind !== "series"
 
-    MovieModel { id: movies; dbPath: spikeArgs.db }
-    SeriesCatalog { id: seriesCat; dbPath: spikeArgs.db }
+    // Los modelos leen la base solo cuando la colección está abierta: el backend (respaldo, bloqueo, migraciones) va primero.
+    readonly property bool wizardMode: wizardActive
+    property bool wizardActive: dataFolder.path === ""
+    readonly property bool dataReady: dataFolder.path !== "" && (spikeArgs.noBackend || !spikeArgs.dataDir || backend.state === "listo")
+    readonly property string dbFile: dataReady ? dataFolder.dbFile : ""
+    MovieModel { id: movies; dbPath: root.dbFile }
+    SeriesCatalog { id: seriesCat; dbPath: root.dbFile }
 
     // Backend (sidecar Node): lo crea y lo inicia main.cpp (`backend` es una propiedad de contexto); aquí solo se consume.
     ApiClient { id: api; baseUrl: backend.baseUrl; token: backend.token }
     readonly property string backendNote: spikeArgs.dataDir ? ""
-        : "La administración necesita una carpeta de datos con cinemalove.sqlite (usa --database .dev-data/cinemalove.sqlite)."
+        : "La administración necesita una carpeta de datos con un archivo cinemalove.sqlite."
 
     // --- Progreso (specs/05 §4): se guarda solo al pausar, hacer seek, cambiar de pista, cerrar y al superar el 95 % ---
     property var nowPlaying: null       // ficha en reproducción (null en el modo --selftest / archivo suelto)
@@ -306,6 +311,7 @@ Window {
         backendError: root.backendNote !== "" ? root.backendNote : backend.error
         onToast: (t) => { root.notice = t; noticeTimer.restart() }
         onCatalogChanged: { movies.reload(); seriesCat.reload() }
+        onChangeFolder: { dataFolder.forget(); backend.stop(); root.wizardActive = true; startup.step = 1 }
     }
 
     CollectionsView {
@@ -349,6 +355,17 @@ Window {
                     } }
             }
         }
+    }
+
+    StartupView {
+        id: startup
+        z: 100                      // por encima de todas las vistas, por debajo de la barra de título
+        anchors.fill: parent
+        api: api
+        wizard: root.wizardActive
+        visible: root.wizardActive || !root.dataReady
+        onFinished: { root.wizardActive = false; movies.reload(); seriesCat.reload() }
+        onChooseAnotherFolder: { dataFolder.forget(); backend.stop(); root.wizardActive = true; startup.step = 1 }
     }
 
     HomeView {
@@ -397,6 +414,7 @@ Window {
     readonly property bool fullscreen: root.visibility === Window.FullScreen
     Rectangle {
         id: titleBar
+        z: 200
         anchors { left: parent.left; right: parent.right; top: parent.top }
         height: 36
         visible: (!root.playing || root.controlsVisible) && !root.fullscreen
@@ -415,7 +433,7 @@ Window {
             }
             Text { text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
             Repeater {
-                model: root.playing || root.detail ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" }, { k: "collections", t: "Colecciones" }, { k: "admin", t: "Administración" } ]
+                model: root.playing || root.detail || startup.visible ? [] : [ { k: "home", t: "Inicio" }, { k: "catalog", t: "Películas" }, { k: "series", t: "Series" }, { k: "collections", t: "Colecciones" }, { k: "admin", t: "Administración" } ]
                 delegate: Text {
                     leftPadding: 12
                     text: modelData.t; font.pixelSize: 13; font.weight: Font.Medium
@@ -469,6 +487,7 @@ Window {
             { e: Qt.LeftEdge | Qt.BottomEdge, c: Qt.SizeBDiagCursor, l: true, t: false, r: false, b: true }
         ]
         delegate: MouseArea {
+            z: 300
             enabled: !root.fullscreen && root.visibility !== Window.Maximized
             readonly property bool corner: (modelData.l || modelData.r) && (modelData.t || modelData.b)
             x: modelData.r ? root.width - width : 0
@@ -565,7 +584,15 @@ Window {
         console.log("PT ficha tras cerrar: estado=" + root.detail.progressState + " pos=" + root.detail.progressPos) } }
     Timer { id: pt4; interval: 16000; onTriggered: { player.shutdown(); Qt.quit() } }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
-        if (spikeArgs.uiTest === "collection") collectionsView.open(collectionsView.collections[0])
+        if (spikeArgs.uiTest === "wizard0") { root.wizardActive = true; startup.step = 0 }
+        else if (spikeArgs.uiTest === "wizard1") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir + "/../bk-test" }
+        else if (spikeArgs.uiTest === "wizard1locked") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir }
+        else if (spikeArgs.uiTest === "wizard1new") { root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir + "/../carpeta-nueva-prueba" }
+        else if (spikeArgs.uiTest === "wizardflow") {   // lo mismo que «Abrir esta colección»
+            root.wizardActive = true; startup.step = 1; startup.chosen = spikeArgs.dataDir + "/../bk-test"
+            if (dataFolder.apply(startup.chosen)) { startup.step = 2; backend.restart(dataFolder.path) } }
+        else if (spikeArgs.uiTest === "wizard5") { root.wizardActive = true; startup.step = 5 }
+        else if (spikeArgs.uiTest === "collection") collectionsView.open(collectionsView.collections[0])
         else if (spikeArgs.uiTest === "special") collectionsView.open({ special: true })
         else if (spikeArgs.uiTest === "menu") root.openItemMenu({ id: movies.get(2).id, kind: "movie", title: movies.get(2).title }, 420, 330)
         else if (spikeArgs.uiTest === "about") aboutDialog.open()

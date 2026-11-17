@@ -42,6 +42,8 @@ export type EstadoDatos =
       ok: true
       soloLectura: boolean
       aviso: string | null
+      /** Nombre del respaldo de `cinemalove.sqlite` hecho al abrir (null si no hizo falta). */
+      respaldo: string | null
       bibliotecas: number
       peliculas: number
       series: number
