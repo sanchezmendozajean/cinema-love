@@ -10,6 +10,7 @@ Rectangle {
     property var series: ({})          // mapa de SeriesCatalog.detail()
     property var catalog               // SeriesCatalog
     signal back()
+    signal personRequested(var person)
     signal playEpisode(string episodeId, real start)
     signal markRequested(var seriesId, var season, string estado)   // season === null → serie completa
 
@@ -270,6 +271,9 @@ Rectangle {
                     model: view.series.cast || []
                     delegate: Item {
                         width: 144; height: 220
+                        HoverHandler { id: castHover; enabled: !!modelData.id; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { enabled: !!modelData.id; onTapped: view.personRequested(modelData) }
+                        opacity: castHover.hovered ? 0.8 : 1
                         Rectangle {
                             width: 120; height: 120; radius: 60; x: 12; color: Tokens.surface; border.color: Tokens.border
                             Text { anchors.centerIn: parent; visible: !photo.visible; text: (modelData.nombre || "?").charAt(0); color: Tokens.textFaint; font.pixelSize: 42 }

@@ -30,6 +30,7 @@ qt_add_qml_module(cinemalove
         qml/Modal.qml
         qml/ItemMenu.qml
         qml/PlayerOverlay.qml
+        qml/PersonView.qml
         qml/Pager.qml
         qml/SmoothWheel.qml
         qml/RoundedCorners.qml

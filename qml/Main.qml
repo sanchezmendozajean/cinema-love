@@ -45,6 +45,7 @@ Window {
     readonly property bool navCompact: width < 1100
     property int navWidth: navVisible ? (navCompact ? 72 : 232) : 0
     Behavior on navWidth { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    property var person: null   // ficha de persona abierta (encima de la ficha de la que se llegó) o null
     property var detail: null   // ficha abierta (película de MovieModel o serie de SeriesCatalog, con kind === "series") o null
     readonly property bool seriesOpen: detail !== null && detail.kind === "series"
     readonly property bool movieOpen: detail !== null && detail.kind !== "series"
@@ -113,7 +114,13 @@ Window {
         detail = m
         detailView.forceActiveFocus()
     }
-    function closeDetail() { detail = null; catalog.forceActiveFocus() }
+    function closeDetail() { if (person) { closePerson(); return } detail = null; catalog.forceActiveFocus() }
+    function openPerson(p) { if (p && p.id) { person = p; personView.forceActiveFocus() } }
+    function closePerson() { person = null; if (detail) (seriesOpen ? seriesDetailView : detailView).forceActiveFocus() }
+    function openFromPerson(it) {   // desde «En tu colección»: se abre la ficha del título (la persona queda atrás)
+        person = null
+        if (it.kind === "pelicula") showDetailById(it.id); else showSeriesById(it.serieId || it.seriesId || it.id)
+    }
 
     // --- Series ---
     function openSeries(d) {
@@ -458,7 +465,7 @@ Window {
     SeriesDetailView {
         id: seriesDetailView
         anchors { fill: parent; leftMargin: root.navWidth }
-        readonly property bool pageActive: !root.playing && root.seriesOpen
+        readonly property bool pageActive: !root.playing && root.seriesOpen && !root.person
         opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
         visible: opacity > 0
         enabled: pageActive
@@ -466,6 +473,7 @@ Window {
         series: root.seriesOpen ? root.detail : ({})
         catalog: seriesCat
         onBack: root.closeDetail()
+        onPersonRequested: (p) => root.openPerson(p)
         onPlayEpisode: (id, start) => root.playEpisodeById(id, start)
         onMarkRequested: (sid, season, estado) => root.confirmMark(sid, season, estado, root.detail.title)
     }
@@ -473,14 +481,30 @@ Window {
     DetailView {
         id: detailView
         anchors { fill: parent; leftMargin: root.navWidth }
-        readonly property bool pageActive: !root.playing && root.movieOpen
+        readonly property bool pageActive: !root.playing && root.movieOpen && !root.person
         opacity: pageActive ? 1 : 0                      // fundido suave entre secciones
         visible: opacity > 0
         enabled: pageActive
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         movie: root.movieOpen ? root.detail : ({})
         onBack: root.closeDetail()
+        onPersonRequested: (p) => root.openPerson(p)
         onPlay: (start) => root.openMovie(root.detail, start)
+    }
+
+    PersonView {
+        id: personView
+        anchors { fill: parent; leftMargin: root.navWidth }
+        readonly property bool pageActive: !root.playing && root.person !== null
+        opacity: pageActive ? 1 : 0
+        visible: opacity > 0
+        enabled: pageActive
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+        api: api
+        person: root.person
+        onBack: root.closePerson()
+        onOpenItem: (it) => root.openFromPerson(it)
+        onMenuRequested: (it, x, y) => root.openItemMenu(it, x, y)
     }
 
     Rectangle { // aviso temporal (archivo no disponible)
@@ -504,7 +528,7 @@ Window {
         clip: true
         compact: root.navCompact
         section: root.section
-        onNavigate: (k) => { root.detail = null; root.section = k }
+        onNavigate: (k) => { root.person = null; root.detail = null; root.section = k }
         onAboutRequested: aboutDialog.open()
     }
 
@@ -525,7 +549,7 @@ Window {
             spacing: 12
             Text {
                 visible: root.playing || root.detail !== null
-                text: root.playing ? "‹ " + (root.detail ? "Ficha" : "Biblioteca") : (root.seriesOpen ? "‹ Series" : "‹ Películas"); color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
+                text: root.playing ? "‹ " + (root.detail ? "Ficha" : "Biblioteca") : (root.person ? "‹ Ficha" : (root.seriesOpen ? "‹ Series" : "‹ Películas")); color: backHover.hovered ? "white" : "#bbbbbb"; font.pixelSize: 13
                 HoverHandler { id: backHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: root.playing ? root.closeMovie() : root.closeDetail() }
             }
@@ -646,6 +670,7 @@ Window {
     Timer { id: wheelT2; interval: 1500; onTriggered: console.log("WHEEL 3 muescas: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px") }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
         if (spikeArgs.uiTest === "page2") { movies.page = 1; console.log("PAGE2 primera=" + movies.get(0).title + " rows=" + movies.rowCount() + " paginas=" + movies.pageCount); root.showDetail(0) }
+        else if (spikeArgs.uiTest === "person") root.openPerson(root.detail.cast[0])
         else if (spikeArgs.uiTest === "pl-ended") root.ended = true
         else if (spikeArgs.uiTest === "pl-audio") overlay.openAudioMenu(overlay.audioButton)
         else if (spikeArgs.uiTest === "pl-subs") overlay.openSubMenu(overlay.subButton)

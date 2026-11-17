@@ -9,6 +9,7 @@ Rectangle {
     color: Tokens.bg
     property var movie: ({})
     signal back()
+    signal personRequested(var person)
     signal play(real start)
 
     readonly property bool inProgress: movie.progressState === "enProgreso" && movie.progressPos > 0
@@ -188,6 +189,9 @@ Rectangle {
                     model: view.movie.cast || []
                     delegate: Item {
                         width: 144; height: 220
+                        HoverHandler { id: castHover; enabled: !!modelData.id; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { enabled: !!modelData.id; onTapped: view.personRequested(modelData) }
+                        opacity: castHover.hovered ? 0.8 : 1
                         Rectangle {
                             id: avatar
                             width: 120; height: 120; radius: 60; x: 12
