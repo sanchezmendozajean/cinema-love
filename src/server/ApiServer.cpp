@@ -17,6 +17,7 @@
 #include "ImageApi.h"
 #include "AdminApi.h"
 #include "Jobs.h"
+#include "PublicServer.h"
 #include "Bcrypt.h"
 
 using namespace Mappers;
@@ -71,23 +72,28 @@ QString ApiServer::baseUrl() const { return QStringLiteral("http://127.0.0.1:%1"
 
 quint16 ApiServer::start(quint16 port)
 {
+    m_public = std::make_unique<PublicServer>();
     m_adminToken = randomToken(24);
     m_http = std::make_unique<HttpServer>();
     m_http->setThreadDone([] { Store::closeThreadConnection(); });
-    registerRoutes();
+    installRoutes(*m_http, m_adminToken, m_public.get());
     m_port = m_http->listen(QStringLiteral("127.0.0.1"), port);
+    try {   // «Iniciar automáticamente al abrir CinemaLove»
+        if (m_port && m_public->config().value(QStringLiteral("autostart")).toBool()) m_public->start();
+    } catch (const std::exception &e) {
+        qWarning("No se pudo iniciar el servidor público automáticamente: %s", e.what());
+    }
     return m_port;
 }
 
 void ApiServer::stop()
 {
+    m_public.reset();
     if (m_http) { m_http->stop(); m_http.reset(); }
 }
 
-void ApiServer::registerRoutes()
+void ApiServer::installRoutes(HttpServer &h, const QString &token, PublicServer *ps)
 {
-    HttpServer &h = *m_http;
-    const QString token = m_adminToken;
 
     // Autenticación (specs/04 §2): token admin efímero, API key activa o token de sesión de un usuario.
     h.setGuard([token](HttpRequest &req, HttpResponse &res) {
@@ -97,7 +103,7 @@ void ApiServer::registerRoutes()
         QString cred = req.headers.value(QStringLiteral("x-api-key"));
         if (cred.isEmpty()) cred = req.q(QStringLiteral("api_key"));
         if (!cred.isEmpty()) {
-            if (constantTimeEq(cred, token)) { req.principal = QStringLiteral("admin"); return true; }
+            if (!token.isEmpty() && constantTimeEq(cred, token)) { req.principal = QStringLiteral("admin"); return true; }
             const QVariant key = Store::scalar(QStringLiteral("SELECT valor FROM api_keys WHERE activa = 1 LIMIT 1"));
             if (key.isValid() && constantTimeEq(cred, key.toString())) { req.principal = QStringLiteral("token"); return true; }
             const QVariantMap s = Store::row(QStringLiteral("SELECT usuario_id, expira_en FROM sesiones WHERE token = ?"), {cred});
@@ -128,7 +134,7 @@ void ApiServer::registerRoutes()
     h.route("GET", "/api/v1/health", [](HttpRequest &) {
         const QVariant id = Store::scalar(QStringLiteral("SELECT valor FROM cl_meta WHERE clave = 'server_id'"));
         return HttpResponse::json(QJsonObject{{"status", "ok"}, {"app", "cinemalove"}, {"serverId", id.isValid() ? id.toString() : QStringLiteral("desconocido")},
-                                              {"nombre", QSysInfo::machineHostName()}, {"apiVersion", 1}, {"plataforma", "qt"}});
+                                              {"nombre", PublicServer::serverName()}, {"apiVersion", 1}, {"plataforma", "qt"}});
     });
     h.route("GET", "/api/v1/me", [](HttpRequest &r) {
         QJsonArray caps{"browse", "play", "progress"};
@@ -167,7 +173,10 @@ void ApiServer::registerRoutes()
     });
 
     registerUserRoutes(h);
-    registerAdminRoutes(h, *new JobManager(m_http.get()));   // hijo del servidor: vive en su hilo
+    if (!token.isEmpty()) {   // solo el listener interno expone administración
+        registerAdminRoutes(h, *new JobManager(&h));   // hijo del servidor: vive en su hilo
+        if (ps) registerServerAdminRoutes(h, *ps);
+    }
     registerImageRoutes(h);
 
     // --- catálogo [v1-legado]

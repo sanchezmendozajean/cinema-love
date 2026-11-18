@@ -3,6 +3,7 @@
 #include <memory>
 
 class HttpServer;
+class PublicServer;
 
 /**
  * API HTTP v1 del backend integrado (specs/heredadas/04): el mismo contrato que sirve el backend Node, ahora dentro de la aplicación.
@@ -18,10 +19,12 @@ public:
     void stop();
     QString adminToken() const { return m_adminToken; }
     QString baseUrl() const;
+    /** Instala las rutas de la API en `h`. Con `adminToken` vacío es el listener público (sin administración). */
+    static void installRoutes(HttpServer &h, const QString &adminToken, PublicServer *ps);
 
 private:
-    void registerRoutes();
     std::unique_ptr<HttpServer> m_http;
+    std::unique_ptr<PublicServer> m_public;
     QString m_adminToken;
     quint16 m_port = 0;
 };

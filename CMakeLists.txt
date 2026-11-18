@@ -77,6 +77,8 @@ qt_add_qml_module(cinemalove
         src/server/Metadata.cpp
         src/server/Jobs.h
         src/server/Jobs.cpp
+        src/server/PublicServer.h
+        src/server/PublicServer.cpp
         src/server/AdminApi.h
         src/server/AdminApi.cpp
         src/server/Catalog.h
