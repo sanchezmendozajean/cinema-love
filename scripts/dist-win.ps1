@@ -33,7 +33,14 @@ Copy-Item (Join-Path $sq 'lib') $sqDest -Recurse
 Copy-Item (Join-Path $sq 'prebuilds\win32-x64.node') (Join-Path $sqDest 'prebuilds')
 
 # 2b) Tipografías opcionales (third_party/fonts/*.ttf|otf, OFL)
-$fonts = Get-ChildItem (Join-Path $root 'third_party' | Join-Path -ChildPath 'fonts') -Filter 'OFL-*.txt' -ErrorAction SilentlyContinue | Copy-Item -Destination $lic
+$fonts = Get-ChildItem (Join-Path (Join-Path $root 'third_party') 'fonts') -Include *.ttf,*.otf -Recurse -ErrorAction SilentlyContinue
+if ($fonts) { $fd = Join-Path $dest 'fonts'; New-Item -ItemType Directory -Force $fd | Out-Null; $fonts | Copy-Item -Destination $fd }
+
+# 3) Licencias y avisos
+$lic = Join-Path $dest 'licencias'
+New-Item -ItemType Directory -Force $lic | Out-Null
+Copy-Item (Join-Path $root 'third_party\README.md') (Join-Path $lic 'COMPONENTES.md')
+Get-ChildItem (Join-Path (Join-Path $root 'third_party') 'fonts') -Filter 'OFL-*.txt' -ErrorAction SilentlyContinue | Copy-Item -Destination $lic
 Set-Content (Join-Path $lic 'LEEME.txt') -Encoding utf8 -Value @"
 CinemaLove $version (Qt 6 + libmpv)
 
