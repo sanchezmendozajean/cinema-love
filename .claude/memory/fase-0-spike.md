@@ -239,3 +239,5 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Hallazgo al probar la GUI: el Modo Cliente arranca de forma síncrona en main.cpp, antes de cargar QML, así que `onReadyChanged` ya no llegaba a tiempo → `Main.qml` llama `clientAutoConnect()` también en `Component.onCompleted`.
 - Distribución: `.\scripts\dist-win.ps1` → 177 MB, ZIP 73 MB, sin carpeta `backend/`; el exe empaquetado arranca con solo el PATH del sistema.
 - Pendiente (no probado): Linux (libssl del sistema para TLS, D-Bus, empaquetado), prueba larga de reproducción, ZIP en máquina limpia, interfaz de «Buscar en la red» (mDNS) en ClientView (el servicio `/control/descubrir` ya existe).
+
+- 18/11/2026: ClientView tiene �Buscar en la red� (EN TU RED): sondea /control/descubrir 8 s y al elegir rellena la direcci�n y verifica. Gancho de prueba: --ui-test clientsearch.

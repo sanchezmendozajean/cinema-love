@@ -772,9 +772,11 @@ Window {
     Timer { id: wheelT1; interval: 1500; onTriggered: { console.log("WHEEL 1 muesca: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px"); root.wheelY0 = catalog.scrollY
         for (let i = 0; i < 3; i++) testInput.wheel(root, 700, 400, -120); wheelT2.start() } }
     Timer { id: wheelT2; interval: 1500; onTriggered: console.log("WHEEL 3 muescas: " + (catalog.scrollY - root.wheelY0).toFixed(1) + " px") }
+    Timer { id: clientPickT; interval: 4000; onTriggered: { console.log("CLIENTSEARCH encontrados=" + clientView.found.length + " " + JSON.stringify(clientView.found)); if (clientView.found.length) clientView.pick(clientView.found[0]) } }
     Timer { id: uiTestTimer; interval: 5000; onTriggered: {
         if (spikeArgs.uiTest === "page2") { movies.page = 1; console.log("PAGE2 primera=" + movies.get(0).title + " rows=" + movies.rowCount() + " paginas=" + movies.pageCount); root.showDetail(0) }
         else if (spikeArgs.uiTest === "maxrestore") { root.visibility = Window.Maximized; maxRestoreTimer.start() }
+        else if (spikeArgs.uiTest === "clientsearch") { clientView.search(); clientPickT.start() }
         else if (spikeArgs.uiTest === "person") root.openPerson(root.detail.cast[0])
         else if (spikeArgs.uiTest === "pl-ended") root.ended = true
         else if (spikeArgs.uiTest === "pl-audio") overlay.openAudioMenu(overlay.audioButton)

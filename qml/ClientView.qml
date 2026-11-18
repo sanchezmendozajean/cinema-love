@@ -25,6 +25,22 @@ Rectangle {
     readonly property bool problem: connType === "sin-conexion" || connType === "sesion-vencida" || connType === "certificado-cambiado"
     readonly property bool syncing: connType === "conectada"
 
+    // Descubrimiento en la red local (mDNS): «Buscar en la red» consulta el servicio unos segundos y lista lo que se anuncia.
+    property var found: []
+    property bool searching: false
+    property bool searched: false
+    property int searchTicks: 0
+    function search() { found = []; searching = true; searched = true; searchTicks = 0; pollTimer.restart(); poll() }
+    function poll() {
+        ctl.request("GET", "/control/descubrir", undefined, (st, d) => { if (st === 200 && d && d.servidores) found = d.servidores })
+    }
+    function stopSearch() { pollTimer.stop(); searching = false; if (ctl) ctl.request("POST", "/control/descubrir/detener", null, () => {}) }
+    function pick(srv) { urlField.text = (srv.tls ? "https://" : "http://") + srv.host + ":" + srv.puerto; probe = null; error = ""; verify() }
+    Timer { id: pollTimer; interval: 1000; repeat: true
+        onTriggered: { view.poll(); if (++view.searchTicks >= 8) { pollTimer.stop(); view.searching = false } } }
+    onStageChanged: if (stage !== "url") stopSearch()
+    Component.onDestruction: stopSearch()
+
     function reset() { stage = "url"; probe = null; trustHash = ""; error = ""; busy = false; passField.text = ""; keyField.text = "" }
 
     function verify() {
@@ -135,6 +151,27 @@ Rectangle {
                         TapHandler { onTapped: view.act("/control/reconectar", { id: modelData.id }) }
                     }
                 }
+                // Servidores anunciados en la red local
+                Row { width: parent.width; spacing: 10
+                    Text { anchors.verticalCenter: parent.verticalCenter; width: parent.width - searchBtn.width - 10; color: Tokens.textFaint; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.5
+                           text: "EN TU RED" }
+                    AdminButton { id: searchBtn; text: view.searching ? "Buscando…" : (view.searched ? "Buscar de nuevo" : "Buscar en la red"); enabled: !view.searching && !view.busy; onClicked: view.search() }
+                }
+                Repeater {
+                    model: view.found
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: col.width; height: 54; radius: Tokens.radius; color: fh.hovered ? Tokens.surfaceHover : Tokens.surface; border.color: Tokens.border
+                        Column { anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter } spacing: 2
+                            Text { text: modelData.nombre; color: Tokens.text; font.pixelSize: 15; font.weight: Font.Medium }
+                            Text { text: (modelData.tls ? "https://" : "http://") + modelData.host + ":" + modelData.puerto; color: Tokens.textMuted; font.pixelSize: 12 } }
+                        Text { anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter } text: "Elegir ›"; color: Tokens.accentSoft; font.pixelSize: 14 }
+                        HoverHandler { id: fh; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { onTapped: view.pick(modelData) }
+                    }
+                }
+                Text { visible: view.searched && !view.searching && view.found.length === 0; width: parent.width; wrapMode: Text.WordWrap; color: Tokens.textMuted; font.pixelSize: 13
+                       text: "No se encontró ningún CinemaLove en tu red. Comprueba que el otro equipo tenga activado «Compartir mi colección en la red» y «Anunciar en la red (mDNS)», o escribe su dirección." }
                 TextField { id: urlField; width: parent.width; height: 46; placeholderText: "http://192.168.0.115:8080"; color: Tokens.text; font.pixelSize: 15; leftPadding: 14
                     placeholderTextColor: Tokens.textFaint; selectByMouse: true; inputMethodHints: Qt.ImhUrlCharactersOnly
                     background: Rectangle { radius: Tokens.radiusSmall; color: Tokens.surface; border.color: urlField.activeFocus ? Tokens.accent : Tokens.border }
