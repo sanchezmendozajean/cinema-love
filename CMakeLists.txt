@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 QuickDialogs2 OpenGL Sql Network)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 QuickDialogs2 OpenGL Sql Network Concurrent)
 qt_standard_project_setup(REQUIRES 6.8)
 
 include(cmake/Libmpv.cmake) # define el destino mpv::libmpv
@@ -69,6 +69,16 @@ qt_add_qml_module(cinemalove
         src/server/ImageApi.cpp
         src/server/UserApi.h
         src/server/UserApi.cpp
+        src/server/Naming.h
+        src/server/Naming.cpp
+        src/server/Scanner.h
+        src/server/Scanner.cpp
+        src/server/Metadata.h
+        src/server/Metadata.cpp
+        src/server/Jobs.h
+        src/server/Jobs.cpp
+        src/server/AdminApi.h
+        src/server/AdminApi.cpp
         src/server/Catalog.h
         src/server/Catalog.cpp
         src/server/Store.h
@@ -101,7 +111,7 @@ endif()
 qt_add_resources(cinemalove "server_schema" PREFIX "/server" BASE "${CMAKE_SOURCE_DIR}/src/server" FILES src/server/schema-v11.sql)
 
 target_link_libraries(cinemalove PRIVATE
-    Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::OpenGL Qt6::Sql Qt6::Network Qt6::QuickControls2
+    Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::OpenGL Qt6::Sql Qt6::Network Qt6::QuickControls2 Qt6::Concurrent
     mpv::libmpv
 )
 

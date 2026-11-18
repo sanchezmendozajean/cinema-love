@@ -39,7 +39,7 @@ const primera = (a, b, ruta = '') => {
 let ok = 0, fail = 0
 const cmp = async (path, ignorar = []) => {
   const a = await get(node, path), b = await get(qt, path)
-  const strip = (o) => { if (o && typeof o === 'object' && !Array.isArray(o)) for (const k of ignorar) delete o[k]; return o }
+  const strip = (o) => o && typeof o === 'object' ? JSON.parse(JSON.stringify(o, (k, v) => (ignorar.includes(k) ? undefined : v))) : o
   const same = a.status === b.status && norm(strip(a.json)) === norm(strip(b.json))
   if (same) ok++; else { fail++; console.log('DIFERENCIA', path, a.status, b.status, primera(sort(strip(a.json)), sort(strip(b.json))) ?? '') }
 }
@@ -154,6 +154,123 @@ const secuencia = async (o) => {
   const noDisp = '/api/v1/image?src=' + encodeURIComponent('https://image.tmdb.org/t/p/w500/noexiste-xyz.jpg')
   await cmp(noDisp)
   for (const id of ['8229', '1', 'x']) await cmp('/api/v1/people/' + id)
+}
+// Administración: bibliotecas, escáner, trabajos, huérfanos, re-vinculación, homologación y usuarios.
+// Se crean dos árboles idénticos de archivos de prueba (uno por backend) para poder renombrar en disco sin que se estorben.
+{
+  const { mkdirSync: mk, writeFileSync: wf, renameSync: rn, rmSync: rm2 } = await import('node:fs')
+  const crear = (raiz) => {
+    const f = (rel, n) => { const p = raiz + '/' + rel; mk(p.slice(0, p.lastIndexOf('/')), { recursive: true }); wf(p, Buffer.alloc(200000 + n, n % 251)) }
+    f('peliculas/Matrix (1999)/Matrix.1999.1080p.mkv', 1); f('peliculas/Matrix (1999)/Matrix.1999.es.srt', 2); f('peliculas/Matrix (1999)/extras/Making.of.mkv', 3)
+    f('peliculas/1917/1917.2019.720p.x264.mp4', 4); f('peliculas/CD1/Pelicula.Rara.2001.avi', 5); f('peliculas/Sin Video/leeme.txt', 6)
+    f('series/Dark/Season 1/Dark.S01E01.mkv', 7); f('series/Dark/Season 1/Dark.S01E02.mkv', 8); f('series/Dark/Season 2/dark 2x01.mkv', 9)
+    f('series/Show/Episodio 02.mkv', 10); f('series/Show/Episodio 01.mkv', 11); f('series/Show/Episodio 10.mkv', 12)
+    f('series/Otra/Temporada 03/Otra S03E04.mp4', 13)
+  }
+  const A = '/api/v1/admin'
+  const adm = async (o, m, path, body) => { const r = await fetch(o.baseUrl + A + path, { method: m, headers: body !== undefined ? { 'X-Api-Key': o.token, 'Content-Type': 'application/json' } : { 'X-Api-Key': o.token }, body: body !== undefined ? JSON.stringify(body) : undefined }); const j = await r.json().catch(() => null); return { status: r.status, json: j } }
+  const esperar = async (o, id) => { for (let i = 0; i < 200; i++) { const j = (await adm(o, 'GET', '/jobs/' + id)).json; if (j && j.estado !== 'corriendo') return j; await new Promise(r => setTimeout(r, 100)) } return null }
+  const secAdmin = async (o, raiz) => {
+    const out = []
+    const ph = (x) => JSON.stringify(sort(x), (k, v) => (['creadoEn', 'terminadoEn', 'id', 'jobId', 'libraryId'].includes(k) ? undefined : v)).split(String.fromCharCode(92) + String.fromCharCode(92)).join('/').split(raiz).join('RAIZ')
+    const reg = (t, r) => out.push(`${t} -> ${r.status} ${ph(r.json)}`)
+    const libsAntes = (await adm(o, 'GET', '/bibliotecas')).json.length
+    reg('crear sin nombre', await adm(o, 'POST', '/bibliotecas', { tipo: 'pelicula', ruta: raiz + '/peliculas' }))
+    reg('crear tipo malo', await adm(o, 'POST', '/bibliotecas', { nombre: 'X', tipo: 'otro', ruta: raiz + '/peliculas' }))
+    reg('crear ruta inexistente', await adm(o, 'POST', '/bibliotecas', { nombre: 'X', tipo: 'pelicula', ruta: raiz + '/nada' }))
+    const c1 = await adm(o, 'POST', '/bibliotecas', { nombre: 'Prueba Pelis', tipo: 'pelicula', ruta: raiz + '/peliculas', escanear: false }); reg('crear pelis', c1)
+    reg('crear nombre repetido', await adm(o, 'POST', '/bibliotecas', { nombre: 'prueba pelis', tipo: 'pelicula', ruta: raiz + '/series' }))
+    reg('crear superpuesta', await adm(o, 'POST', '/bibliotecas', { nombre: 'Dentro', tipo: 'pelicula', ruta: raiz + '/peliculas/Matrix (1999)' }))
+    const c2 = await adm(o, 'POST', '/bibliotecas', { nombre: 'Prueba Series', tipo: 'serie', ruta: raiz + '/series', escanear: false }); reg('crear series', c2)
+    const lp = c1.json.id, ls = c2.json.id
+    const lista = (await adm(o, 'GET', '/bibliotecas')).json.filter(l => l.id === lp || l.id === ls); out.push('lista: ' + ph(lista))
+    const correr = async (id, ruta, etiqueta) => { const j = await adm(o, 'POST', ruta); if (j.status !== 200) { reg(etiqueta, j); return }; const fin = await esperar(o, j.json.id); const det = (await adm(o, 'GET', '/jobs/' + j.json.id)).json; out.push(`${etiqueta}: ${ph({ estado: fin?.estado, resultado: fin?.resultado, error: fin?.error, lineas: det?.lineas })}`) }
+    const foto = async (etiqueta) => {
+      const filas = []
+      for (const [lid, tipo] of [[lp, 'pelicula'], [ls, 'serie']]) {
+        const items = tipo === 'pelicula' ? (await get(o, `/api/v1/libraries/${lid}/items`)).json : []
+        for (const m of items) { const a = (await adm(o, 'GET', `/items/${m.id}/archivo`)).json; filas.push(`P|${a.rutaRelativa}|${a.existe}|${a.bytes}`) }
+        const ss = tipo === 'serie' ? (await get(o, `/api/v1/libraries/${lid}/series`)).json : []
+        for (const sx of ss) {
+          for (const e of (await get(o, `/api/v1/series/${sx.id}/episodes`)).json) { const a = (await adm(o, 'GET', `/items/${e.id}/archivo`)).json; filas.push(`E|${a.rutaRelativa}|T${e.numeroTemporada}E${e.numeroEpisodio}`) }
+        }
+        for (const h of (await adm(o, 'GET', `/bibliotecas/${lid}/huerfanos`)).json) filas.push(`H|${h.tipo}|${h.rutaRelativa}|${h.serie}`)
+      }
+      out.push(`${etiqueta}: ` + ph(filas.sort()))
+    }
+    await correr(lp, `/bibliotecas/${lp}/escanear`, 'escaneo pelis'); await correr(ls, `/bibliotecas/${ls}/escanear`, 'escaneo series'); await foto('estado 1')
+    await correr(lp, `/bibliotecas/${lp}/escanear`, 'reescaneo pelis'); await foto('estado 2')
+    // mover un archivo (se reconcilia por hash), borrar otro (queda huérfano) y añadir uno nuevo
+    rn(raiz + '/peliculas/1917/1917.2019.720p.x264.mp4', raiz + '/peliculas/1917/1917.renombrada.mp4')
+    rm2(raiz + '/peliculas/CD1/Pelicula.Rara.2001.avi')
+    mk(raiz + '/peliculas/Nueva (2020)', { recursive: true }); wf(raiz + '/peliculas/Nueva (2020)/Nueva.2020.mkv', Buffer.alloc(300001, 7))
+    rn(raiz + '/series/Dark/Season 1/Dark.S01E02.mkv', raiz + '/series/Dark/Season 1/Dark.S01E02.FINAL.mkv')
+    await correr(lp, '/escanear-todo', 'escanear todo'); await foto('estado 3')
+    const h = (await adm(o, 'GET', `/bibliotecas/${lp}/huerfanos`)).json; reg('huerfanos', { status: 200, json: h })
+    reg('borrar huerfanos cantidad mala', await adm(o, 'DELETE', `/bibliotecas/${lp}/huerfanos?confirm=99`))
+    const nuevo = (await get(o, `/api/v1/libraries/${lp}/items`)).json.find(m => m.titulo == null && m.id)
+    // re-vincular el huérfano con otro archivo existente
+    if (h.length) { reg('revincular fuera', await adm(o, 'POST', `/items/${h[0].id}/revincular`, { rutaRelativa: '../x.mkv' })); reg('revincular inexistente', await adm(o, 'POST', `/items/${h[0].id}/revincular`, { rutaRelativa: 'nada/x.mkv' })); reg('revincular ocupado', await adm(o, 'POST', `/items/${h[0].id}/revincular`, { rutaRelativa: 'Matrix (1999)/Matrix.1999.1080p.mkv' }))
+      reg('revincular ok', await adm(o, 'POST', `/items/${h[0].id}/revincular`, { rutaRelativa: 'Nueva (2020)/Nueva.2020.mkv' })) }
+    await foto('estado 4')
+    // homologar: vista previa y aplicación
+    const matrix = (await get(o, `/api/v1/libraries/${lp}/items`)).json
+    for (const m of matrix) { const a = (await adm(o, 'GET', `/items/${m.id}/archivo`)).json
+      if (a.rutaRelativa.startsWith('Matrix')) { reg('homologar previa', await adm(o, 'POST', `/items/${m.id}/homologar`, { titulo: 'The Matrix: Reloaded?', anio: 2003 })); reg('homologar anio malo', await adm(o, 'POST', `/items/${m.id}/homologar`, { titulo: 'X', anio: 3000 })); reg('homologar aplicar', await adm(o, 'POST', `/items/${m.id}/homologar`, { titulo: 'The Matrix: Reloaded?', anio: 2003, aplicar: true })); reg('homologar de nuevo', await adm(o, 'POST', `/items/${m.id}/homologar`, { titulo: 'The Matrix: Reloaded?', anio: 2003 })) } }
+    await foto('estado 5')
+    // metadata manual
+    const un = (await get(o, `/api/v1/libraries/${lp}/items`)).json[0]
+    reg('editar metadata', await adm(o, 'PUT', `/items/${un.id}/metadata`, { titulo: 'Mi título', anio: 1999, sinopsis: '  ', generos: ['Acción', 'Drama'], reparto: [{ id: 5, nombre: 'Ana', rol: 'X' }, { nombre: 'Sin id' }], duracionSegundos: 3600 }))
+    reg('editar metadata ruta mala', await adm(o, 'PUT', `/otra/${un.id}/metadata`, { titulo: 'x' })); reg('editar metadata no existe', await adm(o, 'PUT', `/items/nada/metadata`, { titulo: 'x' }))
+    out.push('ficha: ' + ph((await get(o, `/api/v1/items/${un.id}`)).json))
+    // ajustes
+    reg('tmdb get', await adm(o, 'GET', '/ajustes/tmdb')); reg('subs get', await adm(o, 'GET', '/ajustes/subtitulos'))
+    reg('subs put', await adm(o, 'PUT', '/ajustes/subtitulos', { tamano: 40, posicion: 60 })); reg('subs put malo', await adm(o, 'PUT', '/ajustes/subtitulos', { tamano: 'x' }))
+    reg('limpiar raro', await adm(o, 'POST', '/datos/limpiar/otra'))
+    // usuarios y token
+    reg('usuario corto', await adm(o, 'POST', '/usuarios', { nombreUsuario: 'ab', password: '123456' })); reg('usuario pass corta', await adm(o, 'POST', '/usuarios', { nombreUsuario: 'carlos', password: '123' }))
+    const u = await adm(o, 'POST', '/usuarios', { nombreUsuario: 'carlos', password: 'secreta1' }); reg('usuario ok', { status: u.status, json: { ...u.json, id: undefined } })
+    reg('usuario repetido', await adm(o, 'POST', '/usuarios', { nombreUsuario: 'CARLOS', password: 'secreta1' }))
+    out.push('usuarios: ' + ph((await adm(o, 'GET', '/usuarios')).json.map(x => ({ n: x.nombreUsuario, rol: x.rol, s: x.sesiones }))))
+    const lg = await fetch(o.baseUrl + '/api/v1/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombreUsuario: 'carlos', password: 'secreta1' }) }); out.push('login nuevo usuario: ' + lg.status)
+    reg('pass corta', await adm(o, 'PUT', `/usuarios/${u.json.id}/password`, { password: '1' })); reg('pass ok', await adm(o, 'PUT', `/usuarios/${u.json.id}/password`, { password: 'otra-clave' }))
+    const lg2 = await fetch(o.baseUrl + '/api/v1/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombreUsuario: 'carlos', password: 'otra-clave' }) }); out.push('login tras cambio: ' + lg2.status)
+    reg('borrar sin confirmar', await adm(o, 'DELETE', `/usuarios/${u.json.id}?confirm=otro`)); reg('borrar ok', await adm(o, 'DELETE', `/usuarios/${u.json.id}?confirm=carlos`))
+    const k = (await adm(o, 'POST', '/api-key/regenerar')).json.valor; out.push('api-key regenerada: ' + (k.length) + ' ' + /^[0-9a-f]{64}$/.test(k))
+    out.push('api-key get igual: ' + ((await adm(o, 'GET', '/api-key')).json.valor === k))
+    // 403 para quien no es admin
+    const nr = await fetch(o.baseUrl + A + '/bibliotecas', { headers: { 'X-Api-Key': k } }); out.push('apikey no admin: ' + nr.status)
+    // borrar biblioteca
+    reg('borrar con nombre mal', await adm(o, 'DELETE', `/bibliotecas/${lp}?confirm=x`)); reg('borrar pelis', await adm(o, 'DELETE', `/bibliotecas/${lp}?confirm=Prueba%20Pelis`)); reg('borrar series', await adm(o, 'DELETE', `/bibliotecas/${ls}?confirm=Prueba%20Series`))
+    out.push('bibliotecas al final: ' + ((await adm(o, 'GET', '/bibliotecas')).json.length === libsAntes))
+    // trabajos inexistentes
+    reg('job no existe', await adm(o, 'GET', '/jobs/nada')); reg('cancelar no existe', await adm(o, 'POST', '/jobs/nada/cancelar'))
+    return out
+  }
+  const rn1 = S + '/media-node', rq1 = S + '/media-qt'
+  crear(rn1); crear(rq1)
+  const a = await secAdmin(node, rn1), b = await secAdmin(qt, rq1)
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (a[i] === b[i]) ok++; else { fail++; console.log('DIFERENCIA admin #' + i); const x = a[i] ?? '', y = b[i] ?? ''; let k = 0; while (k < x.length && x[k] === y[k]) k++; console.log('  primera diferencia en', k); console.log('  node:', x.slice(Math.max(0, k - 120), k + 200)); console.log('  qt  :', y.slice(Math.max(0, k - 120), k + 200)) }
+  }
+}
+// Importación de metadata desde TMDb (requiere red y la clave de la base de pruebas): mismo resultado en ambos
+{
+  const A = '/api/v1/admin'
+  const adm = async (o, m, path, body) => { const r = await fetch(o.baseUrl + A + path, { method: m, headers: body !== undefined ? { 'X-Api-Key': o.token, 'Content-Type': 'application/json' } : { 'X-Api-Key': o.token }, body: body !== undefined ? JSON.stringify(body) : undefined }); return { status: r.status, json: await r.json().catch(() => null) } }
+  const correr = async (o, lid) => {
+    const j = await adm(o, 'POST', `/bibliotecas/${lid}/metadata`, { modo: 'faltantes' }); if (j.status !== 200) return `inicio ${j.status} ${JSON.stringify(j.json)}`
+    for (let i = 0; i < 600; i++) { const d = (await adm(o, 'GET', '/jobs/' + j.json.id)).json; if (d.estado !== 'corriendo') return JSON.stringify(sort({ estado: d.estado, error: d.error, resultado: d.resultado, lineas: d.lineas })); await new Promise(r => setTimeout(r, 200)) }
+    return 'timeout'
+  }
+  const lib = libs.find(l => l.tipo === 'pelicula')
+  const uu = (t) => t.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, 'U')
+  const a = uu(await correr(node, lib.id)), b = uu(await correr(qt, lib.id))
+  if (a === b) ok++; else { fail++; console.log('DIFERENCIA metadata job'); let k = 0; while (k < a.length && a[k] === b[k]) k++; console.log('  en', k); console.log('  node:', a.slice(Math.max(0, k - 150), k + 250)); console.log('  qt  :', b.slice(Math.max(0, k - 150), k + 250)) }
+  await cmp('/api/v1/libraries/' + lib.id + '/items', ['creadoEn', 'id'])
+  const sinMeta = pelis.filter(m => m.titulo == null).map(m => m.id)
+  for (const id of sinMeta) await cmp('/api/v1/items/' + id, ['creadoEn', 'id'])
+  console.log('metadata: probados', sinMeta.length, 'ítems sin metadata previa;', a.slice(0, 160))
 }
 // streaming con Range
 const id = pelis[0].id

@@ -7,6 +7,8 @@
 #include <QJsonObject>
 #include <QMetaObject>
 #include <QPointer>
+#include <QTimer>
+#include <QtConcurrent>
 #include <QRegularExpression>
 #include <QTcpSocket>
 
@@ -79,6 +81,20 @@ HttpResponse HttpResponse::file(const QString &path, const QString &contentType)
     r.filePath = path;
     r.fileContentType = contentType;
     return r;
+}
+
+SseChannel::SseChannel(QTcpSocket *s) : QObject(s), m_sock(s)
+{
+    connect(s, &QTcpSocket::disconnected, this, &SseChannel::closed);
+    auto *beat = new QTimer(this);   // latido: mantiene viva la conexión y detecta clientes caídos
+    connect(beat, &QTimer::timeout, this, [this] { m_sock->write(": latido\n\n"); });
+    beat->start(20000);
+}
+
+void SseChannel::send(const QString &event, const QJsonValue &data)
+{
+    const QByteArray json = data.isArray() ? QJsonDocument(data.toArray()).toJson(QJsonDocument::Compact) : QJsonDocument(data.toObject()).toJson(QJsonDocument::Compact);
+    m_sock->write("event: " + event.toUtf8() + "\ndata: " + json + "\n\n");
 }
 
 /** Una conexión TCP: analiza peticiones (keep-alive) y escribe respuestas, enviando archivos por trozos con control de flujo. */
@@ -162,6 +178,14 @@ private:
         res.header("Access-Control-Expose-Headers", "Content-Range, Accept-Ranges");
         if (!origin.isEmpty()) res.header("Vary", "Origin");
         m_waiting = false;
+        if (res.sse) {
+            QByteArray head = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: keep-alive\r\n";
+            for (const auto &p : res.headers) head += p.first + ": " + p.second + "\r\n";
+            m_sock->write(head + "\r\n");
+            m_streaming = true;   // la conexión queda dedicada al stream
+            res.sse(new SseChannel(m_sock));
+            return;
+        }
         if (!res.filePath.isEmpty()) sendFile(req, res);
         else write(res, res.body.size(), req.method == QLatin1String("HEAD") ? QByteArray() : res.body);
         if (!m_streaming && !m_closeAfter && !m_buf.isEmpty()) QMetaObject::invokeMethod(this, [this] { process(); }, Qt::QueuedConnection);
@@ -338,4 +362,20 @@ void HttpServer::stop()
     }, Qt::BlockingQueuedConnection);
     m_thread.quit();
     m_thread.wait(3000);
+}
+
+void HttpServer::runBlocking(std::function<HttpResponse()> fn, std::function<void(HttpResponse)> done)
+{
+    QPointer<HttpServer> self(this);
+    (void)QtConcurrent::run([self, fn = std::move(fn), done = std::move(done)] {
+        HttpResponse res;
+        try {
+            res = fn();
+        } catch (const std::exception &e) {
+            qWarning("servidor: error en trabajo bloqueante: %s", e.what());
+            res = HttpResponse::error(500, QStringLiteral("Error interno del servidor."));
+        }
+        if (!self) return;
+        QMetaObject::invokeMethod(self.data(), [done, res = std::move(res)] { done(res); }, Qt::QueuedConnection);
+    });
 }

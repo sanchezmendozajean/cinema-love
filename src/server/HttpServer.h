@@ -35,10 +35,25 @@ struct HttpRequest {
     QJsonValue json(bool *ok = nullptr) const;   // cuerpo interpretado como JSON (objeto o lista)
 };
 
+/** Canal de eventos en vivo (Server-Sent Events) sobre una conexión HTTP que se mantiene abierta. Vive en el hilo del servidor. */
+class SseChannel : public QObject
+{
+    Q_OBJECT
+public:
+    explicit SseChannel(QTcpSocket *s);
+    /** Envía `event: <name>` + `data: <json>`. */
+    void send(const QString &event, const QJsonValue &data);
+signals:
+    void closed();
+private:
+    QTcpSocket *m_sock;
+};
+
 struct HttpResponse {
     int status = 200;
     QList<QPair<QByteArray, QByteArray>> headers;
     QByteArray body;
+    std::function<void(SseChannel *)> sse; // si está definido, la conexión pasa a ser un stream de eventos en vivo
     QString filePath;                     // si no está vacío, se envía este archivo (con soporte de Range)
     QString fileContentType;
 
@@ -63,8 +78,11 @@ public:
     /** Registra una ruta: pattern como «/api/v1/items/:id». */
     void route(const QString &method, const QString &pattern, HttpHandler h);
     void routeAsync(const QString &method, const QString &pattern, AsyncHandler h);
+    /** Ejecuta `fn` en un hilo de trabajo (red, disco…) y entrega su resultado a `done` en el hilo del servidor. */
+    void runBlocking(std::function<HttpResponse()> fn, std::function<void(HttpResponse)> done);
     /** Se llama antes de cada manejador; devuelve false (y rellena la respuesta) si la petición no está autorizada. */
     void setGuard(std::function<bool(HttpRequest &, HttpResponse &)> g) { m_guard = std::move(g); }
+    std::function<bool(HttpRequest &, HttpResponse &)> guard() const { return m_guard; }
     /** Se ejecuta en el hilo del servidor al arrancar (para abrir la base de datos de ese hilo). */
     void setThreadInit(std::function<void()> f) { m_threadInit = std::move(f); }
     void setThreadDone(std::function<void()> f) { m_threadDone = std::move(f); }

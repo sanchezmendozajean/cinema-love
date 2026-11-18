@@ -15,6 +15,8 @@
 #include "Store.h"
 #include "UserApi.h"
 #include "ImageApi.h"
+#include "AdminApi.h"
+#include "Jobs.h"
 #include "Bcrypt.h"
 
 using namespace Mappers;
@@ -111,6 +113,16 @@ void ApiServer::registerRoutes()
         res = HttpResponse::error(401, QStringLiteral("Credencial inválida o faltante."));
         return false;
     });
+    // Todo lo que cuelga de /admin exige admin; las escrituras además exigen una base que se pueda escribir.
+    auto inner = h.guard();
+    h.setGuard([inner](HttpRequest &req, HttpResponse &res) {
+        if (!inner(req, res)) return false;
+        if (req.path.startsWith(QLatin1String("/api/v1/admin/")) || req.path == QLatin1String("/api/v1/admin")) {
+            if (req.principal != QLatin1String("admin")) { res = HttpResponse::error(403, QStringLiteral("Requiere permisos de administrador.")); return false; }
+            if (req.method != QLatin1String("GET") && Store::readOnly()) { res = HttpResponse::error(409, QStringLiteral("La base de datos está en solo lectura (es de una versión más nueva de CinemaLove).")); return false; }
+        }
+        return true;
+    });
 
     // --- sistema
     h.route("GET", "/api/v1/health", [](HttpRequest &) {
@@ -155,6 +167,7 @@ void ApiServer::registerRoutes()
     });
 
     registerUserRoutes(h);
+    registerAdminRoutes(h, *new JobManager(m_http.get()));   // hijo del servidor: vive en su hilo
     registerImageRoutes(h);
 
     // --- catálogo [v1-legado]
