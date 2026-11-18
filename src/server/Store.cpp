@@ -289,3 +289,17 @@ bool Store::exec(const QString &sql, const QVariantList &binds, QString *error)
     if (!ok && error) *error = q.lastError().text();
     return ok;
 }
+
+namespace {
+thread_local int g_txDepth = 0;
+}
+
+void Store::begin()
+{
+    if (g_txDepth++ == 0) db().transaction();
+}
+
+void Store::commit()
+{
+    if (g_txDepth > 0 && --g_txDepth == 0) db().commit();
+}

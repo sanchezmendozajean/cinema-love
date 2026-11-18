@@ -36,5 +36,8 @@ public:
     static QVector<QVariantMap> rows(const QString &sql, const QVariantList &binds = {});
     static QVariantMap row(const QString &sql, const QVariantList &binds = {});   // vacío si no hay
     static QVariant scalar(const QString &sql, const QVariantList &binds = {});
+    /** Transacción con anidamiento (como los `transaction()` de better-sqlite3): solo la más externa hace BEGIN/COMMIT. */
+    static void begin();
+    static void commit();
     static bool exec(const QString &sql, const QVariantList &binds = {}, QString *error = nullptr);
 };

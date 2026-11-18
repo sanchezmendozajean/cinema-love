@@ -57,6 +57,58 @@ await cmp('/api/v1/home')
   await cmp('/api/v1/catalog/items?ids=' + series.slice(0, 5).map(m => m.id).join(',') + ',' + ids.split(',').slice(0, 3).join(','))
   await cmp('/api/v1/catalog/items'); await cmp('/api/v1/catalog/continuar')
 }
+// Datos personales: se aplica la MISMA secuencia de operaciones a ambos y se comparan las respuestas y el estado resultante
+const secuencia = async (o) => {
+  const out = []
+  const ids = new Map()
+  const limpiar = (x) => { const t = JSON.stringify(sort(x), (k, v) => (k === 'creadoEn' ? undefined : v)); let r = t ?? 'null'; for (const [real, ph] of ids) r = r.split(real).join(ph); return r }
+  const call = async (m, path, body) => {
+    const r = await fetch(o.baseUrl + path, { method: m, headers: body !== undefined ? { 'X-Api-Key': o.token, 'Content-Type': 'application/json' } : { 'X-Api-Key': o.token }, body: body !== undefined ? JSON.stringify(body) : undefined })
+    const j = await r.json().catch(() => null); if (m === 'POST' && path === '/api/v1/collections' && j?.id) ids.set(j.id, 'COL1'); out.push(`${m} ${path.replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g, (x) => ids.get(x) ?? x)} -> ${r.status} ${limpiar(j)}`); return j
+  }
+  const [a, b, c] = pelis.slice(5, 8).map(m => m.id)
+  await call('PUT', `/api/v1/media/${a}/progress`, { posicionSegundos: 1234, pistaAudioId: '2', pistaSubtituloId: '3' })
+  await call('GET', `/api/v1/media/${a}/progress`)
+  await call('PUT', `/api/v1/media/${a}/progress`, { posicionSegundos: 2000 })
+  await call('PUT', `/api/v1/media/${b}/progress`, { estado: 'visto' })
+  await call('PUT', `/api/v1/media/${b}/progress`, { estado: 'noVisto' })
+  await call('PUT', `/api/v1/media/${c}/progress`, { estado: 'raro' })
+  await call('PUT', `/api/v1/media/no-existe/progress`, { posicionSegundos: 1 })
+  await call('GET', `/api/v1/media/${a}/user-state`)
+  await call('PUT', `/api/v1/watchlist/${a}`); await call('PUT', `/api/v1/watchlist/${b}`); await call('PUT', `/api/v1/watchlist/${a}`)
+  await call('GET', '/api/v1/watchlist'); await call('GET', '/api/v1/watchlist?formato=catalogo')
+  await call('DELETE', `/api/v1/watchlist/${b}`); await call('GET', '/api/v1/watchlist?formato=catalogo')
+  const col = await call('POST', '/api/v1/collections', { nombre: '  Prueba  ', quitarAlVerse: true })
+  await call('POST', '/api/v1/collections', { nombre: '' }); await call('POST', '/api/v1/collections', {})
+  await call('POST', `/api/v1/collections/${col.id}/items`, { mediaItemId: a }); await call('POST', `/api/v1/collections/${col.id}/items`, { mediaItemId: b }); await call('POST', `/api/v1/collections/${col.id}/items`, { mediaItemId: c })
+  await call('POST', `/api/v1/collections/${col.id}/items`, { mediaItemId: 'x' }); await call('POST', `/api/v1/collections/${col.id}/items`, {})
+  await call('GET', '/api/v1/collections'); await call('GET', `/api/v1/collections/${col.id}`); await call('GET', `/api/v1/collections/${col.id}/items`); await call('GET', `/api/v1/collections/${col.id}/items?formato=catalogo`)
+  await call('GET', `/api/v1/collections/item/${a}`); await call('GET', `/api/v1/media/${a}/user-state`)
+  await call('PUT', `/api/v1/collections/${col.id}`, { nombre: 'Renombrada', quitarAlVerse: false }); await call('PUT', `/api/v1/collections/${col.id}`, { nombre: '' })
+  await call('PUT', `/api/v1/collections/${col.id}/progress/${a}`, { posicionSegundos: 77 }); await call('GET', `/api/v1/collections/${col.id}/progress/${a}`)
+  await call('GET', `/api/v1/collections/${col.id}/continuar-viendo`); await call('GET', `/api/v1/collections/${col.id}/continuar-viendo?formato=catalogo`)
+  await call('GET', `/api/v1/collections/${col.id}/items?formato=catalogo`)
+  await call('PUT', `/api/v1/collections/${col.id}/progress/${b}`, { estado: 'visto' }); await call('GET', `/api/v1/collections/${col.id}/items`)
+  await call('PUT', `/api/v1/collections/${col.id}/progress/${a}`, { estado: 'noVisto' }); await call('GET', `/api/v1/collections/${col.id}/progress/${a}`)
+  await call('DELETE', `/api/v1/collections/${col.id}/items/${a}`); await call('GET', `/api/v1/collections/${col.id}/items`)
+  await call('GET', '/api/v1/collections/no-existe'); await call('DELETE', `/api/v1/collections/${col.id}`); await call('GET', '/api/v1/collections')
+  // series: marcar temporada / serie
+  const sid = series[0].id
+  await call('PUT', `/api/v1/series/${sid}/progress`, { estado: 'visto', temporada: 1 }); await call('GET', `/api/v1/series/${sid}/progress-states`)
+  await call('PUT', `/api/v1/series/${sid}/progress`, { estado: 'noVisto' }); await call('GET', `/api/v1/series/${sid}/progress-states`)
+  await call('PUT', `/api/v1/series/${sid}/progress`, { estado: 'x' }); await call('PUT', `/api/v1/series/no-existe/progress`, { estado: 'visto' })
+  await call('GET', `/api/v1/libraries/${libs[0].id}/progress-states`); await call('GET', '/api/v1/libraries/no-existe/progress-states')
+  // estado agregado tras los cambios
+  await call('GET', '/api/v1/home'); await call('GET', '/api/v1/catalog?estado=visto'); await call('GET', '/api/v1/catalog?orden=-reproducido&tamano=15')
+  await call('GET', '/api/v1/people/8229/in-catalog'); await call('GET', '/api/v1/people/x/in-catalog')
+  return out
+}
+{
+  const a = await secuencia(node), b = await secuencia(qt)
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (a[i] === b[i]) ok++; else { fail++; console.log('DIFERENCIA secuencia #' + i); console.log('  node:', (a[i] ?? '').slice(0, 300)); console.log('  qt  :', (b[i] ?? '').slice(0, 300)) }
+  }
+}
 // streaming con Range
 const id = pelis[0].id
 for (const rg of [undefined, 'bytes=0-99', 'bytes=1000-', 'bytes=-500', 'bytes=999999999999-', 'basura']) {

@@ -10,93 +10,14 @@
 #include <QDir>
 
 #include "Catalog.h"
+#include "Mappers.h"
 #include "HttpServer.h"
 #include "Store.h"
+#include "UserApi.h"
+
+using namespace Mappers;
 
 namespace {
-
-QString isoDate(qint64 secs) { return QDateTime::fromSecsSinceEpoch(secs, Qt::UTC).toString(Qt::ISODateWithMs); }
-
-QJsonValue nz(const QVariant &v)   // NULL de SQL → null JSON
-{
-    if (!v.isValid() || v.isNull()) return QJsonValue::Null;
-    switch (v.typeId()) {
-    case QMetaType::Int: case QMetaType::LongLong: case QMetaType::UInt: case QMetaType::ULongLong: return v.toLongLong();
-    case QMetaType::Double: return v.toDouble();
-    default: return v.toString();
-    }
-}
-
-QJsonArray genres(const QVariant &v)
-{
-    QJsonArray out;
-    for (const QJsonValue &g : QJsonDocument::fromJson(v.toString().toUtf8()).array())
-        if (g.isString()) out.append(g);
-    return out;
-}
-
-QJsonArray people(const QVariant &v)
-{
-    QJsonArray out;
-    for (const QJsonValue &pv : QJsonDocument::fromJson(v.toString().toUtf8()).array()) {
-        const QJsonObject o = pv.toObject();
-        if (!o.value(QStringLiteral("nombre")).isString()) continue;
-        QJsonObject p;
-        if (o.value(QStringLiteral("id")).isDouble()) p.insert(QStringLiteral("id"), o.value(QStringLiteral("id")));
-        p.insert(QStringLiteral("nombre"), o.value(QStringLiteral("nombre")));
-        const QString rol = o.value(QStringLiteral("rol")).isString() ? o.value(QStringLiteral("rol")).toString() : o.value(QStringLiteral("personaje")).toString();
-        if (!rol.isEmpty()) p.insert(QStringLiteral("rol"), rol);
-        if (!o.value(QStringLiteral("fotoUrl")).toString().isEmpty()) p.insert(QStringLiteral("fotoUrl"), o.value(QStringLiteral("fotoUrl")));
-        out.append(p);
-    }
-    return out;
-}
-
-/** Nombre legible derivado de una ruta relativa (sin extensión, puntos y guiones bajos como espacios). */
-QString fileName(const QString &rel)
-{
-    const QStringList parts = rel.split(QRegularExpression(QStringLiteral("[\\\\/]")), Qt::SkipEmptyParts);
-    QString last = parts.isEmpty() ? QString() : parts.last();
-    last.remove(QRegularExpression(QStringLiteral("\\.(mp4|mkv|avi|mov|m4v|wmv|flv|webm|ts|mpg|mpeg)$"), QRegularExpression::CaseInsensitiveOption));
-    last.replace(QRegularExpression(QStringLiteral("[._]+")), QStringLiteral(" "));
-    last.replace(QRegularExpression(QStringLiteral("\\s+")), QStringLiteral(" "));
-    return last.trimmed();
-}
-
-QJsonObject mediaItem(const QVariantMap &r, bool detail)
-{
-    QJsonObject o{{"id", r["id"].toString()}, {"libraryId", r["library_id"].toString()}, {"seriesId", nz(r["series_id"])},
-                  {"numeroTemporada", nz(r["numero_temporada"])}, {"numeroEpisodio", nz(r["numero_episodio"])}, {"tmdbId", nz(r["tmdb_id"])},
-                  {"titulo", nz(r["titulo"])}, {"anio", nz(r["anio"])}, {"posterUrl", nz(r["poster_url"])}, {"backdropUrl", nz(r["backdrop_url"])},
-                  {"duracionSegundos", nz(r["duracion_segundos"])}, {"creadoEn", isoDate(r["creado_en"].toLongLong())}};
-    if (!detail) { o.insert(QStringLiteral("generos"), genres(r["generos"])); return o; }
-    o.insert(QStringLiteral("estadoArchivo"), r["estado_archivo"].toString());
-    if (r["titulo"].isNull()) o.insert(QStringLiteral("tituloArchivo"), fileName(r["ruta_relativa"].toString()));
-    o.insert(QStringLiteral("tituloOriginal"), nz(r["titulo_original"]));
-    o.insert(QStringLiteral("idiomaOriginal"), nz(r["idioma_original"]));
-    o.insert(QStringLiteral("sinopsis"), nz(r["sinopsis"]));
-    o.insert(QStringLiteral("estudio"), nz(r["estudio"]));
-    o.insert(QStringLiteral("generos"), genres(r["generos"]));
-    o.insert(QStringLiteral("reparto"), people(r["reparto"]));
-    o.insert(QStringLiteral("equipo"), people(r["equipo"]));
-    return o;
-}
-
-QJsonObject serie(const QVariantMap &r, bool detail)
-{
-    QJsonObject o{{"id", r["id"].toString()}, {"libraryId", r["library_id"].toString()}, {"tmdbId", nz(r["tmdb_id"])}, {"titulo", nz(r["titulo"])},
-                  {"anio", nz(r["anio"])}, {"posterUrl", nz(r["poster_url"])}, {"backdropUrl", nz(r["backdrop_url"])}, {"creadoEn", isoDate(r["creado_en"].toLongLong())}};
-    if (!detail) { o.insert(QStringLiteral("generos"), genres(r["generos"])); return o; }
-    if (r["titulo"].isNull()) o.insert(QStringLiteral("tituloArchivo"), fileName(r["ruta_relativa"].toString()));
-    o.insert(QStringLiteral("tituloOriginal"), nz(r["titulo_original"]));
-    o.insert(QStringLiteral("idiomaOriginal"), nz(r["idioma_original"]));
-    o.insert(QStringLiteral("sinopsis"), nz(r["sinopsis"]));
-    o.insert(QStringLiteral("estudio"), nz(r["estudio"]));
-    o.insert(QStringLiteral("generos"), genres(r["generos"]));
-    o.insert(QStringLiteral("reparto"), people(r["reparto"]));
-    o.insert(QStringLiteral("equipo"), people(r["equipo"]));
-    return o;
-}
 
 const QHash<QString, QString> kMime = {
     {"mp4", "video/mp4"}, {"m4v", "video/x-m4v"}, {"mkv", "video/x-matroska"}, {"avi", "video/x-msvideo"}, {"mov", "video/quicktime"},
@@ -207,6 +128,8 @@ void ApiServer::registerRoutes()
         if (!r.sessionToken.isEmpty()) Store::exec(QStringLiteral("DELETE FROM sesiones WHERE token = ?"), {r.sessionToken});
         return HttpResponse::json(QJsonObject{{"ok", true}});
     });
+
+    registerUserRoutes(h);
 
     // --- catálogo [v1-legado]
     h.route("GET", "/api/v1/libraries", [](HttpRequest &) {

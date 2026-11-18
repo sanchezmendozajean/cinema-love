@@ -61,6 +61,10 @@ qt_add_qml_module(cinemalove
         src/AppSettings.h
         src/server/HttpServer.h
         src/server/HttpServer.cpp
+        src/server/Mappers.h
+        src/server/Mappers.cpp
+        src/server/UserApi.h
+        src/server/UserApi.cpp
         src/server/Catalog.h
         src/server/Catalog.cpp
         src/server/Store.h
