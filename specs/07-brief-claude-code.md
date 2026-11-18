@@ -24,8 +24,8 @@
 |---|---|
 | `cmake --preset <win\|linux>-debug` / `cmake --build --preset …` | Configurar y compilar |
 | `ctest --preset …` | Qt Test + `qmltestrunner` |
-| `npm run fetch:libmpv` / `build:backend` | Dependencias nativas y sidecar (opción A) |
-| `npm run dist:win` / `dist:linux` | ZIP portable / AppImage + tar.gz |
+| `scripts/build-backend.ps1` | Dependencias nativas y sidecar (opción A) |
+| `scripts/dist-win.ps1` / `scripts/dist-linux.sh` | ZIP portable / AppImage + tar.gz |
 
 ## Entregable de la Fase 0 (resumen que debe devolver)
 - Tabla de archivos probados (contenedor, códec, origen: local/SMB/HTTP) y resultado en Windows y Linux (X11/Wayland).

@@ -1,4 +1,4 @@
-# Equivalente de `npm run dev`: configura (si hace falta), compila y lanza CinemaLove con la copia de datos de .dev-data/.
+# Desarrollo diario: configura (si hace falta), compila y lanza CinemaLove con la copia de datos de .dev-data/.
 # Uso: .\scripts\dev.ps1 [-DebugBuild] [-Configure] [argumentos de la app...]   p. ej.  .\scripts\dev.ps1 --search dalmatas
 param(
     [switch]$DebugBuild,

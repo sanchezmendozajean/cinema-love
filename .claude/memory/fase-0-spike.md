@@ -47,7 +47,7 @@ Hecho y verificado con capturas (`--selftest` genera `*-fs.png` y `*-small.png`)
 - Decidir interfaz QML vs web embebida y backend sidecar vs C++ (specs/00 §4).
 
 ## Arranque de desarrollo
-`npm run dev [-- args de la app]` (scripts/dev.ps1): configura si falta, compila y lanza. `npm run dev:debug`, `npm run configure`.
+`.\scripts\dev.ps1 [args de la app]`: configura si falta, compila y lanza. `-DebugBuild`, `-Configure`.
 
 ## Selector de películas / catálogo (16/11/2026)
 Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin cerrarse).
@@ -60,7 +60,7 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 ## Ficha de película (16/11/2026)
 `qml/DetailView.qml` (design/11 · P5, versión reducida): backdrop con degradados, póster, título/original/año/duración/idioma, chips de género, estudio, botón Reproducir / Continuar (con minutos restantes y barra de progreso, leído de `watch_progresses`) / Volver a ver, ↺ reiniciar, «Vista», sinopsis, reparto (fotos circulares con `MultiEffect` + máscara) y equipo (dirección/guion). Flujo: catálogo → ficha → reproductor; «‹ Ficha»/Esc vuelven al paso anterior. `MovieModel.get(row)` devuelve el mapa completo.
 - El progreso es **solo lectura**: reproducir aquí todavía NO guarda posición (escritura aditiva en `watch_progresses` pendiente, tras acordar con la API/otras versiones).
-- Pruebas: `npm run dev -- --catalog-shot x.png --search "The Majestic" --open-first [--play]`.
+- Pruebas: `.\scripts\dev.ps1 --catalog-shot x.png --search "The Majestic" --open-first [--play]`.
 - Pendiente de la ficha: extras, colecciones, detalles técnicos, pistas de audio/subs recordadas (`pista_*_id`), estados sin metadatos y skeletons.
 
 ## Guardar y reanudar progreso (16/11/2026)
@@ -69,7 +69,7 @@ Adelanto de la Fase 2 a petición del usuario (la puerta de la Fase 0 sigue sin 
 - Reanudar: `load(ruta, start)` + reselección única de audio/subtítulo al conocer las pistas. Verificado: guarda 311 → reanuda en 318,7 → guarda 622; audio `1`, sub `no`.
 - Catálogo: barra de progreso y marca ✓ en las tarjetas; la ficha se refresca al volver.
 - Pendiente: mapear subtítulos externos `ext-k` ↔ ids de mpv (specs/05 §3), ids de pista con las otras versiones.
-- **Trampa de PowerShell**: `-db` es alias de `-Debug`; por eso la opción de la app es `--database` (no `--db`). Los argumentos con espacios pasan bien por `npm run dev --`.
+- **Trampa de PowerShell**: `-db` es alias de `-Debug`; por eso la opción de la app es `--database` (no `--db`). Los argumentos con espacios pasan bien por `dev.ps1` si se comillan.
 - Las pruebas que escriben deben usar `--database` con una copia aparte en `.dev-data/` (la base original de `flutter-version/datos/` nunca se toca). Prueba: `--progress-test --search "101 d"` (ejecutar dos veces).
 
 ## Inicio (16/11/2026)
@@ -150,7 +150,7 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Pruebas: `--ui-test wizard0|wizard1|wizard1new|wizard1locked|wizard5|wizardflow` (wizardflow escribe config.yaml junto al exe: borrarlo después).
 
 ## Empaquetado Windows (17/11/2026)
-`npm run dist:win` / `scripts/dist-win.ps1 [-NoZip]` → `dist/CinemaLove-win/` y `dist/CinemaLove-win-<versión>.zip` (dist/ está en .gitignore). Contenido: cinemalove.exe + Qt (lo que dejó windeployqt) + libmpv-2.dll + `backend/{main.cjs,node.exe,node_modules/better-sqlite3 (lib + prebuilds/win32-x64.node)}` + `licencias/` + LEEME. ~266 MB sin comprimir. Requiere haber compilado antes (exe Release y `backend/dist/main.cjs`).
+`scripts/dist-win.ps1 [-NoZip]` → `dist/CinemaLove-win/` y `dist/CinemaLove-win-<versión>.zip` (dist/ está en .gitignore). Contenido: cinemalove.exe + Qt (lo que dejó windeployqt) + libmpv-2.dll + `backend/{main.cjs,node.exe,node_modules/better-sqlite3 (lib + prebuilds/win32-x64.node)}` + `licencias/` + LEEME. ~266 MB sin comprimir. Requiere haber compilado antes (exe Release y `backend/dist/main.cjs`).
 - Verificado: la distribución se ejecuta desde su carpeta con PATH mínimo (sin Qt, Node ni npm), levanta el backend incluido, hace el respaldo y no deja procesos huérfanos.
 - NO verificado: instalación en una máquina limpia real (sin Visual C++ Redistributable ni drivers OpenGL actualizados), Linux (AppImage/tar.gz), firma del ejecutable.
 - Para correr desde la distribución sin pasar por el asistente: no hace falta; sin `config.yaml` junto al exe se muestra el asistente.
@@ -202,3 +202,5 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - `scripts/dist-linux.sh` escrito SIN PROBAR; necesita Node y libmpv para Linux en third_party/.
 - Teclado en Inicio: Tab/Intro/Menú, las filas se desplazan a la tarjeta enfocada; esqueleto de carga también en tarjetas horizontales.
 - La «miniatura al pasar el cursor» de la spec es el TIEMPO bajo el cursor (ya hecho), no una imagen.
+
+- (17/11/2026) Se eliminó package.json: ya no hay alias npm; se usan directamente `scripts/dev.ps1`, `scripts/dist-win.ps1` y `scripts/build-backend.ps1`.
