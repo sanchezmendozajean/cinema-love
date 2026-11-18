@@ -9,6 +9,7 @@
 #include <QRegularExpression>
 #include <QDir>
 
+#include "Catalog.h"
 #include "HttpServer.h"
 #include "Store.h"
 
@@ -294,6 +295,24 @@ void ApiServer::registerRoutes()
         const QVariantMap m = Store::row(QStringLiteral("SELECT library_id, ruta_relativa FROM media_items WHERE id = ?"), {r.params["id"]});
         return m.isEmpty() ? HttpResponse::error(404, QStringLiteral("Ítem no encontrado.")) : serveVideo(m["library_id"].toString(), m["ruta_relativa"].toString());
     });
+    // --- catálogo unificado e Inicio (nuevos)
+    h.route("GET", "/api/v1/catalog", [](HttpRequest &r) {
+        QHash<QString, QString> q;
+        for (const auto &kv : r.query.queryItems(QUrl::FullyDecoded)) q.insert(kv.first, kv.second);
+        Catalog::Filters f;
+        const QString err = Catalog::parseFilters(q, &f);
+        if (!err.isEmpty()) return HttpResponse::error(400, err);
+        return HttpResponse::json(Catalog::search(f, r.userId));
+    });
+    h.route("GET", "/api/v1/home", [](HttpRequest &r) { return HttpResponse::json(Catalog::home(r.userId)); });
+    auto idsOf = [](const HttpRequest &r) {
+        QStringList ids;
+        for (const QString &i : r.q(QStringLiteral("ids")).split(QLatin1Char(','), Qt::SkipEmptyParts)) if (!ids.contains(i)) ids << i;
+        return ids.mid(0, 200);
+    };
+    h.route("GET", "/api/v1/catalog/items", [idsOf](HttpRequest &r) { return HttpResponse::json(Catalog::elementsByIds(idsOf(r), r.userId, false)); });
+    h.route("GET", "/api/v1/catalog/continuar", [idsOf](HttpRequest &r) { return HttpResponse::json(Catalog::continueSummaries(idsOf(r))); });
+
     h.route("GET", "/api/v1/extras/:id/stream", [](HttpRequest &r) {
         const QVariantMap e = Store::row(QStringLiteral("SELECT media_item_id, ruta_relativa FROM extras WHERE id = ?"), {r.params["id"]});
         if (e.isEmpty()) return HttpResponse::error(404, QStringLiteral("Extra no encontrado."));

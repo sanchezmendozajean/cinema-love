@@ -18,12 +18,19 @@ const qt = await lanzar(exe, ['--serve', S + '/qt'], { PATH: 'D:/Qt/6.8.3/msvc20
 const get = async (o, path, headers = {}) => { const r = await fetch(o.baseUrl + path, { headers: { 'X-Api-Key': o.token, ...headers } }); const t = await r.text(); let j = null; try { j = JSON.parse(t) } catch {} return { status: r.status, json: j, len: t.length, h: r.headers, text: t } }
 const norm = (x) => JSON.stringify(sort(x))
 const sort = (x) => Array.isArray(x) ? x.map(sort) : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map(k => [k, sort(x[k])])) : x
+const primera = (a, b, ruta = '') => {
+  if (JSON.stringify(a) === JSON.stringify(b)) return null
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) { const d = primera(a[k], b[k], ruta + '/' + k); if (d) return d }
+  }
+  return `${ruta}: node=${JSON.stringify(a)?.slice(0, 120)} qt=${JSON.stringify(b)?.slice(0, 120)}`
+}
 let ok = 0, fail = 0
 const cmp = async (path, ignorar = []) => {
   const a = await get(node, path), b = await get(qt, path)
   const strip = (o) => { if (o && typeof o === 'object' && !Array.isArray(o)) for (const k of ignorar) delete o[k]; return o }
   const same = a.status === b.status && norm(strip(a.json)) === norm(strip(b.json))
-  if (same) ok++; else { fail++; console.log('DIFERENCIA', path, a.status, b.status); console.log('  node:', a.text.slice(0, 220)); console.log('  qt  :', b.text.slice(0, 220)) }
+  if (same) ok++; else { fail++; console.log('DIFERENCIA', path, a.status, b.status, primera(sort(strip(a.json)), sort(strip(b.json))) ?? '') }
 }
 await cmp('/api/v1/health', ['nombre', 'plataforma'])
 await cmp('/api/v1/me')
@@ -38,6 +45,18 @@ for (const l of libs) {
 for (const m of pelis) { await cmp(`/api/v1/items/${m.id}`); await cmp(`/api/v1/items/${m.id}/extras`) }
 for (const s of series) { await cmp(`/api/v1/series/${s.id}`); await cmp(`/api/v1/series/${s.id}/seasons`); await cmp(`/api/v1/series/${s.id}/episodes`); await cmp(`/api/v1/series/${s.id}/episodes?temporada=1`); await cmp(`/api/v1/series/${s.id}/episodes?temporada=x`) }
 await cmp('/api/v1/items/no-existe'); await cmp('/api/v1/series/no-existe'); await cmp('/api/v1/ruta-rara')
+// catálogo unificado e Inicio
+for (const q of ['', '?tamano=20', '?tamano=20&pagina=3', '?orden=-anio&tamano=30', '?orden=anio', '?orden=-agregado', '?orden=reproducido', '?orden=-titulo&tamano=15',
+  '?q=padrino', '?q=a', '?q=dalmatas', '?q=el%20rey', '?tipo=pelicula&tamano=10', '?tipo=serie', '?generos=Drama', '?generos=Drama,Comedia&tamano=25', '?anioDesde=1990&anioHasta=1999',
+  '?estado=visto', '?estado=enProgreso', '?estado=noVisto&tamano=10', '?q=acci%C3%B3n&generos=Acci%C3%B3n', '?tamano=500', '?tamano=0', '?pagina=0', '?tipo=x', '?estado=x', '?orden=x', '?pagina=9999'])
+  await cmp('/api/v1/catalog' + q)
+await cmp('/api/v1/home')
+{
+  const ids = pelis.slice(0, 30).map(m => m.id).join(',')
+  await cmp('/api/v1/catalog/items?ids=' + ids); await cmp('/api/v1/catalog/continuar?ids=' + ids)
+  await cmp('/api/v1/catalog/items?ids=' + series.slice(0, 5).map(m => m.id).join(',') + ',' + ids.split(',').slice(0, 3).join(','))
+  await cmp('/api/v1/catalog/items'); await cmp('/api/v1/catalog/continuar')
+}
 // streaming con Range
 const id = pelis[0].id
 for (const rg of [undefined, 'bytes=0-99', 'bytes=1000-', 'bytes=-500', 'bytes=999999999999-', 'basura']) {
@@ -52,4 +71,4 @@ for (const rg of [undefined, 'bytes=0-99', 'bytes=1000-', 'bytes=-500', 'bytes=9
 const sin = await fetch(qt.baseUrl + '/api/v1/libraries'); const nodeSin = await fetch(node.baseUrl + '/api/v1/libraries')
 if (sin.status === nodeSin.status) ok++; else { fail++; console.log('DIFERENCIA sin credencial', nodeSin.status, sin.status) }
 console.log(`Resultado: ${ok} iguales, ${fail} con diferencias`)
-node.p.kill(); qt.p.kill(); rmSync(S, { recursive: true, force: true }); process.exit(fail ? 1 : 0)
+node.p.kill(); qt.p.kill(); await new Promise(r => setTimeout(r, 1500)); try { rmSync(S, { recursive: true, force: true }) } catch {} process.exit(fail ? 1 : 0)
