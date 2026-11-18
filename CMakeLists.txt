@@ -59,6 +59,12 @@ qt_add_qml_module(cinemalove
         src/backend/BackendLauncher.h
         src/backend/BackendLauncher.cpp
         src/AppSettings.h
+        src/server/HttpServer.h
+        src/server/HttpServer.cpp
+        src/server/Store.h
+        src/server/Store.cpp
+        src/server/ApiServer.h
+        src/server/ApiServer.cpp
         src/TestInput.h
         src/TestInput.cpp
         src/backend/DataFolder.h
@@ -81,6 +87,8 @@ if(UNIX AND NOT APPLE)
         target_compile_definitions(cinemalove PRIVATE CL_HAVE_QTDBUS=1)
     endif()
 endif()
+
+qt_add_resources(cinemalove "server_schema" PREFIX "/server" BASE "${CMAKE_SOURCE_DIR}/src/server" FILES src/server/schema-v11.sql)
 
 target_link_libraries(cinemalove PRIVATE
     Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::OpenGL Qt6::Sql Qt6::Network Qt6::QuickControls2

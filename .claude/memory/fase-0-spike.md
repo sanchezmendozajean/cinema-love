@@ -204,3 +204,11 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - La «miniatura al pasar el cursor» de la spec es el TIEMPO bajo el cursor (ya hecho), no una imagen.
 
 - (17/11/2026) Se eliminó package.json: ya no hay alias npm; se usan directamente `scripts/dev.ps1`, `scripts/dist-win.ps1` y `scripts/build-backend.ps1`.
+
+## Backend integrado en C++ (inicio 17/11/2026) — reemplazo del backend Node
+- Decisión del usuario: Flutter y Electron son obsoletos y se eliminarán; el backend pasa a vivir DENTRO de la app Qt (sin Node). Se mantiene el esquema SQLite v11 y la API v1 (el Modo Cliente la usa).
+- QtHttpServer NO está instalado: servidor HTTP propio sobre QTcpServer (`src/server/HttpServer.*`: rutas con :params, CORS, keep-alive, Range, hilo propio). `Store.*` = base (bloqueos por PID, respaldo VACUUM INTO, esquema v11 embebido `:/server/schema-v11.sql`, migraciones cl_*, conexión por hilo). `ApiServer.*` = rutas.
+- Estrategia: el Node queda como ORÁCULO. `cinemalove.exe --serve <carpeta dentro de .dev-data/>` expone solo la API; `scripts/paridad-backend.mjs` levanta ambos sobre copias idénticas de la base y compara respuestas JSON/streaming (hoy 1186/1186 iguales).
+- Hecho (tramo 1): health, me, logout, libraries, libraries/:id/items|series, items/:id (+extras), series/:id (+seasons, episodes), media|extras/:id/stream (Range), auth (token admin / API key / sesión).
+- Pendiente (orden previsto): login (bcrypt, hay que implementarlo), /catalog y /home, progreso/Próximas a ver/colecciones/user-state/personas, imágenes (+descarga TMDb), administración y escáner (jobs/SSE), servidor público (HTTPS + certificado, mDNS, usuarios, sesiones), Modo Cliente (conexión, proxy, espejo), luego cambiar la app a backend integrado y retirar Node/backend/.
+- Trampa de herramientas: en heredocs de bash los `\n` de literales C++ se rompen; escribir C++ con la herramienta Write/Edit, no con python.

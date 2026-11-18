@@ -8,6 +8,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "AppSettings.h"
+#include "server/ApiServer.h"
+#include "server/Store.h"
 #include "BackendLauncher.h"
 #include "DataFolder.h"
 #include "TestInput.h"
@@ -125,11 +127,34 @@ int main(int argc, char *argv[])
     QCommandLineOption clientDirOpt(QStringLiteral("client-dir"), QStringLiteral("Prueba del Modo Cliente: carpeta de cliente_datos.sqlite y el espejo (dentro de .dev-data/)"), QStringLiteral("ruta"));
     QCommandLineOption clientUrlOpt(QStringLiteral("client-url"), QStringLiteral("Prueba del Modo Cliente: se conecta a esta URL"), QStringLiteral("url"));
     QCommandLineOption clientKeyOpt(QStringLiteral("client-key"), QStringLiteral("Prueba del Modo Cliente: token (API key) del servidor"), QStringLiteral("token"));
-    parser.addOptions({clientDirOpt, clientUrlOpt, clientKeyOpt, nativeScroll, notchOpt, multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption serveOpt(QStringLiteral("serve"), QStringLiteral("Prueba del backend integrado: solo API HTTP sobre esta carpeta de datos (dentro de .dev-data/)"), QStringLiteral("carpeta"));
+    QCommandLineOption servePortOpt(QStringLiteral("serve-port"), QStringLiteral("Puerto del modo --serve (0 = libre)"), QStringLiteral("puerto"), QStringLiteral("0"));
+    parser.addOptions({serveOpt, servePortOpt, clientDirOpt, clientUrlOpt, clientKeyOpt, nativeScroll, notchOpt, multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
     // Instancia única (specs/01 §5): una segunda ejecución avisa a la primera, que se trae al frente, y termina.
     QLocalServer instanceServer;
+    // Backend integrado en modo de pruebas: solo la API HTTP (sin interfaz), para compararla con la del backend Node.
+    if (parser.isSet(serveOpt)) {
+        const QString dir = QDir(parser.value(serveOpt)).absolutePath();
+        if (!QDir::fromNativeSeparators(dir).contains(QStringLiteral("/.dev-data/"))) {
+            fprintf(stderr, "--serve solo acepta carpetas dentro de .dev-data/\n");
+            return 3;
+        }
+        const Store::OpenResult r = Store::open(dir);
+        if (!r.ok) {
+            printf("CL_ERROR {\"motivo\":\"%s\",\"mensaje\":\"%s\"}\n", qPrintable(r.code), qPrintable(r.message));
+            fflush(stdout);
+            return 2;
+        }
+        ApiServer api;
+        const quint16 port = api.start(parser.value(servePortOpt).toUShort());
+        if (!port) { printf("CL_ERROR {\"motivo\":\"error\",\"mensaje\":\"no se pudo escuchar\"}\n"); fflush(stdout); return 2; }
+        printf("CL_READY {\"baseUrl\":\"%s\",\"token\":\"%s\",\"respaldo\":\"%s\"}\n", qPrintable(api.baseUrl()), qPrintable(api.adminToken()), qPrintable(r.backup));
+        fflush(stdout);
+        QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&api] { api.stop(); Store::close(); });
+        return app.exec();
+    }
     // Pruebas automatizadas: solo sobre copias de .dev-data/ y sin instancia única ni persistencia de ventana.
     const bool testMode = parser.isSet(selftest) || parser.isSet(catShot) || parser.isSet(uiTest) || parser.isSet(progTest) || parser.isSet(adminScan);
     if (!parser.isSet(multi) && !testMode) {
