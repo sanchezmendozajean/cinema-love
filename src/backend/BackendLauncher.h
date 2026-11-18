@@ -4,6 +4,9 @@
 #include <QQmlEngine>
 #include <QStringList>
 #include <QVariantMap>
+#include <memory>
+
+class ApiServer;
 
 /**
  * Ciclo de vida del sidecar Node (specs/03 §2): lo lanza con la carpeta de datos, espera `CL_READY` en su salida, vigila que siga
@@ -60,6 +63,9 @@ signals:
 
 private:
     void launch();
+    void startLocal(const QString &dataDir);          // Modo Local: backend integrado en este proceso (sin Node)
+    void finishLocalOpen(bool ok, const QString &code, const QString &message, const QVariantMap &info);
+    void stopLocal();
     void onStdout();
     void onFinished(int code, QProcess::ExitStatus status);
     void setState(const QString &s, const QString &err = {});
@@ -68,6 +74,9 @@ private:
     static QString findNode();
 
     QProcess *m_proc = nullptr;
+    std::unique_ptr<ApiServer> m_api;
+    bool m_localRunning = false;
+    bool m_localOpening = false;
     QString m_errorCode;
     QVariantMap m_info;
     bool m_requireDev = false;
