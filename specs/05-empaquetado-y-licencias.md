@@ -1,6 +1,6 @@
 # 05 · Empaquetado y licencias
 
-Requisito heredado: **build autocontenido**, sin dependencias externas en runtime (`specs/heredadas/00`, principios). Nada de instalar Qt, mpv, Node ni ffmpeg.
+Requisito heredado: **build autocontenido**, sin dependencias externas en runtime (`specs/heredadas/00`, principios). Nada de instalar Qt, mpv ni ffmpeg.
 
 ## 1. Windows (x64)
 
@@ -8,7 +8,7 @@ Requisito heredado: **build autocontenido**, sin dependencias externas en runtim
 - `windeployqt` copia las DLL de Qt y los plugins necesarios (platforms, imageformats, qml). Revisar que no arrastre módulos no usados.
 - **libmpv**: `libmpv-2.dll` (o `mpv-2.dll`) de una compilación para Windows con soporte de libass, ffmpeg y los *hwdec* (D3D11VA/DXVA2). Se vendoriza en `third_party/` con su checksum; el script `fetch:libmpv` la descarga y verifica.
 - Distribución: **ZIP portable** (`CinemaLove-Qt-Windows-x64-<versión>.zip`), igual que la versión Electron. Opcional más adelante: instalador.
-- El sidecar (opción A): `backend/node.exe`, `backend/main.js`, `better-sqlite3` precompilado.
+- El backend va integrado en el ejecutable (C++): no hay Node ni proceso hijo.
 - Si Node/MSVC requieren runtime de Visual C++, incluir `vcruntime`/`msvcp` junto al ejecutable (despliegue local de la app).
 
 ## 2. Linux (x64)
@@ -16,7 +16,7 @@ Requisito heredado: **build autocontenido**, sin dependencias externas en runtim
 - Build en una distro base antigua (p. ej. Ubuntu 22.04 en contenedor) para compatibilidad de glibc.
 - **AppImage** con `linuxdeploy` + `linuxdeploy-plugin-qt` (Qt, plugins y QML) y libmpv incluida en el AppDir con sus dependencias (libass, ffmpeg, libplacebo si procede). **tar.gz** como alternativa.
 - Probar en Ubuntu y Fedora, en **X11 y Wayland** (Qt usa `xcb` o `wayland`; comprobar el contexto OpenGL y los *hwdec* VAAPI/NVDEC en ambos).
-- Sidecar: `backend/node` + `main.js` + `better-sqlite3` precompilado (musl/glibc según el build).
+- El backend va integrado en el ejecutable. TLS usa OpenSSL del sistema (libssl 3); es la única dependencia externa en runtime fuera de lo empaquetado.
 
 ## 3. Compilación de libmpv
 

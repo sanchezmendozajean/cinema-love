@@ -233,3 +233,9 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - `scripts/paridad-servidor.mjs`: 45 comprobaciones (QR contra `qrcode`; certificado validado por `node:crypto` —firma, huella, SAN, RSA, uso, vigencia, clave—; mDNS cruzado con `bonjour-service` en ambos sentidos; HTTPS con Range; el cliente C++ confía por huella y detecta el certificado regenerado).
 - Trampas: `QSslServer` avisa con `pendingConnectionAvailable` (no `newConnection`); Schannel no permite `QSslCertificate::verify` ni evita reanudar sesión → el cliente comprueba al `encrypted` que un autofirmado esté fijado por huella (sin eso, un `probar` dejaba pasar un `conectar` sin confiar).
 - Paridad final antes de retirar Node: backend 1374/0, cliente 29/0, servidor 45/0.
+
+## Node retirado (18/11/2026)
+- Eliminados `backend/`, `third_party/node/`, `scripts/build-backend.ps1` y los `paridad-*.mjs`; `BackendLauncher` ya no tiene rama de proceso hijo. Todo sigue en la etiqueta git `con-backend-node` (el `node.exe` v24.18.0 no estaba versionado: SHA-256 `9a4eb5f1c29c6a2e93852ead46b999e284a6a5ca8bab4d4e241d587d025a52de`, descargable de nodejs.org si se quisiera reabrir el oráculo).
+- Hallazgo al probar la GUI: el Modo Cliente arranca de forma síncrona en main.cpp, antes de cargar QML, así que `onReadyChanged` ya no llegaba a tiempo → `Main.qml` llama `clientAutoConnect()` también en `Component.onCompleted`.
+- Distribución: `.\scripts\dist-win.ps1` → 177 MB, ZIP 73 MB, sin carpeta `backend/`; el exe empaquetado arranca con solo el PATH del sistema.
+- Pendiente (no probado): Linux (libssl del sistema para TLS, D-Bus, empaquetado), prueba larga de reproducción, ZIP en máquina limpia, interfaz de «Buscar en la red» (mDNS) en ClientView (el servicio `/control/descubrir` ya existe).

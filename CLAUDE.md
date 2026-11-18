@@ -4,9 +4,9 @@ Versión de CinemaLove sobre **Qt 6** con **libmpv** (Windows y Linux). **Proyec
 
 - `specs/` — especificaciones de esta versión. **Fuente de verdad de lo que cambia** (reproductor, arquitectura, empaquetado). Empezar por `specs/README.md`.
 - `specs/heredadas/` — especificaciones heredadas (datos, API, funcionalidades, diseño). Siguen valiendo en todo lo que `specs/` de aquí no cambia.
-- `backend/` — backend **propio** (TypeScript/Node: API HTTP v1, escáner, TMDb, imágenes, servidor público). Se ejecuta con el Node incluido en `third_party/node/` y sus dependencias en `backend/node_modules/`. Nació de una copia del de Electron (16/11/2026) y desde entonces es independiente: no se sincroniza con nadie.
-- `third_party/` — binarios de terceros incluidos (libmpv LGPL, Node) con su procedencia y checksums en `third_party/README.md`. Qt, MSVC y CMake son la cadena de herramientas del equipo de desarrollo, no dependencias del proyecto.
-- Estructura: `src/` (C++), `qml/` (interfaz), `backend/`, `cmake/`, `scripts/` (`dev.ps1`, `build-backend.ps1`), `specs/` (incluye `specs/heredadas/`, copia propia de las specs de datos, API, funcionalidades y diseño).
+- `src/server/`, `src/client/`, `src/backend/` — backend **propio e integrado en C++** (API HTTP v1, escáner, TMDb, imágenes, servidor público con HTTPS/mDNS/QR, Modo Cliente). No hay Node ni proceso hijo (el sidecar Node se retiró el 18/11/2026; está en la etiqueta git `con-backend-node`). Ver `specs/03-backend-y-datos.md`.
+- `third_party/` — binarios de terceros incluidos (libmpv LGPL, tipografías) con su procedencia y checksums en `third_party/README.md`. Qt, MSVC y CMake son la cadena de herramientas del equipo de desarrollo, no dependencias del proyecto.
+- Estructura: `src/` (C++), `qml/` (interfaz), `cmake/`, `scripts/` (`dev.ps1`, `dist-win.ps1`, `dist-linux.sh`), `specs/` (incluye `specs/heredadas/`, copia propia de las specs de datos, API, funcionalidades y diseño).
 
 ## Idioma
 Responder siempre en español: explicaciones, commits, comentarios y textos de la app.
@@ -21,5 +21,5 @@ Colaborador perfeccionista con lo visual y amante del cine. Referencia: Jellyfin
 - La API HTTP v1 debe seguir siendo compatible con los clientes Flutter (`specs/heredadas/04-api-servidor.md`).
 - Nunca perder datos del usuario: toda operación destructiva pide confirmación explícita y, si se puede, ofrece primero una alternativa no destructiva.
 - Modales: siempre con botón X visible; nunca se cierran al hacer clic afuera.
-- **Autocontenido**: ninguna referencia a otras carpetas ni descargas (npm/GitHub/etc.) para compilar o ejecutar; si se necesita un binario, se incluye en `third_party/` con checksum. Builds autocontenidos (Qt, libmpv, Node y backend incluidos); licencias LGPL (`specs/05-empaquetado-y-licencias.md`).
+- **Autocontenido**: ninguna referencia a otras carpetas ni descargas (GitHub/etc.) para compilar o ejecutar; si se necesita un binario, se incluye en `third_party/` con checksum. Builds autocontenidos (Qt y libmpv incluidos; el backend va dentro del ejecutable); licencias LGPL (`specs/05-empaquetado-y-licencias.md`).
 - Memoria del proyecto en `.claude/memory/` con `MEMORY.md` como índice.

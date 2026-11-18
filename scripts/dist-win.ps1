@@ -1,14 +1,12 @@
 # Empaqueta una distribución portable para Windows: dist\CinemaLove-win\ y dist\CinemaLove-win-<versión>.zip
-# Autocontenida: Qt, libmpv, el Node incluido y el backend propio. No descarga nada. Requiere haber compilado antes
-# (scripts\dev.ps1 o cmake --build --preset win-release) y el backend (scripts\build-backend.ps1).
+# Autocontenida: Qt, libmpv y el backend integrado (C++). No descarga nada. Requiere haber compilado antes
+# (scripts\dev.ps1 o cmake --build --preset win-release).
 param([switch]$NoZip)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $rel = Join-Path $root 'build\win\Release'
 $exe = Join-Path $rel 'cinemalove.exe'
-$bundle = Join-Path $root 'backend\dist\main.cjs'
-$node = Join-Path $root 'third_party\node\node.exe'
-foreach ($f in @($exe, $bundle, $node, (Join-Path $rel 'libmpv-2.dll'))) { if (-not (Test-Path $f)) { throw "Falta $f. Compila primero." } }
+foreach ($f in @($exe, (Join-Path $rel 'libmpv-2.dll'))) { if (-not (Test-Path $f)) { throw "Falta $f. Compila primero." } }
 
 $version = (Select-String -Path (Join-Path $root 'CMakeLists.txt') -Pattern 'project\(CinemaLove VERSION ([0-9.]+)').Matches[0].Groups[1].Value
 $out = Join-Path $root 'dist'
@@ -20,19 +18,7 @@ New-Item -ItemType Directory -Force $dest | Out-Null
 robocopy $rel $dest /E /NFL /NDL /NJH /NJS /NP /XF *.log *.pdb *.ilk *.exp *.lib config.yaml window.ini | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy falló ($LASTEXITCODE)" }
 
-# 2) Backend propio: bundle + Node incluido + el único módulo nativo (better-sqlite3, solo Windows x64)
-$be = Join-Path $dest 'backend'
-New-Item -ItemType Directory -Force $be | Out-Null
-Copy-Item $bundle (Join-Path $be 'main.cjs')
-Copy-Item $node (Join-Path $be 'node.exe')
-$sq = Join-Path $root 'backend\node_modules\better-sqlite3'
-$sqDest = Join-Path $be 'node_modules\better-sqlite3'
-New-Item -ItemType Directory -Force (Join-Path $sqDest 'prebuilds') | Out-Null
-Copy-Item (Join-Path $sq 'package.json'), (Join-Path $sq 'LICENSE') $sqDest
-Copy-Item (Join-Path $sq 'lib') $sqDest -Recurse
-Copy-Item (Join-Path $sq 'prebuilds\win32-x64.node') (Join-Path $sqDest 'prebuilds')
-
-# 2b) Tipografías opcionales (third_party/fonts/*.ttf|otf, OFL)
+# 2) Tipografías opcionales (third_party/fonts/*.ttf|otf, OFL)
 $fonts = Get-ChildItem (Join-Path (Join-Path $root 'third_party') 'fonts') -Include *.ttf,*.otf -Recurse -ErrorAction SilentlyContinue
 if ($fonts) { $fd = Join-Path $dest 'fonts'; New-Item -ItemType Directory -Force $fd | Out-Null; $fonts | Copy-Item -Destination $fd }
 
@@ -46,7 +32,6 @@ CinemaLove $version (Qt 6 + libmpv)
 
 Qt 6 se enlaza dinamicamente (LGPL v3): las DLL de Qt de esta carpeta pueden sustituirse por otras compatibles.
 libmpv (libmpv-2.dll) es una compilacion LGPL v2.1+; FFmpeg va incluido en ella (LGPL, sin componentes GPL).
-Node.js (backend\node.exe) y las dependencias del backend son MIT/BSD.
 Esta aplicacion usa la API de TMDb pero no esta avalada ni certificada por TMDb.
 Consulta "Acerca de" (icono i, arriba a la derecha) y COMPONENTES.md para versiones y procedencia.
 "@

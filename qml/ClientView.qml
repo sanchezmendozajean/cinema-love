@@ -7,7 +7,7 @@ import CinemaLove
 Rectangle {
     id: view
     color: Tokens.bg
-    property var ctl                    // ApiClient del servidor de control del sidecar
+    property var ctl                    // ApiClient del servidor de control del Modo Cliente
     property var conn: ({ tipo: "desconectada" })
     property var mirror: ({ fase: "inactivo", hecho: 0, total: 0 })
     property var remembered: []

@@ -17,7 +17,7 @@ Prototipo mínimo, no el proyecto final.
 ## Fase 1 — Esqueleto y backend
 - Proyecto Qt en la raíz de `qt6-version/` con CMake, presets, recursos, `Tokens.qml`, fuentes e iconos locales.
 - Ventana sin marco, barra de título propia, instancia única, persistencia de ventana, modo gráfico de respaldo.
-- Opción A: extraer el backend de Electron a un paquete ejecutable con Node plano; `BackendLauncher` (puerto, token, health, cierre, reintento).
+- Backend: hecho en C++ integrado (antes sidecar Node); `BackendLauncher` abre la colección y levanta la API interna.
 - `ApiClient` y `getBootstrap` equivalentes; pantalla de arranque/error.
 - **Aceptación**: `dist:win` y `dist:linux` producen un «hola mundo» que arranca el backend, responde `/health` y se cierra sin dejar procesos huérfanos.
 

@@ -25,7 +25,7 @@ Estas specs **no repiten** lo que no cambia. Lo siguiente se hereda tal cual y s
 | `00-motivacion-y-decisiones.md` | Por qué existe, qué se gana y se pierde, decisiones abiertas |
 | `01-arquitectura.md` | Stack Qt, estructura de carpetas, hilos, capas, CMake |
 | `02-reproductor-mpv.md` | Integración de libmpv, interfaz del reproductor en QML, pistas y subtítulos, progreso |
-| `03-backend-y-datos.md` | Cómo se obtiene la API y los datos: sidecar Node (recomendado) o port a C++ |
+| `03-backend-y-datos.md` | El backend integrado en C++ (API, escáner, TMDb, servidor público, Modo Cliente) y los datos |
 | `04-interfaz-qml.md` | Traducción del sistema de diseño y las pantallas a QML; rendimiento de grillas |
 | `05-empaquetado-y-licencias.md` | Windows, Linux, libmpv, Qt, licencias |
 | `06-plan-de-implementacion.md` | Fases con criterios de aceptación; empieza por un *spike* de validación |
@@ -40,4 +40,4 @@ Estas specs **no repiten** lo que no cambia. Lo siguiente se hereda tal cual y s
 
 ## Decisiones abiertas (resolver antes de la Fase 1)
 
-Ver `00-motivacion-y-decisiones.md` §4: interfaz **QML nativa** frente a **web embebida (QtWebEngine)** y backend **sidecar Node** frente a **port a C++**.
+Ver `00-motivacion-y-decisiones.md` §4: interfaz **QML nativa** frente a **web embebida (QtWebEngine)** (el backend se decidió: C++ integrado, sin Node).

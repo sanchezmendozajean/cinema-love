@@ -14,8 +14,6 @@ Modal {
         { n: "Qt 6.8", l: "LGPL v3", d: "Interfaz (Qt Quick, Qt SQL, Qt Network). Enlace dinámico, sin modificar.", u: "https://www.qt.io/licensing" },
         { n: "libmpv " + (mpvVersion || ""), l: "LGPL v2.1+", d: "Reproducción de video y audio. Compilación LGPL (sin componentes GPL).", u: "https://github.com/mpv-player/mpv" },
         { n: "FFmpeg " + (ffmpegVersion || ""), l: "LGPL", d: "Decodificación, dentro de libmpv. Sin --enable-gpl ni --enable-nonfree.", u: "https://ffmpeg.org/legal.html" },
-        { n: "Node.js", l: "MIT", d: "Entorno del servicio en segundo plano (catálogo, escáner, TMDb).", u: "https://github.com/nodejs/node/blob/main/LICENSE" },
-        { n: "Fastify · better-sqlite3 · bcryptjs · yaml · qrcode · node-forge · bonjour-service", l: "MIT / BSD", d: "Servicio en segundo plano (API, base de datos, certificados, descubrimiento en red).", u: "" },
         { n: "The Movie Database (TMDb)", l: "Términos de TMDb", d: "Esta aplicación usa la API de TMDb pero no está avalada ni certificada por TMDb. Los pósters y datos pertenecen a sus autores.", u: "https://www.themoviedb.org/api-terms-of-use" }
     ]
 

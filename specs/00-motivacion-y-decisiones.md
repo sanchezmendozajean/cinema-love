@@ -40,8 +40,8 @@ Esta alternativa recupera ese modelo de reproducción (libmpv) sin volver a Flut
 
 **Recomendación:** A. La variante B conserva el esfuerzo ya hecho, pero mantiene Chromium en la ecuación y complica el reproductor, que es justo lo que se quiere simplificar. Si se elige B, `04-interfaz-qml.md` pasa a describir el puente (`QWebChannel`) en lugar de componentes QML; `02` y `05` aplican igual.
 
-### 4.2 Backend: sidecar Node o port a C++
-Ver `03-backend-y-datos.md`. **Recomendación:** sidecar Node al principio.
+### 4.2 Backend: decidido, C++ integrado
+Ver `03-backend-y-datos.md`. Se empezó con un sidecar Node y se portó por completo a C++ (18/11/2026) para que el proyecto sea autocontenido y sin proceso hijo.
 
 ## 5. Criterio de éxito
 

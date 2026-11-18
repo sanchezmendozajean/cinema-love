@@ -1,53 +1,31 @@
 # 03 · Backend y datos
 
-La interfaz Qt es solo el cliente de la API v1 (`specs/heredadas/04`). Falta decidir **qué sirve esa API**.
+La interfaz Qt es el cliente de la API v1 (`specs/heredadas/04`). **El backend es código C++ propio, integrado en la aplicación**: no hay proceso hijo, ni Node, ni dependencias de JavaScript. (Hasta el 18/11/2026 existió un sidecar Node en `backend/`; sirvió de oráculo para comprobar la paridad y se retiró. Sigue disponible en la etiqueta git `con-backend-node`.)
 
-## 1. Opciones
+## 1. Piezas
 
-| | **A. Sidecar Node (recomendada para empezar)** | **B. Port a C++/Qt** |
-|---|---|---|
-| Qué es | El backend, hoy **código propio** de esta versión en `backend/` (nació de una copia del de la versión Electron y ya no se sincroniza con ella): Fastify, `better-sqlite3`, escáner, TMDb, imágenes, descubrimiento) se ejecuta como **proceso hijo** empaquetado con la app, sin ventana | Se reescriben servidor HTTP, repositorios, escáner y TMDb en C++ (QtHttpServer, QtSql, QNetworkAccessManager) |
-| Reutiliza | Casi todo; los tests de contrato y paridad ya existen | Nada; hay que reescribir y reprobar |
-| Esfuerzo | Bajo: lanzar, vigilar y cerrar el proceso | Muy alto (la mayor parte del trabajo de las Fases 1, 2, 5 y 6 de `specs/heredadas/20`) |
-| Dependencias en runtime | Un runtime Node empaquetado (autocontenido, sin instalar nada) | Ninguna adicional |
-| Tamaño | +~60–90 MB (Node + `node_modules` + better-sqlite3) | Menor |
-| Riesgo | Dos procesos y su ciclo de vida; una app «Qt + Node» menos elegante | Divergencia de comportamiento respecto a la versión de referencia; paridad con Flutter por reprobar |
-| Mantenimiento | Un solo backend para las dos UIs (Electron y Qt) | Dos backends a mantener |
+| Carpeta | Qué hace |
+|---|---|
+| `src/server/` | Servidor HTTP propio sobre `QTcpServer` / `QSslServer` (`HttpServer`), API v1 (`ApiServer`, `UserApi`, `ImageApi`, `AdminApi`), base de datos `Store` (QtSql, conexión por hilo, respaldo, bloqueo de un solo escritor), catálogo (`Catalog`), escáner (`Scanner`, `Naming`), TMDb (`Metadata`), trabajos con SSE (`Jobs`), contraseñas bcrypt (`Bcrypt`) |
+| `src/server/PublicServer.*` | «Compartir mi colección en la red»: HTTP o HTTPS en `0.0.0.0` sin administración; certificado autofirmado propio (`Certs`: RSA 2048, SHA-256, 10 años, huella SHA-256), anuncio mDNS `_cinemalove._tcp` (`Mdns`), código QR (`Qr`) y «Reproduciendo ahora» (`Activity`) |
+| `src/client/` | Modo Cliente: conexión con otro CinemaLove (`ClientConnection`), proxy local con la credencial remota (`ClientProxy`), espejo local del catálogo (`Mirror`), progreso, «Próximas a ver» y colecciones de este equipo (`Personal`, `ClientState`), `cliente_datos.sqlite` (`ClientDb`), servidor de control `/control/*` (`ClientBackend`) |
+| `src/backend/BackendLauncher.*` | Ciclo de vida: abre la colección y levanta la API interna (Modo Local) o el servicio del Modo Cliente; se cierra con la app |
 
-**Recomendación:** A. Permite validar lo importante (reproducción y UI) sin reescribir un backend que ya funciona. El port a C++ se decide más tarde, con datos, si el tamaño o el ciclo de vida del sidecar resultan un problema.
+Todo cálculo criptográfico (bignum, RSA, ASN.1/X.509, bcrypt) y el codificador QR son código del proyecto; Qt aporta TLS (Schannel en Windows, OpenSSL en Linux) y el resto de la red.
 
-> Consecuencia a tener en cuenta: el backend sidecar sigue conteniendo `PlaybackService` y sus sesiones ffmpeg para los clientes Flutter/Android. La UI Qt **no** las usa. El backend se extrae a un paquete independiente de Electron (sin `electron` como dependencia) para poder ejecutarlo con Node plano. Ese refactor es la primera tarea de la opción A (Fase 1 de `06`).
-
-## 2. Opción A en detalle
-
-### Ciclo de vida (`BackendLauncher`)
-1. Al arrancar la app Qt: elegir puerto efímero y generar el **token admin** aleatorio de la sesión.
-2. Lanzar `node backend/main.js` (`QProcess`) con variables de entorno: carpeta de datos, token, puerto interno, ruta de ffmpeg/ffprobe incluidos, `CL_HEADLESS=1`.
-3. Esperar `GET /api/v1/health` (con límite de tiempo) antes de mostrar la UI; si falla, pantalla de error con el log del proceso.
-4. El proceso hijo se cierra con la app (cierre ordenado por señal; y *job object* en Windows / `PR_SET_PDEATHSIG` en Linux para que no quede huérfano si la app muere).
-5. Si el backend muere durante la ejecución: reintentar una vez automáticamente; si vuelve a fallar, avisar con opción de reiniciar. Los datos nunca se pierden por esto (SQLite transaccional).
-6. **Instancia única**: la protege la app Qt; el backend no abre la base si hay otro escritor (mismas reglas de `specs/heredadas/02`).
-
-### Distribución
-`backend/` junto al ejecutable: `node` (binario), `main.js` empaquetado (esbuild/`@vercel/ncc`) y `better-sqlite3` precompilado para esa plataforma y versión de Node. Sin npm ni Node del sistema.
-
-### Lo que el backend deja de hacer para esta UI
-- Nada para la UI Qt: usa los mismos endpoints de catálogo, progreso, administración y `media/<id>/direct`.
+## 2. Ciclo de vida
+1. Al arrancar: el asistente de bienvenida elige la carpeta de datos; `Store::open` toma el bloqueo de un solo escritor (`cinemalove.electron.lock` + `cinemalove.qt.lock`, por PID), hace el respaldo automático (`cinemalove.sqlite.bak-qt-AAAAMMDD`, cada 7 días, conserva 5) y migra de forma aditiva. La apertura se hace fuera del hilo de la interfaz.
+2. La API interna escucha en `127.0.0.1` con puerto efímero y un token de administración aleatorio de la sesión; vive en su propio hilo.
+3. En Modo Cliente no hay colección local: el servicio de control (`/control/*`, token efímero) gestiona la conexión, el proxy y el espejo; una vez conectado, la interfaz habla con el proxy local.
+4. Se cierra con la app (`aboutToQuit`). Los datos nunca se pierden por esto (SQLite transaccional).
 
 ## 3. Datos y compatibilidad
+Sin cambios: `cinemalove.sqlite` (drift v11, solo cambios aditivos), `cliente_datos.sqlite` (esquema v6 + `cl_cliente_servidor_extra`), `images/`, `config.yaml` (`specs/heredadas/02`). La API HTTP v1 sigue siendo compatible con los clientes Flutter. Mientras coexistan otras versiones de CinemaLove, **no pueden abrir la misma carpeta a la vez** (un solo escritor).
 
-Sin cambios: `cinemalove.sqlite` (drift v11, solo cambios aditivos), `cliente_datos.sqlite`, `images/`, `config.yaml` (`specs/heredadas/02`). Mientras la app Qt y la Electron coexistan, **no pueden abrir la misma carpeta a la vez** (un solo escritor); el bloqueo de `specs/heredadas/02` se respeta entre las tres versiones.
+Durante el desarrollo se trabaja con **copias** en `.dev-data/`; las pruebas automatizadas se niegan a usar otra cosa. `cinemalove.exe --serve <carpeta .dev-data>` expone solo la API (sin interfaz) y `--client-serve <carpeta .dev-data>` el servicio del Modo Cliente, para probarlos con cualquier cliente HTTP.
 
-Durante el desarrollo se trabaja con **copias** en `.dev-data/` (regla de oro de `specs/heredadas/20`).
+## 4. Verificación hecha al retirar Node
+El comportamiento se comparó con el del backend Node sobre copias idénticas de los datos: API, escáner, metadata TMDb, usuarios y sesiones, imágenes y administración (1374 comprobaciones iguales); Modo Cliente (29: conexión con token y usuario, espejo, proxy con lo personal, streaming Range, reconexión, sesión vencida, servidor caído); servidor público (45: QR idéntico a la biblioteca de referencia, certificado validado por `node:crypto`, mDNS cruzado con `bonjour-service`, HTTPS con Range y detección del certificado regenerado). Los scripts de esas pruebas están en la etiqueta `con-backend-node` (`scripts/paridad-*.mjs`).
 
-## 4. Opción B en detalle (si se aprueba más adelante)
-
-Orden sugerido de portado, cada paso verificable contra el backend Node con los mismos tests de contrato:
-1. `ConfigService` y apertura de SQLite (`QSQLITE`) con PRAGMAs, `user_version`, respaldo y lock.
-2. Repositorios de lectura → endpoints de catálogo, `/home`, `/image`.
-3. Progreso, colecciones, próximas a ver.
-4. Servidor público (HTTP/HTTPS, certificados autofirmados, mDNS).
-5. Escáner (hash 64 KB + 64 KB, paridad con Flutter), TMDb, administración.
-6. Retirar el sidecar.
-
-Los DTOs (`specs/heredadas/04` §4) se definen una vez en C++ y se serializan con `QJsonObject`; los tests de paridad del escáner (50 nombres de prueba) se portan tal cual.
+## 5. Conversión de video
+El backend integrado no transcodifica (no hay sesiones ffmpeg): la UI Qt reproduce el archivo original con mpv y los clientes que piden `media/<id>/stream` reciben el archivo con soporte de `Range`.

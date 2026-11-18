@@ -56,7 +56,7 @@ Window {
     readonly property bool dataReady: clientMode ? clientReady : (dataFolder.path !== "" && (spikeArgs.noBackend || !spikeArgs.dataDir || backend.state === "listo"))
     readonly property string dbFile: clientMode ? mirrorDb : (dataReady ? dataFolder.dbFile : "")
 
-    // --- Modo Cliente: el catálogo de otro CinemaLove se refleja en un espejo local (backend/src/main/client/espejo.ts) que leen los mismos modelos ---
+    // --- Modo Cliente: el catálogo de otro CinemaLove se refleja en un espejo local (src/client/Mirror.cpp) que leen los mismos modelos ---
     readonly property bool clientMode: backend.clientMode
     property var clientConn: ({ tipo: "desconectada" })
     property var clientMirror: ({ fase: "inactivo", hecho: 0, total: 0, ruta: null })
@@ -67,7 +67,7 @@ Window {
     readonly property bool clientReady: clientMode && clientConn.tipo === "conectada" && mirrorDb !== ""
     readonly property string serverName: clientConn.info ? clientConn.info.nombre : ""
     Binding { target: Tokens; property: "clientMode"; value: root.clientMode }
-    ApiClient { id: ctl; baseUrl: backend.controlUrl; token: backend.controlToken }   // servidor de control del sidecar (solo Modo Cliente)
+    ApiClient { id: ctl; baseUrl: backend.controlUrl; token: backend.controlToken }   // servidor de control del Modo Cliente
     function enterClientMode() {
         wizardActive = false; mirrorDb = ""; clientConn = ({ tipo: "desconectada" }); clientAutoDone = true; lastMirrorPhase = ""
         clientView.reset()
@@ -92,19 +92,19 @@ Window {
             root.lastMirrorPhase = d.espejo.fase
         })
     }
-    Connections {   // al estar listo el sidecar en Modo Cliente: reconectar al servidor recordado (o la conexión de prueba)
-        target: backend
-        function onReadyChanged() {
-            if (!backend.clientMode || backend.controlUrl === "" || root.clientAutoDone) return
-            root.clientAutoDone = true
-            if (spikeArgs.clientConnect) {
-                ctl.request("POST", "/control/conectar", { url: spikeArgs.clientConnect, credencial: { tipo: "apiKey", apiKey: spikeArgs.clientKey }, recordar: true }, (st, d, err) => { if (st !== 200 || !d || !d.ok) console.log("CLIENT conectar falló:", st, JSON.stringify(d), err || "") })
-            } else {
-                const id = prefs.value("servidorId", "")
-                if (id) ctl.request("POST", "/control/reconectar", { id: id }, () => {})
-            }
+    // Al estar listo el servicio del Modo Cliente: reconectar al servidor recordado (o la conexión de prueba). El servicio arranca de forma
+    // síncrona en main.cpp, antes de cargar la interfaz: por eso también se comprueba al completarse el componente.
+    function clientAutoConnect() {
+        if (!backend.clientMode || backend.controlUrl === "" || root.clientAutoDone) return
+        root.clientAutoDone = true
+        if (spikeArgs.clientConnect) {
+            ctl.request("POST", "/control/conectar", { url: spikeArgs.clientConnect, credencial: { tipo: "apiKey", apiKey: spikeArgs.clientKey }, recordar: true }, (st, d, err) => { if (st !== 200 || !d || !d.ok) console.log("CLIENT conectar falló:", st, JSON.stringify(d), err || "") })
+        } else {
+            const id = prefs.value("servidorId", "")
+            if (id) ctl.request("POST", "/control/reconectar", { id: id }, () => {})
         }
     }
+    Connections { target: backend; function onReadyChanged() { root.clientAutoConnect() } }
     // Lo que el usuario cambia se manda al servidor; el espejo local solo se refresca.
     function pushProgress(id, pos, state, audio, sub) {
         if (!clientMode) return
@@ -115,7 +115,7 @@ Window {
     MovieModel { id: movies; dbPath: root.dbFile }
     SeriesCatalog { id: seriesCat; dbPath: root.dbFile }
 
-    // Backend (sidecar Node): lo crea y lo inicia main.cpp (`backend` es una propiedad de contexto); aquí solo se consume.
+    // Backend integrado: lo crea y lo inicia main.cpp (`backend` es una propiedad de contexto); aquí solo se consume.
     ApiClient { id: api; baseUrl: backend.baseUrl; token: backend.token }
     readonly property string backendNote: spikeArgs.dataDir ? ""
         : "La administración necesita una carpeta de datos con un archivo cinemalove.sqlite."
@@ -816,6 +816,7 @@ Window {
         player.grabWindowTo(spikeArgs.catalogShot); if (root.playing) root.closeMovie(); player.shutdown(); Qt.quit() } }
 
     Component.onCompleted: {
+        clientAutoConnect()
         if (spikeArgs.progressTest) { if (spikeArgs.search) catalog.setSearch(spikeArgs.search); pt1.start(); pt2.start(); pt3.start(); pt4.start() }
         if (spikeArgs.adminScan) adminScanTimer.start()
         if (spikeArgs.uiTest) uiTestTimer.start()

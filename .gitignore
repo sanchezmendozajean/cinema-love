@@ -34,10 +34,7 @@ dist/
 # Dependencias nativas descargadas por scripts (libmpv, sidecar, etc.); lo versionado son los scripts y los checksums
 # Binarios grandes de terceros: están en la carpeta pero no en git (ver third_party/README.md)
 third_party/libmpv/libmpv-2.dll
-third_party/node/node.exe
 third_party/*/bin/
-backend/dist/
-/node_modules/
 
 # Datos de desarrollo: copias de datos reales del usuario
 .dev-data/

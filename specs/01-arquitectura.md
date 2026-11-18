@@ -60,7 +60,7 @@ qt6-version/                   # raíz del repositorio (el proyecto Qt se crea a
 │   ├─ models/               # CatalogModel, HomeModel, ProgressModel… (QAbstractListModel)
 │   ├─ player/               # MpvItem, MpvController, TrackModel, SubtitleSettings
 │   ├─ images/               # ImageProvider + caché
-│   ├─ backend/              # BackendLauncher (sidecar) o módulos C++ (opción B)
+│   ├─ backend/              # BackendLauncher (ciclo de vida del backend integrado, C++)
 │   └─ util/
 ├─ qml/
 │   ├─ Main.qml

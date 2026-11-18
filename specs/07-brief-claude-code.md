@@ -24,7 +24,7 @@
 |---|---|
 | `cmake --preset <win\|linux>-debug` / `cmake --build --preset …` | Configurar y compilar |
 | `ctest --preset …` | Qt Test + `qmltestrunner` |
-| `scripts/build-backend.ps1` | Dependencias nativas y sidecar (opción A) |
+| `scripts/dev.ps1` | Compila y lanza con la copia de `.dev-data/` |
 | `scripts/dist-win.ps1` / `scripts/dist-linux.sh` | ZIP portable / AppImage + tar.gz |
 
 ## Entregable de la Fase 0 (resumen que debe devolver)

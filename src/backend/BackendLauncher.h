@@ -1,6 +1,5 @@
 #pragma once
 #include <QObject>
-#include <QProcess>
 #include <QQmlEngine>
 #include <QStringList>
 #include <QVariantMap>
@@ -10,8 +9,8 @@ class ApiServer;
 class ClientBackend;
 
 /**
- * Ciclo de vida del sidecar Node (specs/03 §2): lo lanza con la carpeta de datos, espera `CL_READY` en su salida, vigila que siga
- * vivo (un reintento automático) y lo cierra con la app. El sidecar también se cierra solo si se cierra su stdin (la app murió).
+ * Ciclo de vida del backend integrado (specs/03 §2): en Modo Local abre la colección y levanta la API HTTP interna en este proceso (hilo propio);
+ * en Modo Cliente levanta el servicio de conexión con otro CinemaLove (control, proxy y espejo). Se cierra con la app.
  */
 class BackendLauncher : public QObject
 {
@@ -20,7 +19,7 @@ class BackendLauncher : public QObject
     Q_PROPERTY(QString state READ state NOTIFY stateChanged)       // detenido | iniciando | listo | error
     Q_PROPERTY(QString baseUrl READ baseUrl NOTIFY readyChanged)   // API que usa la interfaz (en Modo Cliente, el proxy al servidor remoto)
     Q_PROPERTY(QString token READ token NOTIFY readyChanged)
-    Q_PROPERTY(QString controlUrl READ controlUrl NOTIFY readyChanged)   // solo Modo Cliente: servidor de control del sidecar
+    Q_PROPERTY(QString controlUrl READ controlUrl NOTIFY readyChanged)   // solo Modo Cliente: servidor de control del Modo Cliente
     Q_PROPERTY(QString controlToken READ controlToken NOTIFY readyChanged)
     Q_PROPERTY(bool clientMode READ clientMode NOTIFY stateChanged)
     Q_PROPERTY(QString error READ error NOTIFY stateChanged)
@@ -50,10 +49,10 @@ public:
     Q_INVOKABLE void start(const QString &dataDir);
     /** Detiene el backend (si corre) y lo inicia sobre otra carpeta. */
     Q_INVOKABLE void restart(const QString &dataDir);
-    /** Modo Cliente: inicia el sidecar sin colección local; `clientDir` guarda cliente_datos.sqlite y el espejo del catálogo. */
+    /** Modo Cliente: inicia el servicio sin colección local; `clientDir` guarda cliente_datos.sqlite y el espejo del catálogo. */
     Q_INVOKABLE void startClient(const QString &clientDir);
     Q_INVOKABLE void restartClient(const QString &clientDir);
-    /** Con una conexión activa, la interfaz habla con el proxy local del servidor remoto en vez de con el sidecar. */
+    /** Con una conexión activa, la interfaz habla con el proxy local del servidor remoto en vez de con el servicio de control. */
     Q_INVOKABLE void setApi(const QString &baseUrl, const QString &token);
     Q_INVOKABLE void stop();
 
@@ -63,18 +62,12 @@ signals:
     void logChanged();
 
 private:
-    void launch();
-    void startLocal(const QString &dataDir);          // Modo Local: backend integrado en este proceso (sin Node)
+    void startLocal(const QString &dataDir);          // Modo Local: backend integrado en este proceso 
     void finishLocalOpen(bool ok, const QString &code, const QString &message, const QVariantMap &info);
     void stopLocal();
-    void onStdout();
-    void onFinished(int code, QProcess::ExitStatus status);
     void setState(const QString &s, const QString &err = {});
     void appendLog(const QString &line);
-    static QString findScript();
-    static QString findNode();
 
-    QProcess *m_proc = nullptr;
     std::unique_ptr<ApiServer> m_api;
     bool m_localRunning = false;
     bool m_localOpening = false;
@@ -82,11 +75,10 @@ private:
     QString m_errorCode;
     QVariantMap m_info;
     bool m_requireDev = false;
-    QString m_dataDir, m_state = QStringLiteral("detenido"), m_baseUrl, m_token, m_error, m_buffer;
+    QString m_dataDir, m_state = QStringLiteral("detenido"), m_baseUrl, m_token, m_error;
     QStringList m_log;
     bool m_clientMode = false;
     QString m_apiBase, m_apiToken;
     bool m_stopping = false;
-    bool m_failed = false;   // el backend informó un error de apertura (CL_ERROR): no se reintenta
-    int m_restarts = 0;
+    bool m_failed = false;   // la apertura falló: se conserva el estado de error con su mensaje
 };

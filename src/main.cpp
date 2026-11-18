@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&cb] { cb.stop(); });
         return app.exec();
     }
-    // Backend integrado en modo de pruebas: solo la API HTTP (sin interfaz), para compararla con la del backend Node.
+    // Backend integrado en modo de pruebas: solo la API HTTP (sin interfaz).
     if (parser.isSet(serveOpt)) {
         const QString dir = QDir(parser.value(serveOpt)).absolutePath();
         if (!QDir::fromNativeSeparators(dir).contains(QStringLiteral("/.dev-data/"))) {
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     BackendLauncher backend; // declarado antes que el motor: debe sobrevivirle (los bindings QML lo leen al destruirse)
     backend.setRequireDevCopy(testMode);
     QQmlApplicationEngine engine;
-    // El backend (sidecar Node) se inicia desde el arranque: las imágenes y la administración dependen de él.
+    // El backend integrado se inicia desde el arranque: las imágenes y la administración dependen de él.
     engine.rootContext()->setContextProperty(QStringLiteral("backend"), &backend);
     engine.rootContext()->setContextProperty(QStringLiteral("dataFolder"), &dataFolder);
     TestInput testInput;

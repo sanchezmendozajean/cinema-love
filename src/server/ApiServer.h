@@ -6,7 +6,7 @@ class HttpServer;
 class PublicServer;
 
 /**
- * API HTTP v1 del backend integrado (specs/heredadas/04): el mismo contrato que sirve el backend Node, ahora dentro de la aplicación.
+ * API HTTP v1 del backend integrado (specs/heredadas/04): el contrato compatible con los clientes Flutter, dentro de la aplicación.
  * Escucha solo en 127.0.0.1 con un token efímero de administración (listener interno).
  */
 class ApiServer

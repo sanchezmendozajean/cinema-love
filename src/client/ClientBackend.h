@@ -9,7 +9,7 @@ class Mirror;
 class Mdns;
 
 /**
- * Backend del Modo Cliente, integrado en la app (sin Node): `cliente_datos.sqlite`, la conexión con el otro CinemaLove, el proxy local y el
+ * Backend del Modo Cliente, integrado en la app: `cliente_datos.sqlite`, la conexión con el otro CinemaLove, el proxy local y el
  * espejo del catálogo. La interfaz lo gestiona por un pequeño servidor de control en 127.0.0.1 (token efímero): /control/estado|probar|conectar|
  * reconectar|renovar|confiar|reintentar|refrescar|personal|desconectar|olvidar|descubrir
  * (servidores CinemaLove anunciados por mDNS en la red). Una vez conectado, el resto de la API va al proxy local.
