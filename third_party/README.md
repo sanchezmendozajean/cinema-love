@@ -12,3 +12,11 @@ Procedencia (solo informativa): libmpv de la compilación comunitaria «mpv-winb
 
 Las dependencias de JavaScript del backend están en `../backend/node_modules/` (incluidas en el repositorio).
 Qt 6, MSVC y CMake son la cadena de herramientas del equipo de desarrollo, no dependencias del proyecto.
+
+## Tipografías (third_party/fonts/)
+Licencia SIL Open Font License 1.1 (textos en `OFL-Fraunces.txt` y `OFL-Inter.txt`); se cargan al arrancar si existen.
+
+| Archivo | SHA-256 |
+|---|---|
+| `Fraunces-VariableFont_SOFT,WONK,opsz,wght.ttf` (títulos) | `99b365ece2cccd7d7baf879cc141f1fa9f2d20690fe025bc3003b01dff098f05` |
+| `Inter-VariableFont_opsz,wght.ttf` (interfaz) | `0be2399ea925f1f83ff974764761da9860ec50742ed29a5d4c1ffd0c5c7ac3a8` |
