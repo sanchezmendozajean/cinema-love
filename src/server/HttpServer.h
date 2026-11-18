@@ -50,6 +50,8 @@ struct HttpResponse {
 };
 
 using HttpHandler = std::function<HttpResponse(HttpRequest &)>;
+/** Manejador asíncrono: llama a `done` (en el hilo del servidor) cuando la respuesta está lista, p. ej. tras una petición de red. */
+using AsyncHandler = std::function<void(HttpRequest &, std::function<void(HttpResponse)>)>;
 
 class HttpServer : public QObject
 {
@@ -60,6 +62,7 @@ public:
 
     /** Registra una ruta: pattern como «/api/v1/items/:id». */
     void route(const QString &method, const QString &pattern, HttpHandler h);
+    void routeAsync(const QString &method, const QString &pattern, AsyncHandler h);
     /** Se llama antes de cada manejador; devuelve false (y rellena la respuesta) si la petición no está autorizada. */
     void setGuard(std::function<bool(HttpRequest &, HttpResponse &)> g) { m_guard = std::move(g); }
     /** Se ejecuta en el hilo del servidor al arrancar (para abrir la base de datos de ese hilo). */
@@ -72,12 +75,13 @@ public:
 
 private:
     friend class HttpConnection;
-    struct Route { QString method; QStringList parts; HttpHandler handler; };
-    HttpResponse dispatch(HttpRequest &req);
+    struct Route { QString method; QStringList parts; HttpHandler handler; AsyncHandler async; };
+    void dispatch(HttpRequest &req, const std::function<void(HttpResponse)> &done);
 
     QList<Route> m_routes;
     std::function<bool(HttpRequest &, HttpResponse &)> m_guard;
     std::function<void()> m_threadInit, m_threadDone;
+    friend class HttpConnection;
     QThread m_thread;
     QTcpServer *m_server = nullptr;
     quint16 m_port = 0;

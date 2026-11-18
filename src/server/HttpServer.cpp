@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMetaObject>
+#include <QPointer>
 #include <QRegularExpression>
 #include <QTcpSocket>
 
@@ -101,7 +102,7 @@ private:
 
     void process()
     {
-        while (!m_streaming) {
+        while (!m_streaming && !m_waiting) {
             const int end = m_buf.indexOf("\r\n\r\n");
             if (end < 0) {
                 if (m_buf.size() > kMaxHeader) simple(HttpResponse::error(400, QStringLiteral("Solicitud inválida.")), true);
@@ -137,18 +138,33 @@ private:
     void handle(HttpRequest &req, bool close)
     {
         m_closeAfter = close;
+        m_waiting = true;
+        QPointer<HttpConnection> self(this);
+        auto done = [self, req](HttpResponse res) {
+            if (self) self->finish(req, std::move(res));
+        };
+        if (req.method == QLatin1String("OPTIONS")) {
+            HttpResponse r;
+            r.status = 204;
+            done(r);
+        } else {
+            m_srv->dispatch(req, done);
+        }
+    }
+
+    void finish(const HttpRequest &req, HttpResponse res)
+    {
         const QString origin = req.headers.value(QStringLiteral("origin"));
-        HttpResponse res;
-        if (req.method == QLatin1String("OPTIONS")) res.status = 204;
-        else res = m_srv->dispatch(req);
         // CORS abierto: la API no usa cookies; lo que protege es la credencial.
         res.header("Access-Control-Allow-Origin", origin.isEmpty() ? QByteArray("*") : origin.toUtf8());
         res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         res.header("Access-Control-Allow-Headers", "X-Api-Key, Content-Type, Range");
         res.header("Access-Control-Expose-Headers", "Content-Range, Accept-Ranges");
         if (!origin.isEmpty()) res.header("Vary", "Origin");
-        if (!res.filePath.isEmpty()) { sendFile(req, res); return; }
-        write(res, res.body.size(), req.method == QLatin1String("HEAD") ? QByteArray() : res.body);
+        m_waiting = false;
+        if (!res.filePath.isEmpty()) sendFile(req, res);
+        else write(res, res.body.size(), req.method == QLatin1String("HEAD") ? QByteArray() : res.body);
+        if (!m_streaming && !m_closeAfter && !m_buf.isEmpty()) QMetaObject::invokeMethod(this, [this] { process(); }, Qt::QueuedConnection);
     }
 
     void head(const HttpResponse &res, qint64 length, const QByteArray &extra = {})
@@ -252,6 +268,7 @@ private:
     QFile *m_file = nullptr;
     qint64 m_remaining = 0;
     bool m_streaming = false;
+    bool m_waiting = false;   // respuesta asíncrona en curso: no se procesa la siguiente petición
     bool m_closeAfter = false;
 };
 
@@ -261,10 +278,15 @@ HttpServer::~HttpServer() { stop(); }
 
 void HttpServer::route(const QString &method, const QString &pattern, HttpHandler h)
 {
-    m_routes.append({method.toUpper(), pattern.split(QLatin1Char('/'), Qt::SkipEmptyParts), std::move(h)});
+    m_routes.append({method.toUpper(), pattern.split(QLatin1Char('/'), Qt::SkipEmptyParts), std::move(h), nullptr});
 }
 
-HttpResponse HttpServer::dispatch(HttpRequest &req)
+void HttpServer::routeAsync(const QString &method, const QString &pattern, AsyncHandler h)
+{
+    m_routes.append({method.toUpper(), pattern.split(QLatin1Char('/'), Qt::SkipEmptyParts), nullptr, std::move(h)});
+}
+
+void HttpServer::dispatch(HttpRequest &req, const std::function<void(HttpResponse)> &done)
 {
     const QStringList parts = req.path.split(QLatin1Char('/'), Qt::SkipEmptyParts);
     for (const Route &r : std::as_const(m_routes)) {
@@ -279,15 +301,17 @@ HttpResponse HttpServer::dispatch(HttpRequest &req)
         if (r.method != req.method && !(req.method == QLatin1String("HEAD") && r.method == QLatin1String("GET"))) continue;
         req.params = params;
         HttpResponse res;
-        if (m_guard && !m_guard(req, res)) return res;
+        if (m_guard && !m_guard(req, res)) { done(res); return; }
         try {
-            return r.handler(req);
+            if (r.async) r.async(req, done);
+            else done(r.handler(req));
         } catch (const std::exception &e) {
             qWarning("servidor: excepción en %s: %s", qPrintable(req.path), e.what());
-            return HttpResponse::error(500, QStringLiteral("Error interno del servidor."));
+            done(HttpResponse::error(500, QStringLiteral("Error interno del servidor.")));
         }
+        return;
     }
-    return HttpResponse::error(404, QStringLiteral("Ruta no encontrada."));
+    done(HttpResponse::error(404, QStringLiteral("Ruta no encontrada.")));
 }
 
 quint16 HttpServer::listen(const QString &host, quint16 port)

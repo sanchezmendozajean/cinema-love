@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process'
 // Paridad del backend integrado (C++) con el backend Node, sobre dos copias idénticas de la base. Solo para desarrollo (mientras exista backend/).
 // Uso: third_party/node/node.exe scripts/paridad-backend.mjs   (requiere build/alt|win compilado y .dev-data/cinemalove.sqlite)
-import { copyFileSync, mkdirSync, rmSync, existsSync, statSync } from 'node:fs'
+import { copyFileSync, mkdirSync, rmSync, existsSync, statSync, cpSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..').replaceAll(String.fromCharCode(92), '/')
@@ -9,6 +10,16 @@ const exe = [root + '/build/win/Release/cinemalove.exe', root + '/build/alt/Rele
 const S = root + '/.dev-data/paridad'
 rmSync(S, { recursive: true, force: true }); mkdirSync(S + '/node', { recursive: true }); mkdirSync(S + '/qt', { recursive: true })
 copyFileSync(root + '/.dev-data/cinemalove.sqlite', S + '/node/cinemalove.sqlite'); copyFileSync(root + '/.dev-data/cinemalove.sqlite', S + '/qt/cinemalove.sqlite')
+// Imágenes ya descargadas y un usuario de prueba (contraseña hasheada con bcryptjs) en ambas copias
+const req = createRequire(root + '/backend/package.json')
+const bcrypt = req('bcryptjs'), Sqlite = req('better-sqlite3')
+const hashPrueba = bcrypt.hashSync('contraseña-ñ-123', 10)
+for (const d of ['node', 'qt']) {
+  if (existsSync(root + '/.dev-data/images')) cpSync(root + '/.dev-data/images', S + '/' + d + '/images', { recursive: true })
+  const db = new Sqlite(S + '/' + d + '/cinemalove.sqlite')
+  db.prepare("INSERT INTO usuarios (id, nombre_usuario, password_hash, rol, creado_en) VALUES ('u-prueba', 'ana', ?, 'cliente', 1700000000)").run(hashPrueba)
+  db.close()
+}
 const lanzar = (cmd, args, env) => new Promise((res, rej) => {
   const p = spawn(cmd, args, { env: { ...process.env, ...env }, stdio: ['pipe', 'pipe', 'inherit'] })
   let b = ''; p.stdout.on('data', d => { b += d; const m = /CL_(READY|ERROR) (.*)/.exec(b); if (m) m[1] === 'READY' ? res({ p, ...JSON.parse(m[2]) }) : rej(new Error(m[2])) })
@@ -108,6 +119,41 @@ const secuencia = async (o) => {
   for (let i = 0; i < Math.max(a.length, b.length); i++) {
     if (a[i] === b[i]) ok++; else { fail++; console.log('DIFERENCIA secuencia #' + i); console.log('  node:', (a[i] ?? '').slice(0, 300)); console.log('  qt  :', (b[i] ?? '').slice(0, 300)) }
   }
+}
+// inicio de sesión, usuarios y listas por usuario
+{
+  const login = async (o, body) => { const r = await fetch(o.baseUrl + '/api/v1/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { status: r.status, json: await r.json().catch(() => null) } }
+  const casos = [{ nombreUsuario: 'ana', password: 'contraseña-ñ-123' }, { nombreUsuario: 'ana', password: 'mala' }, { nombreUsuario: 'nadie', password: 'x' }, { nombreUsuario: 'ana' }, {}]
+  for (const c of casos) {
+    const a = await login(node, c), b = await login(qt, c)
+    const lim = (x) => JSON.stringify(sort({ status: x.status, ...(x.json?.token ? { ...x.json, token: 'T' } : x.json) }))
+    if (lim(a) === lim(b)) ok++; else { fail++; console.log('DIFERENCIA login', JSON.stringify(c), lim(a), lim(b)) }
+    if (a.json?.token && b.json?.token) {
+      for (const ruta of ['/api/v1/me', '/api/v1/collections', '/api/v1/watchlist', '/api/v1/home']) {
+        const x = await fetch(node.baseUrl + ruta, { headers: { 'X-Api-Key': a.json.token } }), y = await fetch(qt.baseUrl + ruta, { headers: { 'X-Api-Key': b.json.token } })
+        const tx = await x.text(), ty = await y.text()
+        if (x.status === y.status && norm(JSON.parse(tx)) === norm(JSON.parse(ty))) ok++; else { fail++; console.log('DIFERENCIA con sesión', ruta, x.status, y.status, tx.slice(0, 150), ty.slice(0, 150)) }
+      }
+      const lo1 = await fetch(node.baseUrl + '/api/v1/logout', { method: 'POST', headers: { 'X-Api-Key': a.json.token } }), lo2 = await fetch(qt.baseUrl + '/api/v1/logout', { method: 'POST', headers: { 'X-Api-Key': b.json.token } })
+      const d1 = await fetch(node.baseUrl + '/api/v1/me', { headers: { 'X-Api-Key': a.json.token } }), d2 = await fetch(qt.baseUrl + '/api/v1/me', { headers: { 'X-Api-Key': b.json.token } })
+      if (lo1.status === lo2.status && d1.status === d2.status && d1.status === 401) ok++; else { fail++; console.log('DIFERENCIA logout', lo1.status, lo2.status, d1.status, d2.status) }
+    }
+  }
+}
+// imágenes y personas (con red solo si falta en disco)
+{
+  const urls = [...new Set(pelis.slice(0, 4).map(m => m.posterUrl).filter(Boolean))]
+  for (const u of urls) for (const sz of ['', '&size=w342', '&size=original', '&size=raro']) {
+    const ruta = '/api/v1/image?src=' + encodeURIComponent(u) + sz
+    const x = await fetch(node.baseUrl + ruta, { headers: { 'X-Api-Key': node.token } }), y = await fetch(qt.baseUrl + ruta, { headers: { 'X-Api-Key': qt.token } })
+    const bx = Buffer.from(await x.arrayBuffer()), by = Buffer.from(await y.arrayBuffer())
+    const hx = (k) => x.headers.get(k), hy = (k) => y.headers.get(k)
+    if (x.status === y.status && bx.equals(by) && hx('content-type') === hy('content-type') && hx('cache-control') === hy('cache-control')) ok++; else { fail++; console.log('DIFERENCIA imagen', ruta.slice(0, 120), x.status, y.status, bx.length, by.length, hx('content-type'), hy('content-type')) }
+  }
+  for (const r of ['/api/v1/image', '/api/v1/image?src=http://x.com/a.jpg', '/api/v1/image?src=https://image.tmdb.org/t/p/w500/../a.jpg']) await cmp(r)
+  const noDisp = '/api/v1/image?src=' + encodeURIComponent('https://image.tmdb.org/t/p/w500/noexiste-xyz.jpg')
+  await cmp(noDisp)
+  for (const id of ['8229', '1', 'x']) await cmp('/api/v1/people/' + id)
 }
 // streaming con Range
 const id = pelis[0].id

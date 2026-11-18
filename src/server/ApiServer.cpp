@@ -14,6 +14,8 @@
 #include "HttpServer.h"
 #include "Store.h"
 #include "UserApi.h"
+#include "ImageApi.h"
+#include "Bcrypt.h"
 
 using namespace Mappers;
 
@@ -124,12 +126,36 @@ void ApiServer::registerRoutes()
         if (!r.userName.isEmpty()) o.insert(QStringLiteral("nombreUsuario"), r.userName);
         return HttpResponse::json(o);
     });
+    h.route("POST", "/api/v1/login", [](HttpRequest &r) {
+        // Rate limit suave: 5 intentos por minuto por IP.
+        static QHash<QString, QList<qint64>> attempts;
+        const qint64 t = QDateTime::currentMSecsSinceEpoch();
+        QList<qint64> &list = attempts[r.peer];
+        list.removeIf([t](qint64 x) { return t - x >= 60000; });
+        list.append(t);
+        if (list.size() > 5) return HttpResponse::error(429, QStringLiteral("Demasiados intentos. Espera un minuto e inténtalo de nuevo."));
+        bool ok = false;
+        const QJsonValue v = r.json(&ok);
+        const QJsonObject b = (ok && v.isObject()) ? v.toObject() : QJsonObject();
+        if (!b.value(QStringLiteral("nombreUsuario")).isString() || !b.value(QStringLiteral("password")).isString())
+            return HttpResponse::error(400, QStringLiteral("nombreUsuario y password son requeridos."));
+        const QVariantMap u = Store::row(QStringLiteral("SELECT id, nombre_usuario, password_hash FROM usuarios WHERE nombre_usuario = ?"), {b.value(QStringLiteral("nombreUsuario")).toString()});
+        // Se compara siempre (hash de relleno si el usuario no existe) para no revelar por tiempo qué usuarios hay.
+        const QString hash = u.isEmpty() ? QStringLiteral("$2b$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvali") : u["password_hash"].toString();
+        const bool pass = Bcrypt::verify(b.value(QStringLiteral("password")).toString(), hash);
+        if (u.isEmpty() || !pass) return HttpResponse::error(401, QStringLiteral("Usuario o contraseña inválidos."));
+        const QString token = randomToken(32);
+        const qint64 now = QDateTime::currentSecsSinceEpoch();
+        Store::exec(QStringLiteral("INSERT INTO sesiones (token, usuario_id, creada_en, expira_en) VALUES (?, ?, ?, ?)"), {token, u["id"], now, now + 30 * 24 * 3600});
+        return HttpResponse::json(QJsonObject{{"token", token}, {"usuarioId", u["id"].toString()}, {"nombreUsuario", u["nombre_usuario"].toString()}});
+    });
     h.route("POST", "/api/v1/logout", [](HttpRequest &r) {
         if (!r.sessionToken.isEmpty()) Store::exec(QStringLiteral("DELETE FROM sesiones WHERE token = ?"), {r.sessionToken});
         return HttpResponse::json(QJsonObject{{"ok", true}});
     });
 
     registerUserRoutes(h);
+    registerImageRoutes(h);
 
     // --- catálogo [v1-legado]
     h.route("GET", "/api/v1/libraries", [](HttpRequest &) {

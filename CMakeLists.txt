@@ -63,6 +63,10 @@ qt_add_qml_module(cinemalove
         src/server/HttpServer.cpp
         src/server/Mappers.h
         src/server/Mappers.cpp
+        src/server/Bcrypt.h
+        src/server/Bcrypt.cpp
+        src/server/ImageApi.h
+        src/server/ImageApi.cpp
         src/server/UserApi.h
         src/server/UserApi.cpp
         src/server/Catalog.h
