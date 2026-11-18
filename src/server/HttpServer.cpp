@@ -1,5 +1,7 @@
 #include "HttpServer.h"
 
+#include <QSslServer>
+
 #include <QDateTime>
 #include <QFile>
 #include <QJsonArray>
@@ -97,6 +99,38 @@ void SseChannel::send(const QString &event, const QJsonValue &data)
     m_sock->write("event: " + event.toUtf8() + "\ndata: " + json + "\n\n");
 }
 
+ResponseWriter::ResponseWriter(QTcpSocket *s, QList<QPair<QByteArray, QByteArray>> extraHeaders, std::function<void(bool)> onEnd)
+    : QObject(s), m_sock(s), m_extra(std::move(extraHeaders)), m_onEnd(std::move(onEnd))
+{
+    connect(s, &QTcpSocket::bytesWritten, this, [this] { emit drained(); });
+    connect(s, &QTcpSocket::disconnected, this, [this] { m_gone = true; emit closed(); });
+}
+
+void ResponseWriter::begin(int status, const QList<QPair<QByteArray, QByteArray>> &headers, qint64 contentLength)
+{
+    QByteArray h = "HTTP/1.1 " + QByteArray::number(status) + ' ' + reason(status) + "\r\n";
+    for (const auto &p : headers) h += p.first + ": " + p.second + "\r\n";
+    for (const auto &p : m_extra) h += p.first + ": " + p.second + "\r\n";
+    m_closeAfter = contentLength < 0;
+    if (contentLength >= 0) h += "Content-Length: " + QByteArray::number(contentLength) + "\r\n";
+    h += m_closeAfter ? "Connection: close\r\n\r\n" : "Connection: keep-alive\r\n\r\n";
+    m_sock->write(h);
+}
+
+void ResponseWriter::write(const QByteArray &data)
+{
+    if (isOpen() && !data.isEmpty()) m_sock->write(data);
+}
+
+qint64 ResponseWriter::bytesToWrite() const { return m_sock->bytesToWrite(); }
+
+void ResponseWriter::end()
+{
+    if (m_ended) return;
+    m_ended = true;
+    if (m_onEnd) m_onEnd(m_closeAfter);
+}
+
 /** Una conexión TCP: analiza peticiones (keep-alive) y escribe respuestas, enviando archivos por trozos con control de flujo. */
 class HttpConnection : public QObject
 {
@@ -184,6 +218,16 @@ private:
             m_sock->write(head + "\r\n");
             m_streaming = true;   // la conexión queda dedicada al stream
             res.sse(new SseChannel(m_sock));
+            return;
+        }
+        if (res.stream) {
+            m_streaming = true;   // la conexión queda dedicada a esta respuesta hasta que termine
+            auto *w = new ResponseWriter(m_sock, res.headers, [this](bool closeAfter) {
+                m_streaming = false;
+                if (closeAfter || m_closeAfter) m_sock->disconnectFromHost();
+                else if (!m_buf.isEmpty()) QMetaObject::invokeMethod(this, [this] { process(); }, Qt::QueuedConnection);
+            });
+            res.stream(w);
             return;
         }
         if (!res.filePath.isEmpty()) sendFile(req, res);
@@ -305,6 +349,11 @@ void HttpServer::route(const QString &method, const QString &pattern, HttpHandle
     m_routes.append({method.toUpper(), pattern.split(QLatin1Char('/'), Qt::SkipEmptyParts), std::move(h), nullptr});
 }
 
+void HttpServer::routePrefix(const QString &method, const QString &prefix, AsyncHandler h)
+{
+    m_prefixRoutes.append({method.toUpper(), prefix, std::move(h)});
+}
+
 void HttpServer::routeAsync(const QString &method, const QString &pattern, AsyncHandler h)
 {
     m_routes.append({method.toUpper(), pattern.split(QLatin1Char('/'), Qt::SkipEmptyParts), nullptr, std::move(h)});
@@ -335,6 +384,18 @@ void HttpServer::dispatch(HttpRequest &req, const std::function<void(HttpRespons
         }
         return;
     }
+    for (const PrefixRoute &p : std::as_const(m_prefixRoutes)) {
+        if (!req.path.startsWith(p.prefix) || (!p.method.isEmpty() && p.method != req.method)) continue;
+        HttpResponse res;
+        if (m_guard && !m_guard(req, res)) { done(res); return; }
+        try {
+            p.handler(req, done);
+        } catch (const std::exception &e) {
+            qWarning("servidor: excepción en %s: %s", qPrintable(req.path), e.what());
+            done(HttpResponse::error(500, QStringLiteral("Error interno del servidor.")));
+        }
+        return;
+    }
     done(HttpResponse::error(404, QStringLiteral("Ruta no encontrada.")));
 }
 
@@ -344,10 +405,20 @@ quint16 HttpServer::listen(const QString &host, quint16 port)
     m_thread.start();
     QMetaObject::invokeMethod(this, [this, host, port] {
         if (m_threadInit) m_threadInit();
-        m_server = new QTcpServer(this);
-        connect(m_server, &QTcpServer::newConnection, this, [this] {
+        if (m_useTls) {
+            auto *ssl = new QSslServer(this);
+            ssl->setSslConfiguration(m_tls);
+            // Los fallos de handshake (clientes que no aceptan el certificado autofirmado) son normales: no se registran.
+            m_server = ssl;
+        } else {
+            m_server = new QTcpServer(this);
+        }
+        auto accept = [this] {
             while (QTcpSocket *s = m_server->nextPendingConnection()) new HttpConnection(this, s);
-        });
+        };
+        // QSslServer avisa con pendingConnectionAvailable cuando el handshake TLS ya terminó; QTcpServer con newConnection.
+        if (m_useTls) connect(m_server, &QTcpServer::pendingConnectionAvailable, this, accept);
+        else connect(m_server, &QTcpServer::newConnection, this, accept);
         if (m_server->listen(QHostAddress(host), port)) m_port = m_server->serverPort();
     }, Qt::BlockingQueuedConnection);
     return m_port;

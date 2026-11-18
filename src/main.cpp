@@ -10,6 +10,7 @@
 #include "AppSettings.h"
 #include "server/ApiServer.h"
 #include "server/Store.h"
+#include "client/ClientBackend.h"
 #include "BackendLauncher.h"
 #include "DataFolder.h"
 #include "TestInput.h"
@@ -129,11 +130,26 @@ int main(int argc, char *argv[])
     QCommandLineOption clientKeyOpt(QStringLiteral("client-key"), QStringLiteral("Prueba del Modo Cliente: token (API key) del servidor"), QStringLiteral("token"));
     QCommandLineOption serveOpt(QStringLiteral("serve"), QStringLiteral("Prueba del backend integrado: solo API HTTP sobre esta carpeta de datos (dentro de .dev-data/)"), QStringLiteral("carpeta"));
     QCommandLineOption servePortOpt(QStringLiteral("serve-port"), QStringLiteral("Puerto del modo --serve (0 = libre)"), QStringLiteral("puerto"), QStringLiteral("0"));
-    parser.addOptions({serveOpt, servePortOpt, clientDirOpt, clientUrlOpt, clientKeyOpt, nativeScroll, notchOpt, multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
+    QCommandLineOption clientServeOpt(QStringLiteral("client-serve"), QStringLiteral("Prueba del Modo Cliente integrado: solo el servicio de control, sobre esta carpeta (dentro de .dev-data/)"), QStringLiteral("carpeta"));
+    parser.addOptions({clientServeOpt, serveOpt, servePortOpt, clientDirOpt, clientUrlOpt, clientKeyOpt, nativeScroll, notchOpt, multi, adminTab, uiTest, noBackend, adminScan, scrollOpt, sectionOpt, selftest, statsOut, subFile, dataDb, catShot, searchOpt, openFirst, playOpt, progTest});
     parser.process(app);
 
     // Instancia única (specs/01 §5): una segunda ejecución avisa a la primera, que se trae al frente, y termina.
     QLocalServer instanceServer;
+    if (parser.isSet(clientServeOpt)) {
+        const QString dir = QDir(parser.value(clientServeOpt)).absolutePath();
+        if (!QDir::fromNativeSeparators(dir).contains(QStringLiteral("/.dev-data/"))) {
+            fprintf(stderr, "--client-serve solo acepta carpetas dentro de .dev-data/\n");
+            return 3;
+        }
+        ClientBackend cb;
+        const QString err = cb.start(dir);
+        if (!err.isEmpty()) { printf("CL_ERROR {\"mensaje\":\"%s\"}\n", qPrintable(err)); fflush(stdout); return 2; }
+        printf("CL_READY {\"baseUrl\":\"%s\",\"token\":\"%s\",\"modo\":\"cliente\"}\n", qPrintable(cb.controlUrl()), qPrintable(cb.controlToken()));
+        fflush(stdout);
+        QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [&cb] { cb.stop(); });
+        return app.exec();
+    }
     // Backend integrado en modo de pruebas: solo la API HTTP (sin interfaz), para compararla con la del backend Node.
     if (parser.isSet(serveOpt)) {
         const QString dir = QDir(parser.value(serveOpt)).absolutePath();

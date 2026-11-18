@@ -205,8 +205,10 @@ Store::OpenResult Store::open(const QString &folder)
         if (schema.open(QIODevice::ReadOnly)) {
             db.transaction();
             for (const QString &stmt : QString::fromUtf8(schema.readAll()).split(QLatin1Char(';'), Qt::SkipEmptyParts)) {
-                const QString s = stmt.trimmed();
-                if (!s.isEmpty() && !s.startsWith(QLatin1String("--"))) q.exec(s);
+                QStringList keep;
+                for (const QString &ln : stmt.split(QLatin1Char('\n'))) if (!ln.trimmed().startsWith(QLatin1String("--"))) keep << ln;
+                const QString s = keep.join(QLatin1Char('\n')).trimmed();
+                if (!s.isEmpty()) q.exec(s);
             }
             q.exec(QStringLiteral("PRAGMA user_version = %1").arg(kSchemaVersion));
             db.commit();

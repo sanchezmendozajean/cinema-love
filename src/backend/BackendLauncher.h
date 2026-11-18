@@ -7,6 +7,7 @@
 #include <memory>
 
 class ApiServer;
+class ClientBackend;
 
 /**
  * Ciclo de vida del sidecar Node (specs/03 §2): lo lanza con la carpeta de datos, espera `CL_READY` en su salida, vigila que siga
@@ -77,6 +78,7 @@ private:
     std::unique_ptr<ApiServer> m_api;
     bool m_localRunning = false;
     bool m_localOpening = false;
+    std::unique_ptr<ClientBackend> m_client;
     QString m_errorCode;
     QVariantMap m_info;
     bool m_requireDev = false;

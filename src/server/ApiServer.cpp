@@ -1,4 +1,5 @@
 #include "ApiServer.h"
+#include "Activity.h"
 
 #include <QDateTime>
 #include <QFileInfo>
@@ -263,6 +264,7 @@ void ApiServer::installRoutes(HttpServer &h, const QString &token, PublicServer 
         return HttpResponse::json(out);
     });
     h.route("GET", "/api/v1/media/:id/stream", [](HttpRequest &r) {
+        Activity::mark(r, QStringLiteral("item"), r.params["id"]);
         const QVariantMap m = Store::row(QStringLiteral("SELECT library_id, ruta_relativa FROM media_items WHERE id = ?"), {r.params["id"]});
         return m.isEmpty() ? HttpResponse::error(404, QStringLiteral("Ítem no encontrado.")) : serveVideo(m["library_id"].toString(), m["ruta_relativa"].toString());
     });
@@ -275,6 +277,39 @@ void ApiServer::installRoutes(HttpServer &h, const QString &token, PublicServer 
         if (!err.isEmpty()) return HttpResponse::error(400, err);
         return HttpResponse::json(Catalog::search(f, r.userId));
     });
+    // Las mismas consultas de /catalog, /home y /catalog/items, pero viendo el progreso que manda el cliente (un cliente con token lo guarda en su equipo).
+    h.route("POST", "/api/v1/catalog/con-estado", [](HttpRequest &r) {
+        bool ok = false;
+        const QJsonValue v = r.json(&ok);
+        const QJsonObject b = ok && v.isObject() ? v.toObject() : QJsonObject();
+        if (!b.value(QStringLiteral("estados")).isArray() || b.value(QStringLiteral("estados")).toArray().size() > 100000) return HttpResponse::error(400, QStringLiteral("estados debe ser una lista (hasta 100 000)."));
+        QVector<Catalog::ExternalState> states;
+        for (const QJsonValue &ev : b.value(QStringLiteral("estados")).toArray()) {
+            const QJsonObject e = ev.toObject();
+            const QString st = e.value(QStringLiteral("estado")).toString();
+            if (!e.value(QStringLiteral("id")).isString() || (st != QLatin1String("noVisto") && st != QLatin1String("enProgreso") && st != QLatin1String("visto"))) return HttpResponse::error(400, QStringLiteral("Un estado no es válido."));
+            states.append({e.value(QStringLiteral("id")).toString(), st, e.value(QStringLiteral("posicionSegundos")).isDouble() ? qMax<qint64>(0, qint64(e.value(QStringLiteral("posicionSegundos")).toDouble())) : 0,
+                           e.value(QStringLiteral("ultima")).isDouble() ? QVariant(qint64(e.value(QStringLiteral("ultima")).toDouble())) : QVariant()});
+        }
+        const QString what = b.value(QStringLiteral("consulta")).toString();
+        if (what == QLatin1String("catalog")) {
+            QHash<QString, QString> q;
+            const QJsonObject qo = b.value(QStringLiteral("query")).toObject();
+            for (auto it = qo.begin(); it != qo.end(); ++it) q.insert(it.key(), it.value().isString() ? it.value().toString() : QString::number(it.value().toDouble()));
+            Catalog::Filters f;
+            const QString err = Catalog::parseFilters(q, &f);
+            if (!err.isEmpty()) return HttpResponse::error(400, err);
+            return HttpResponse::json(Catalog::withExternalStates(states, [f] { return QJsonValue(Catalog::search(f, QString())); }));
+        }
+        if (what == QLatin1String("home")) return HttpResponse::json(Catalog::withExternalStates(states, [] { return QJsonValue(Catalog::home(QString())); }));
+        if (what == QLatin1String("items")) {
+            QStringList ids;
+            for (const QJsonValue &i : b.value(QStringLiteral("ids")).toArray()) if (i.isString()) ids << i.toString();
+            return HttpResponse::json(Catalog::withExternalStates(states, [ids] { return QJsonValue(Catalog::elementsByIds(ids.mid(0, 200), QString(), false)); }));
+        }
+        return HttpResponse::error(400, QStringLiteral("consulta debe ser catalog, home o items."));
+    });
+
     h.route("GET", "/api/v1/home", [](HttpRequest &r) { return HttpResponse::json(Catalog::home(r.userId)); });
     auto idsOf = [](const HttpRequest &r) {
         QStringList ids;
@@ -285,6 +320,7 @@ void ApiServer::installRoutes(HttpServer &h, const QString &token, PublicServer 
     h.route("GET", "/api/v1/catalog/continuar", [idsOf](HttpRequest &r) { return HttpResponse::json(Catalog::continueSummaries(idsOf(r))); });
 
     h.route("GET", "/api/v1/extras/:id/stream", [](HttpRequest &r) {
+        Activity::mark(r, QStringLiteral("extra"), r.params["id"]);
         const QVariantMap e = Store::row(QStringLiteral("SELECT media_item_id, ruta_relativa FROM extras WHERE id = ?"), {r.params["id"]});
         if (e.isEmpty()) return HttpResponse::error(404, QStringLiteral("Extra no encontrado."));
         const QVariantMap m = Store::row(QStringLiteral("SELECT library_id FROM media_items WHERE id = ?"), {e["media_item_id"]});

@@ -61,6 +61,22 @@ qt_add_qml_module(cinemalove
         src/AppSettings.h
         src/server/HttpServer.h
         src/server/HttpServer.cpp
+        src/client/ClientDb.h
+        src/client/ClientDb.cpp
+        src/client/ClientState.h
+        src/client/ClientState.cpp
+        src/client/Remote.h
+        src/client/Remote.cpp
+        src/client/Personal.h
+        src/client/Personal.cpp
+        src/client/ClientProxy.h
+        src/client/ClientProxy.cpp
+        src/client/ClientConnection.h
+        src/client/ClientConnection.cpp
+        src/client/Mirror.h
+        src/client/Mirror.cpp
+        src/client/ClientBackend.h
+        src/client/ClientBackend.cpp
         src/server/Mappers.h
         src/server/Mappers.cpp
         src/server/Bcrypt.h
@@ -77,6 +93,14 @@ qt_add_qml_module(cinemalove
         src/server/Metadata.cpp
         src/server/Jobs.h
         src/server/Jobs.cpp
+        src/server/Certs.h
+        src/server/Certs.cpp
+        src/server/Mdns.h
+        src/server/Mdns.cpp
+        src/server/Qr.h
+        src/server/Qr.cpp
+        src/server/Activity.h
+        src/server/Activity.cpp
         src/server/PublicServer.h
         src/server/PublicServer.cpp
         src/server/AdminApi.h
@@ -110,6 +134,7 @@ if(UNIX AND NOT APPLE)
     endif()
 endif()
 
+qt_add_resources(cinemalove "client_schema" PREFIX "/client" BASE "${CMAKE_SOURCE_DIR}/src/client" FILES src/client/schema-cliente-v6.sql)
 qt_add_resources(cinemalove "server_schema" PREFIX "/server" BASE "${CMAKE_SOURCE_DIR}/src/server" FILES src/server/schema-v11.sql)
 
 target_link_libraries(cinemalove PRIVATE

@@ -4,6 +4,9 @@
 #include <QJsonObject>
 #include <QString>
 #include <QStringList>
+#include <QVariant>
+#include <QVector>
+#include <functional>
 #include <optional>
 
 /**
@@ -32,6 +35,15 @@ QString fileName(const QString &rel);
 
 /** Normaliza texto: sin acentos, minúsculas y sin espacios en los extremos. */
 QString normalize(const QString &s);
+
+struct ExternalState {
+    QString id, state;
+    qint64 position = 0;
+    QVariant last;
+};
+/** Ejecuta `fn` (consultas con `userId` vacío) viendo como progreso el que manda un cliente con token en vez del guardado en el servidor: una tabla TEMP
+ *  llamada igual que la real la tapa SOLO mientras dura `fn` (síncrona: hay una sola conexión por hilo). */
+QJsonValue withExternalStates(const QVector<ExternalState> &states, const std::function<QJsonValue()> &fn);
 
 QJsonObject search(const Filters &f, const QString &userId);
 QJsonObject home(const QString &userId);

@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QRegularExpression>
 #include <QSet>
+#include <algorithm>
 #include <QSqlQuery>
 #include <QSqlError>
 
@@ -420,6 +421,30 @@ QJsonObject search(const Filters &f, const QString &userId)
 }
 
 QJsonArray elementsByIds(const QStringList &ids, const QString &userId, bool onlyMovies) { return byIds(ids, userId, onlyMovies); }
+
+QJsonValue withExternalStates(const QVector<ExternalState> &states, const std::function<QJsonValue()> &fn)
+{
+    QSqlDatabase db = Store::db();
+    QSqlQuery q(db);
+    q.exec(QStringLiteral("CREATE TEMP TABLE watch_progresses (id INTEGER PRIMARY KEY AUTOINCREMENT, media_item_id TEXT NOT NULL, usuario_id TEXT NULL,"
+                          " posicion_segundos INTEGER NOT NULL DEFAULT 0, estado TEXT NOT NULL, ultima_reproduccion INTEGER NULL)"));
+    struct Drop { QSqlDatabase d; ~Drop() { QSqlQuery x(d); x.exec(QStringLiteral("DROP TABLE temp.watch_progresses")); } } drop{db};
+    QVector<ExternalState> sorted = states;
+    // De la más antigua a la más reciente: el `id` desempata el orden de «continuar viendo».
+    std::stable_sort(sorted.begin(), sorted.end(), [](const ExternalState &a, const ExternalState &b) { return a.last.toLongLong() < b.last.toLongLong(); });
+    db.transaction();
+    QSqlQuery ins(db);
+    ins.prepare(QStringLiteral("INSERT INTO temp.watch_progresses (media_item_id, posicion_segundos, estado, ultima_reproduccion) VALUES (?, ?, ?, ?)"));
+    for (const ExternalState &e : std::as_const(sorted)) {
+        ins.addBindValue(e.id);
+        ins.addBindValue(e.position);
+        ins.addBindValue(e.state);
+        ins.addBindValue(e.last.isNull() ? QVariant(QMetaType::fromType<qint64>()) : e.last);
+        ins.exec();
+    }
+    db.commit();
+    return fn();
+}
 
 QJsonArray continueSummaries(const QStringList &ids)
 {

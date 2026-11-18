@@ -11,6 +11,7 @@
 
 #include "../server/ApiServer.h"
 #include "../server/Store.h"
+#include "../client/ClientBackend.h"
 
 #include "../server/ApiServer.h"
 #include "../server/Store.h"
@@ -162,7 +163,22 @@ void BackendLauncher::startClient(const QString &clientDir)
     QDir().mkpath(m_dataDir);
     m_restarts = 0;
     m_stopping = false;
-    launch();
+    // Modo Cliente integrado en la app (sin Node): conexión, proxy local y espejo viven en este proceso.
+    setState(QStringLiteral("iniciando"));
+    m_client = std::make_unique<ClientBackend>();
+    const QString err = m_client->start(m_dataDir);
+    if (!err.isEmpty()) {
+        m_client.reset();
+        m_failed = true;
+        m_errorCode = QStringLiteral("error");
+        setState(QStringLiteral("error"), err);
+        return;
+    }
+    m_baseUrl = m_client->controlUrl();
+    m_token = m_client->controlToken();
+    appendLog(QStringLiteral("Modo Cliente listo en ") + m_baseUrl);
+    emit readyChanged();
+    setState(QStringLiteral("listo"));
 }
 
 void BackendLauncher::restartClient(const QString &clientDir)
@@ -269,6 +285,17 @@ void BackendLauncher::restart(const QString &dataDir)
 
 void BackendLauncher::stop()
 {
+    if (m_client) {
+        m_stopping = true;
+        m_client.reset();
+        m_baseUrl.clear();
+        m_token.clear();
+        m_apiBase.clear();
+        m_apiToken.clear();
+        setState(QStringLiteral("detenido"));
+        emit readyChanged();
+        return;
+    }
     if (m_localRunning || m_localOpening) {
         m_stopping = true;
         const bool wasOpening = m_localOpening;

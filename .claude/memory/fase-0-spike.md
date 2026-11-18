@@ -220,3 +220,16 @@ La compilación completa (CMake + qmlcachegen de ~35 archivos QML + windeployqt)
 - Backend C++ tramo 3 (17/11/2026): Naming/Scanner/Metadata(TMDb)/Jobs(+SSE)/AdminApi/PublicServer. Paridad 1371/1371 incluida la administración, el escáner (reconciliación por hash, huérfanos, re-vincular, homologar) y la importación de metadata. **El Modo Local de la app ya usa el backend integrado en el propio proceso** (BackendLauncher::startLocal; sin Node). El Node solo se lanza aún para el Modo Cliente (`startClient`).
 - Servidor público: HTTP en 0.0.0.0 con la misma API sin administración (token admin vacío ⇒ /admin/* da 404). PENDIENTE: HTTPS (hay que generar certificado autofirmado RSA/X.509 a mano o con otra vía; Qt no lo hace), anuncio/descubrimiento mDNS, QR (SVG), y el Modo Cliente (conexión, proxy, personal local, espejo).
 - Trampas: python en heredoc de bash y la herramienta Write dan distinto tratamiento a las barras invertidas; los `QString()` nulos enlazados a SQL son NULL (usar `QStringLiteral("")` para «cadena vacía»); `QFileInfo::absoluteFilePath` pone la letra de unidad en mayúscula (Node la conserva).
+
+## Modo Cliente en C++ (18/11/2026)
+- `src/client/*` + `ClientBackend` (control `/control/*`) sustituyen al Node en Modo Cliente; `--client-serve <carpeta>` lo expone headless para pruebas.
+- `scripts/paridad-cliente.mjs` (Node vs Qt contra el mismo servidor remoto Qt): 29 iguales, 0 diferencias (probar, conectar token/usuario, espejo, proxy con personal, streaming Range, imágenes, reconectar, sesión vencida, renovar, servidor caído).
+- Fallos hallados y corregidos: esquema SQL con comentario inicial `--` descartaba la 1ª sentencia (`libraries`) en Mirror y Store; `commit` del espejo fallaba por consultas sin `finish()` (se perdían las fichas de series).
+- Diferencia aceptada: con el servidor caído, Node cierra el proxy al detectarlo; Qt responde 502 y pasa a «sin conexión» en la siguiente petición.
+- El límite de intentos de login del remoto es por IP (el harness espera 62 s antes de `renovar`).
+
+## Servidor público completo en C++ (18/11/2026)
+- Hecho en C++ propio, sin dependencias: HTTPS (`Certs.*`: bignum + RSA 2048 + X.509 DER + firma SHA-256; `QSslServer` en `HttpServer::setTls`), mDNS (`Mdns.*`: anuncio y descubrimiento `_cinemalove._tcp`, `/control/descubrir`), QR SVG (`Qr.*`, idéntico a la biblioteca de referencia en modo byte) y «Reproduciendo ahora» (`Activity.*`).
+- `scripts/paridad-servidor.mjs`: 45 comprobaciones (QR contra `qrcode`; certificado validado por `node:crypto` —firma, huella, SAN, RSA, uso, vigencia, clave—; mDNS cruzado con `bonjour-service` en ambos sentidos; HTTPS con Range; el cliente C++ confía por huella y detecta el certificado regenerado).
+- Trampas: `QSslServer` avisa con `pendingConnectionAvailable` (no `newConnection`); Schannel no permite `QSslCertificate::verify` ni evita reanudar sesión → el cliente comprueba al `encrypted` que un autofirmado esté fijado por huella (sin eso, un `probar` dejaba pasar un `conectar` sin confiar).
+- Paridad final antes de retirar Node: backend 1374/0, cliente 29/0, servidor 45/0.

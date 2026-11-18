@@ -1,11 +1,18 @@
 #include "PublicServer.h"
 
 #include <QJsonArray>
+#include <QRegularExpression>
 #include <QNetworkInterface>
+#include <QSslCertificate>
+#include <QSslConfiguration>
+#include <QSslKey>
 #include <QSysInfo>
 #include <QTcpServer>
 
 #include "ApiServer.h"
+#include "Activity.h"
+#include "Certs.h"
+#include "Qr.h"
 #include "HttpServer.h"
 #include "Store.h"
 
@@ -77,10 +84,11 @@ QJsonObject PublicServer::state() const
     const QJsonObject c = config();
     const QString protocol = active() ? m_runProtocol : c.value(QStringLiteral("protocolo")).toString();
     const int port = active() ? m_runPort : (protocol == QLatin1String("https") ? c.value(QStringLiteral("puertoHttps")).toInt() : c.value(QStringLiteral("puertoHttp")).toInt());
+    const QString fingerprint = Certs::Storage(Store::folder()).load().fingerprint;
     QJsonArray ips, urls;
     for (const QString &ip : lanAddresses()) { ips.append(ip); urls.append(QStringLiteral("%1://%2:%3").arg(protocol, ip).arg(port)); }
     return QJsonObject{{"activo", active()}, {"protocolo", protocol}, {"puerto", port}, {"nombre", c.value(QStringLiteral("nombre")).toString()}, {"direcciones", ips}, {"urls", urls},
-                       {"huella", QJsonValue(QJsonValue::Null)}, {"anunciando", false}};
+                       {"huella", fingerprint.isEmpty() ? QJsonValue(QJsonValue::Null) : QJsonValue(fingerprint)}, {"anunciando", m_mdns.announcing()}};
 }
 
 /** Guarda la configuración. Protocolo y puertos solo con el servidor detenido; el puerto debe estar libre. */
@@ -107,6 +115,21 @@ void PublicServer::saveConfig(const QJsonObject &c)
     if (c.contains(QStringLiteral("nombre"))) saveSetting(kName, c.value(QStringLiteral("nombre")).toString().trimmed());
     if (c.contains(QStringLiteral("mdns"))) saveSetting(kMdns, c.value(QStringLiteral("mdns")).toBool() ? QStringLiteral("true") : QStringLiteral("false"));
     if (c.contains(QStringLiteral("autostart"))) saveSetting(kAuto, c.value(QStringLiteral("autostart")).toBool() ? QStringLiteral("true") : QStringLiteral("false"));
+    if (active()) updateAnnouncement();   // el nombre y mDNS sí cambian en caliente
+}
+
+void PublicServer::updateAnnouncement()
+{
+    if (!active()) return;
+    const QJsonObject c = config();
+    if (c.value(QStringLiteral("mdns")).toBool()) {
+        const QString id = Store::scalar(QStringLiteral("SELECT valor FROM cl_meta WHERE clave = 'server_id'")).toString();
+        const QString name = c.value(QStringLiteral("nombre")).toString();
+        m_mdns.publish(name, m_runPort, {{QStringLiteral("v"), QStringLiteral("1")}, {QStringLiteral("id"), id}, {QStringLiteral("name"), name},
+                                         {QStringLiteral("tls"), m_runProtocol == QLatin1String("https") ? QStringLiteral("1") : QStringLiteral("0")}});
+    } else {
+        m_mdns.unpublish();
+    }
 }
 
 void PublicServer::start()
@@ -114,9 +137,20 @@ void PublicServer::start()
     if (active()) return;
     const QJsonObject c = config();
     const QString protocol = c.value(QStringLiteral("protocolo")).toString();
-    if (protocol == QLatin1String("https")) throw Error(QStringLiteral("HTTPS aún no está disponible en esta versión. Usa HTTP en una red de confianza."), 501);
-    const int port = c.value(QStringLiteral("puertoHttp")).toInt();
+    const bool https = protocol == QLatin1String("https");
+    const int port = c.value(https ? QStringLiteral("puertoHttps") : QStringLiteral("puertoHttp")).toInt();
     auto http = std::make_unique<HttpServer>();
+    if (https) {
+        const Certs::Certificate cert = Certs::Storage(Store::folder()).loadOrGenerate(c.value(QStringLiteral("nombre")).toString(), lanAddresses());
+        QSslConfiguration tls = QSslConfiguration::defaultConfiguration();
+        const QSslCertificate certificate(cert.certPem, QSsl::Pem);
+        const QSslKey key(cert.keyPem, QSsl::Rsa, QSsl::Pem);
+        if (certificate.isNull() || key.isNull()) throw Error(QStringLiteral("No se pudo cargar el certificado del servidor. Regéneralo en Ajustes → Servidor."), 500);
+        tls.setLocalCertificate(certificate);
+        tls.setPrivateKey(key);
+        tls.setPeerVerifyMode(QSslSocket::VerifyNone);
+        http->setTls(tls);
+    }
     http->setThreadDone([] { Store::closeThreadConnection(); });
     ApiServer::installRoutes(*http, QString(), nullptr);   // sin token admin ni administración: solo la API de cliente
     const quint16 listening = http->listen(QStringLiteral("0.0.0.0"), quint16(port));
@@ -124,16 +158,25 @@ void PublicServer::start()
     m_http = std::move(http);
     m_runProtocol = protocol;
     m_runPort = listening;
+    updateAnnouncement();
 }
 
 void PublicServer::stop()
 {
     if (!m_http) return;
+    m_mdns.unpublish();
     m_http->stop();
     m_http.reset();
 }
 
-void PublicServer::regenerateCertificate() { throw Error(QStringLiteral("HTTPS aún no está disponible en esta versión."), 501); }
+/** Genera un certificado nuevo. Si el servidor estaba corriendo en HTTPS se reinicia para usarlo (los clientes tendrán que volver a confiar). */
+void PublicServer::regenerateCertificate()
+{
+    const bool restart = active() && m_runProtocol == QLatin1String("https");
+    if (restart) stop();
+    Certs::Storage(Store::folder()).regenerate(serverName(), lanAddresses());
+    if (restart) start();
+}
 
 void registerServerAdminRoutes(HttpServer &h, PublicServer &ps)
 {
@@ -154,8 +197,14 @@ void registerServerAdminRoutes(HttpServer &h, PublicServer &ps)
     h.route("POST", A + "/servidor/iniciar", [&ps, wrap](HttpRequest &) { return wrap([&] { ps.start(); return HttpResponse::json(ps.view()); }); });
     h.route("POST", A + "/servidor/detener", [&ps, wrap](HttpRequest &) { return wrap([&] { ps.stop(); return HttpResponse::json(ps.view()); }); });
     h.route("POST", A + "/servidor/certificado/regenerar", [&ps, wrap](HttpRequest &) { return wrap([&] { ps.regenerateCertificate(); return HttpResponse::json(ps.view()); }); });
-    h.route("GET", A + "/servidor/qr", [](HttpRequest &) { return HttpResponse::error(501, QStringLiteral("El código QR aún no está disponible.")); });
+    h.route("GET", A + "/servidor/qr", [](HttpRequest &r) {
+        static const QRegularExpression ok(QStringLiteral(R"(^https?://\S+$)"));
+        const QString url = r.q(QStringLiteral("url"));
+        if (!ok.match(url).hasMatch() || url.size() > 200) return HttpResponse::error(400, QStringLiteral("Dirección inválida."));
+        const QString svg = Qr::svg(url, 1);
+        return svg.isEmpty() ? HttpResponse::error(400, QStringLiteral("Dirección inválida.")) : HttpResponse::json(QJsonObject{{"svg", svg}});
+    });
     // Sesiones activas: el streaming directo no abre sesión y no hay conversión en esta versión.
-    h.route("GET", A + "/sesiones", [](HttpRequest &) { return HttpResponse::json(QJsonObject{{"conversiones", QJsonArray()}, {"directas", QJsonArray()}}); });
+    h.route("GET", A + "/sesiones", [](HttpRequest &) { return HttpResponse::json(QJsonObject{{"conversiones", QJsonArray()}, {"directas", Activity::active()}}); });
     h.route("DELETE", A + "/sesiones/:id", [](HttpRequest &) { return HttpResponse::error(404, QStringLiteral("La sesión ya terminó.")); });
 }

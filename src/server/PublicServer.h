@@ -2,6 +2,8 @@
 #include <QJsonObject>
 #include <QString>
 #include <memory>
+
+#include "Mdns.h"
 #include <stdexcept>
 
 class HttpServer;
@@ -9,7 +11,6 @@ class HttpServer;
 /**
  * Servidor público («Compartir mi colección en la red», specs/heredadas/03 §4): un segundo listener HTTP en 0.0.0.0 con la misma API pero
  * SIN administración. Se inicia y detiene sin reiniciar la app. Protocolo y puerto no se cambian con el servidor corriendo.
- * (HTTPS con certificado autofirmado y el anuncio mDNS están pendientes en el backend integrado.)
  */
 class PublicServer
 {
@@ -35,7 +36,10 @@ public:
     static QString serverName();
 
 private:
+    void updateAnnouncement();
+
     std::unique_ptr<HttpServer> m_http;
+    Mdns m_mdns;
     QString m_runProtocol;
     int m_runPort = 0;
 };
