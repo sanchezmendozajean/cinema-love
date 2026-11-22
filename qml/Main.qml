@@ -24,7 +24,11 @@ Window {
         const e = seriesCat.episode(nextEpisodeId)
         return (e.label ? e.label + " — " : "") + (e.title || "")
     }
-    function toggleFullscreen() { visibility = visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // Último estado no-pantalla-completa (ventana flotante o maximizada): a él se vuelve al salir de pantalla completa.
+    property int lastWindowedVisibility: Window.Windowed
+    onVisibilityChanged: if (visibility === Window.Windowed || visibility === Window.Maximized) lastWindowedVisibility = visibility
+    function exitFullscreen() { if (visibility === Window.FullScreen) visibility = lastWindowedVisibility }
+    function toggleFullscreen() { if (visibility === Window.FullScreen) exitFullscreen(); else visibility = Window.FullScreen }
     function playNext() {
         const id = nextEpisodeId
         if (!id || !nowPlaying) return
@@ -280,6 +284,7 @@ Window {
         movieTitle = m.kind === "episode" ? m.seriesTitle + "  ·  " + m.label + " — " + m.title
                                           : m.title + (m.year > 0 ? " (" + m.year + ")" : "")
         playing = true
+        if (visibility !== Window.FullScreen) visibility = Window.FullScreen   // la reproducción empieza en pantalla completa; el usuario puede salir con F, Esc o doble clic
         controlsVisible = true
         player.load(m.path, start || 0)
         hideTimer.restart()
@@ -305,7 +310,7 @@ Window {
         pendingTracks = null
         player.stop()
         if (id) refreshDetailAfter(kind, id)
-        if (visibility === Window.FullScreen) visibility = Window.Windowed
+        exitFullscreen()
         playing = false
         movieTitle = ""
         hideTimer.stop()

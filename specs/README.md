@@ -1,8 +1,8 @@
 # CinemaLove (Qt 6 + libmpv) — Especificaciones
 
-Nueva versión de CinemaLove, hermana de las otras versiones de CinemaLove (comparte datos y API, pero no código ni carpetas): misma aplicación (mismos datos, misma API, mismas funciones), pero construida sobre **Qt 6** con **libmpv** como motor de video. El objetivo es eliminar de raíz las pausas y reinicios de reproducción que produce el modelo «`<video>` de Chromium + ffmpeg al vuelo» (ver `../../electron-version/.claude/memory/pausas-reproduccion-416.md`).
+**CinemaLove sobre Qt 6 con libmpv** como motor de video. Es **la versión vigente** de CinemaLove: las versiones Electron y Flutter están obsoletas, se conservan archivadas (`.7z`) solo como referencia histórica y **no son dependencia de este proyecto** (ni de código, ni de carpetas, ni de compilación o ejecución). Mantiene la compatibilidad de datos (SQLite v11, `config.yaml`) y de API HTTP v1 con los clientes existentes. El motivo del cambio fue eliminar las pausas y reinicios de reproducción del modelo «`<video>` de Chromium + ffmpeg al vuelo» (ver `00-motivacion-y-decisiones.md`).
 
-> **Estado: proyecto nuevo, sin código aún.** Es una versión independiente con su propio repositorio. La versión Electron sigue siendo la principal mientras no se valide esta (Fase 0, un *spike*, en `06-plan-de-implementacion.md`). Ninguna de las dos modifica a la otra.
+> **Estado: en desarrollo, con código.** El spike de la Fase 0 ya se hizo; el avance real está en `.claude/memory/`. Es una versión independiente con su propio repositorio.
 
 ## Cómo se relaciona con `../specs/heredadas/`
 

@@ -306,7 +306,10 @@ int main(int argc, char *argv[])
             if (testing) return;
             QSettings out(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QStringLiteral("/window.ini"), QSettings::IniFormat);
             out.setValue(QStringLiteral("geometry"), lastNormal);
-            out.setValue(QStringLiteral("maximized"), win->visibility() == QWindow::Maximized);
+            // En pantalla completa (la reproducción empieza así) se recuerda el estado de antes: maximizada o flotante.
+            const auto vis = win->visibility() == QWindow::FullScreen ? QWindow::Visibility(win->property("lastWindowedVisibility").toInt())
+                                                                       : win->visibility();
+            out.setValue(QStringLiteral("maximized"), vis == QWindow::Maximized);
             out.sync();
         });
         QObject::connect(&instanceServer, &QLocalServer::newConnection, win, [win, &instanceServer]() {

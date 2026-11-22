@@ -83,9 +83,9 @@ qt6-version/                   # raíz del repositorio (el proyecto Qt se crea a
 ## 5. Ventana
 
 - Sin marco, barra de título propia con botones de minimizar, maximizar y cerrar (arrastre con `startSystemMove()`, redimensionado con `startSystemResize()`, ambos de `QWindow`).
-- Tamaño mínimo 1024×640; recordar tamaño, posición y estado maximizado (mismo `cl-config.json`).
+- Tamaño mínimo 1024×640; al cerrar se guardan tamaño y posición de la ventana flotante y si estaba maximizada (`window.ini` en la carpeta de configuración de la app), y se restauran al abrir; si la posición guardada queda fuera de toda pantalla, se descarta.
 - **Instancia única** (bloqueo con `QLockFile` + canal local `QLocalServer` para enfocar la existente).
-- Pantalla completa real con `showFullScreen()`.
+- Pantalla completa real (`Window.FullScreen`). **Al empezar a reproducir una película o episodio la ventana pasa a pantalla completa**; el usuario sale de ella de la forma habitual (`F`, `Esc`, doble clic) y queda en el estado de antes (flotante o maximizada). Al cerrar el reproductor también se vuelve a ese estado. Si la app se cierra en pantalla completa, se guarda el estado de antes, no «pantalla completa».
 - **Robustez gráfica** (lección de la versión Flutter, donde la ventana quedaba gris sin controles): el cierre y la barra de título deben funcionar aunque la escena falle; registrar `QQuickWindow::sceneGraphError` y `graphicsResetStatus`, y exponer un modo de renderizado alternativo (`QT_QUICK_BACKEND=software`) en Ajustes → Avanzado.
 
 ## 6. Seguridad

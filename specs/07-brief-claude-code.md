@@ -2,7 +2,7 @@
 
 ## Prompt de arranque (copiar y pegar)
 
-> Vamos a construir la **alternativa Qt 6 + libmpv** de CinemaLove en la raíz de `qt6-version/`. Lee primero `CLAUDE.md` de esta carpeta, luego `specs/README.md` y todos los documentos que enlaza; las specs de `specs/heredadas/` se heredan salvo lo que `specs/` de aquí cambia. La versión Electron (`../electron-version/`, incluido su backend en `src/main`) y la de Flutter (`../flutter-version/`) son referencia: no las modifiques. Trabaja por fases según `specs/06-plan-de-implementacion.md`, **empezando por la Fase 0 (spike)**. Al terminar cada fase, verifica sus criterios y resume qué quedó hecho y qué no. No continúes tras la Fase 0 si no pasa su aceptación: avísame con los resultados.
+> Vamos a construir la **alternativa Qt 6 + libmpv** de CinemaLove en la raíz de `qt6-version/`. Lee primero `CLAUDE.md` de esta carpeta, luego `specs/README.md` y todos los documentos que enlaza; las specs de `specs/heredadas/` se heredan salvo lo que `specs/` de aquí cambia. Las versiones Electron y Flutter están **obsoletas**: son solo referencia histórica (archivadas), no las modifiques y **nunca las uses como dependencia**; la versión que cuenta es esta. Trabaja por fases según `specs/06-plan-de-implementacion.md`, **empezando por la Fase 0 (spike)**. Al terminar cada fase, verifica sus criterios y resume qué quedó hecho y qué no. No continúes tras la Fase 0 si no pasa su aceptación: avísame con los resultados.
 
 ## Reglas de trabajo
 

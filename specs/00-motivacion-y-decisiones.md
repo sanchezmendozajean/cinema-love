@@ -1,5 +1,7 @@
 # 00 · Motivación y decisiones
 
+> **Nota de estado:** este documento es histórico. La alternativa se adoptó: Qt 6 es la versión principal y Electron y Flutter están obsoletos (archivados solo como referencia; no son dependencia). Las menciones a «Electron» y «Flutter» describen el contexto de la decisión.
+
 ## 1. Por qué una alternativa
 
 La versión Electron reproduce con el `<video>` de Chromium. Lo que Chromium no entiende (MKV, AC3/DTS, algunos HEVC, AVI) obliga a pasar por ffmpeg en vivo (remux/transcode). Ese stream no es un archivo: el servidor conserva solo una ventana en memoria y Chromium puede reabrir la conexión en bytes ya descartados (HTTP 416). La app se recupera reiniciando la sesión, y el usuario ve una pausa y un retroceso de unos segundos.
@@ -23,7 +25,7 @@ Esta alternativa recupera ese modelo de reproducción (libmpv) sin volver a Flut
 - **Tokens y componentes**: se reimplementan en QML (grillas con miles de pósters exigen cuidado, ver `04`).
 - **Menos ecosistema web**: no hay Radix, Tailwind ni Framer Motion; las animaciones y accesibilidad se resuelven con Qt Quick.
 - **Riesgo técnico acotado**: la integración mpv + Qt Quick requiere OpenGL (ver `02` §2). Se valida primero con un *spike* (Fase 0).
-- Dos bases de código mientras coexistan la versión Electron y esta.
+- (Resuelto) Ya no hay dos bases de código: Electron y Flutter están obsoletos.
 
 ## 4. Decisiones abiertas
 
@@ -49,6 +51,6 @@ Se da por buena la alternativa si, con la biblioteca real del usuario:
 1. Una película de ≥ 2 h en MKV (H.264, HEVC 10-bit, audio AC3/DTS) se reproduce de principio a fin **sin ninguna pausa de recuperación** ni retroceso, incluyendo pausas largas y saltos.
 2. La interfaz no se queda en blanco ni congelada tras horas de uso (el fallo de la versión Flutter).
 3. El catálogo se navega a 60 fps con 2 000 pósters.
-4. Se conserva la compatibilidad de datos y API con Flutter y Electron.
+4. Se conserva la compatibilidad de datos y API v1 (los clientes existentes siguen funcionando).
 
 Si el *spike* (Fase 0) falla en 1 o 2, se descarta la alternativa antes de invertir más.

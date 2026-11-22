@@ -73,6 +73,7 @@ Se mantienen **íntegros** los de `specs/heredadas/05` §5 (teclado, ratón, vol
 
 - Los atajos se capturan en `Keys` del `PlayerView`, nunca por las teclas por defecto de mpv (`input-default-bindings=no`).
 - La barra de controles, el OSD y el overlay de «Esc de nuevo» son `Item`s QML por encima del `MpvItem`.
+- **La reproducción siempre arranca en pantalla completa** (ver `01` §5); la salida normal (`F`, `Esc`, doble clic) deja la ventana flotante o maximizada, como estuviera antes.
 - Clic simple muestra/oculta controles (no pausa), doble clic pantalla completa, controles se ocultan a los 30 s, cursor oculto a los 5 s solo si los controles están ocultos (`cursorShape` + `MouseArea`).
 - Línea de tiempo con zona de buffer (`demuxer-cache-state`) y *hover preview* de tiempo.
 

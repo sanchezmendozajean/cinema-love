@@ -7,7 +7,7 @@ Requisito heredado: **build autocontenido**, sin dependencias externas en runtim
 - Compilador: MSVC (Visual Studio 2022 Build Tools) con Qt 6 para MSVC 2022 64-bit.
 - `windeployqt` copia las DLL de Qt y los plugins necesarios (platforms, imageformats, qml). Revisar que no arrastre módulos no usados.
 - **libmpv**: `libmpv-2.dll` (o `mpv-2.dll`) de una compilación para Windows con soporte de libass, ffmpeg y los *hwdec* (D3D11VA/DXVA2). Se vendoriza en `third_party/` con su checksum; el script `fetch:libmpv` la descarga y verifica.
-- Distribución: **ZIP portable** (`CinemaLove-Qt-Windows-x64-<versión>.zip`), igual que la versión Electron. Opcional más adelante: instalador.
+- Distribución: **ZIP portable** (`CinemaLove-Qt-Windows-x64-<versión>.zip`). Opcional más adelante: instalador.
 - El backend va integrado en el ejecutable (C++): no hay Node ni proceso hijo.
 - Si Node/MSVC requieren runtime de Visual C++, incluir `vcruntime`/`msvcp` junto al ejecutable (despliegue local de la app).
 

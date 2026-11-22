@@ -44,4 +44,4 @@ Animaciones, accesibilidad, rendimiento de imágenes, logs (archivo rotatorio), 
 - **Aceptación**: checklist visual de `design/11`; builds autocontenidos; prueba de estabilidad de ≥ 8 h con la app abierta sin ventana en blanco.
 
 ## Decisión de continuidad
-Al cerrar la Fase 3 comparar con la versión Electron en la biblioteca real (pausas de reproducción, estabilidad gráfica, consumo de memoria, esfuerzo restante) y decidir si esta alternativa pasa a ser la principal.
+Decidida: Qt 6 es la versión principal; Electron y Flutter están obsoletos y no se usan como comparación ni como dependencia. Los criterios de aceptación de cada fase se verifican contra la biblioteca real del usuario, no contra otra versión.
