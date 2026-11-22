@@ -287,6 +287,7 @@ Window {
         if (visibility !== Window.FullScreen) visibility = Window.FullScreen   // la reproducción empieza en pantalla completa; el usuario puede salir con F, Esc o doble clic
         controlsVisible = true
         player.load(m.path, start || 0)
+        thumbnailer.open(m.path)   // vista previa de la línea de tiempo (solo archivos locales)
         hideTimer.restart()
         player.forceActiveFocus()
     }
@@ -309,6 +310,7 @@ Window {
         ended = false
         pendingTracks = null
         player.stop()
+        thumbnailer.close()
         if (id) refreshDetailAfter(kind, id)
         exitFullscreen()
         playing = false
@@ -642,34 +644,39 @@ Window {
         id: titleBar
         z: 200
         anchors { left: parent.left; right: parent.right; top: parent.top }
-        height: 36
-        visible: (!root.playing || root.controlsVisible) && !root.fullscreen
+        height: root.playing ? 64 : 36   // en el reproductor: botón de 40 px con 12 px de margen arriba y a la izquierda
+        // En pantalla completa solo se muestra al reproducir y con los controles visibles (flecha de volver + título, sin botones de ventana).
+        visible: (!root.playing || root.controlsVisible) && (!root.fullscreen || root.playing)
         gradient: Gradient {
             GradientStop { position: 0.0; color: root.playing ? "#E6000000" : "#B30E0D11" }
             GradientStop { position: 1.0; color: "#000E0D11" }
         }
         Row {
-            anchors { left: parent.left; leftMargin: root.navWidth + 16; verticalCenter: parent.verticalCenter }
+            anchors { left: parent.left; leftMargin: root.playing ? 12 : root.navWidth + 16; top: parent.top; topMargin: root.playing ? 12 : 5 }
             spacing: 12
-            Rectangle {   // botón de retroceso (solo icono)
+            Rectangle {   // botón de retroceso (solo icono); en el reproductor, igual que los botones de la barra inferior (círculo 40×40)
                 visible: root.playing || root.detail !== null
-                width: 30; height: 26; radius: 6
-                color: backHover.hovered ? "#33FFFFFF" : "transparent"
-                NavIcon { anchors.centerIn: parent; width: 18; height: 18; name: "back"; color: backHover.hovered ? "white" : "#cccccc"; lineWidth: 2.2 }
+                width: root.playing ? 40 : 30; height: root.playing ? 40 : 26; radius: root.playing ? 20 : 6
+                color: backHover.hovered ? (root.playing ? "#40FFFFFF" : "#33FFFFFF") : "transparent"
+                Behavior on color { ColorAnimation { duration: 120 } }
+                NavIcon { anchors.centerIn: parent; width: root.playing ? 24 : 18; height: width; name: "back"
+                          color: root.playing || backHover.hovered ? "white" : "#cccccc"; lineWidth: root.playing ? 1.9 : 2.2 }
                 HoverHandler { id: backHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: root.playing ? root.closeMovie() : root.closeDetail() }
                 Accessible.role: Accessible.Button; Accessible.name: "Volver"
             }
-            Text { visible: root.playing || root.navWidth === 0; height: 26; verticalAlignment: Text.AlignVCenter; text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
+            Text { visible: root.playing || root.navWidth === 0; height: root.playing ? 40 : 26; verticalAlignment: Text.AlignVCenter; text: root.playing ? root.movieTitle : "CinemaLove"; color: "#dddddd"; font.pixelSize: 13; font.bold: true }
         }
-        DragHandler { target: null; onActiveChanged: if (active) root.startSystemMove() }
-        TapHandler { acceptedButtons: Qt.LeftButton; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
+        DragHandler { target: null; enabled: !root.fullscreen; onActiveChanged: if (active) root.startSystemMove() }
+        TapHandler { acceptedButtons: Qt.LeftButton; enabled: !root.fullscreen; onDoubleTapped: root.visibility = root.visibility === Window.Maximized ? Window.Windowed : Window.Maximized }
         Row {
-            anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+            visible: !root.fullscreen
+            height: 36   // los botones de ventana no crecen con la barra del reproductor
+            anchors { right: parent.right; top: parent.top }
             Repeater {
                 model: [ { t: "–", a: "min" }, { t: root.visibility === Window.Maximized ? "❐" : "□", a: "max" }, { t: "✕", a: "close" } ]
                 delegate: Rectangle {
-                    width: 46; height: titleBar.height
+                    width: 46; height: 36
                     color: ma.containsMouse ? (modelData.a === "close" ? "#e81123" : "#33ffffff") : "transparent"
                     Text { anchors.centerIn: parent; text: modelData.t; color: "white"; font.pixelSize: 14 }
                     MouseArea {
@@ -713,12 +720,14 @@ Window {
     }
 
     // --- Interfaz del reproductor (barra, OSD, error, fin, siguiente episodio) ---
+    Thumbnailer { id: thumbnailer }
     PlayerOverlay {
         id: overlay
         z: 50
         anchors.fill: parent
         visible: root.playing
         player: player
+        thumbs: thumbnailer
         api: api
         shared: !root.clientMode
         title: root.movieTitle

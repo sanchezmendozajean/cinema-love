@@ -16,6 +16,7 @@
 #include "TestInput.h"
 #include "ProgressWriter.h"
 #include "ClImageProvider.h"
+#include "Thumbnailer.h"
 #include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkDiskCache>
@@ -212,6 +213,7 @@ int main(int argc, char *argv[])
     AppSettings prefs;
     engine.rootContext()->setContextProperty(QStringLiteral("prefs"), &prefs);
     engine.addImageProvider(QStringLiteral("cl"), new ClImageProvider(&backend));
+    engine.addImageProvider(QStringLiteral("thumb"), new ThumbnailStore);   // vista previa de la línea de tiempo (Thumbnailer)
     engine.setNetworkAccessManagerFactory(new CachedNam(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/img")));
     QVariantMap args;
     args["file"] = parser.positionalArguments().value(0);
@@ -276,14 +278,22 @@ int main(int argc, char *argv[])
         const bool testing = testMode;
         QSettings st(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QStringLiteral("/window.ini"), QSettings::IniFormat);
         static QRect lastNormal;
+        static bool wasMaximized = false;
+        // Una geometría del tamaño de la pantalla no es una ventana «normal»: Qt la trataría como pantalla completa (sin barra de título).
+        // Con tolerancia: una ventana sin marco maximizada mide 1–16 px menos que el área útil (p. ej. 1920×1031 sobre 1920×1032).
+        auto coversScreenGeometry = [](const QScreen *sc, const QRect &g) {
+            if (!sc) return false;
+            const QRect av = sc->availableGeometry();
+            return g.width() >= av.width() - 16 && g.height() >= av.height() - 16;
+        };
         if (!testing) {
             const QRect r = st.value(QStringLiteral("geometry")).toRect();
-            // Una geometría del tamaño de la pantalla no es una ventana «normal»: Qt la trataría como pantalla completa (sin barra de título).
             const QScreen *sc = QGuiApplication::screenAt(r.center());
-            const bool coversScreen = sc && r.width() >= sc->availableGeometry().width() && r.height() >= sc->availableGeometry().height();
+            const bool coversScreen = coversScreenGeometry(sc, r);
+            wasMaximized = st.value(QStringLiteral("maximized")).toBool();
             if (r.isValid() && r.width() >= win->minimumWidth() && r.height() >= win->minimumHeight() && sc && !coversScreen)
                 win->setGeometry(r);
-            if (st.value(QStringLiteral("maximized")).toBool()) win->showMaximized();
+            if (wasMaximized) win->showMaximized();
         }
         lastNormal = win->visibility() == QWindow::Windowed ? win->geometry() : QRect();
         if (!lastNormal.isValid()) {   // arrancó maximizada: al restaurar, un tamaño razonable en vez de la pantalla entera
@@ -293,23 +303,26 @@ int main(int argc, char *argv[])
         }
         // Solo se recuerda una ventana en estado normal y más pequeña que la pantalla: al maximizar, la geometría cambia antes que el estado
         // y se guardaba el tamaño de la pantalla, de modo que «restaurar» devolvía una ventana que Qt consideraba pantalla completa.
-        auto remember = [win]() {
+        auto remember = [win, coversScreenGeometry]() {
             if (win->visibility() != QWindow::Windowed) return;
-            const QScreen *sc = win->screen();
             const QRect g = win->geometry();
-            if (sc && g.width() >= sc->availableGeometry().width() && g.height() >= sc->availableGeometry().height()) return;
+            if (coversScreenGeometry(win->screen(), g)) return;
             lastNormal = g;
         };
         for (auto sig : {&QWindow::xChanged, &QWindow::yChanged, &QWindow::widthChanged, &QWindow::heightChanged})
             QObject::connect(win, sig, win, remember);
-        QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [win, testing]() {
+        // «Maximizada» se registra en cada cambio de estado, no al cerrar: al cerrar, Qt oculta la ventana antes de `aboutToQuit`
+        // y su visibilidad ya no es Maximized. Pantalla completa, minimizada y oculta conservan el valor anterior (la reproducción
+        // entra en pantalla completa desde maximizada o flotante y vuelve a ese estado).
+        QObject::connect(win, &QWindow::visibilityChanged, win, [](QWindow::Visibility v) {
+            if (v == QWindow::Maximized) wasMaximized = true;
+            else if (v == QWindow::Windowed) wasMaximized = false;
+        });
+        QObject::connect(&app, &QCoreApplication::aboutToQuit, &app, [testing]() {
             if (testing) return;
             QSettings out(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QStringLiteral("/window.ini"), QSettings::IniFormat);
             out.setValue(QStringLiteral("geometry"), lastNormal);
-            // En pantalla completa (la reproducción empieza así) se recuerda el estado de antes: maximizada o flotante.
-            const auto vis = win->visibility() == QWindow::FullScreen ? QWindow::Visibility(win->property("lastWindowedVisibility").toInt())
-                                                                       : win->visibility();
-            out.setValue(QStringLiteral("maximized"), vis == QWindow::Maximized);
+            out.setValue(QStringLiteral("maximized"), wasMaximized);
             out.sync();
         });
         QObject::connect(&instanceServer, &QLocalServer::newConnection, win, [win, &instanceServer]() {

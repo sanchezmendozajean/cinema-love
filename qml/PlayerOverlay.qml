@@ -8,6 +8,7 @@ import CinemaLove
 Item {
     id: ov
     property var player
+    property var thumbs                     // Thumbnailer: fotogramas de vista previa de la línea de tiempo (null = sin vista previa)
     property string title: ""
     property bool isEpisode: false
     property bool hasNext: false
@@ -156,12 +157,6 @@ Item {
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; hoverEnabled: true
                     onClicked: ov.interacted(); onWheel: (w) => ov.adjustVolume(w.angleDelta.y > 0 ? 5 : -5) }
 
-        Text {
-            anchors { left: parent.left; right: parent.right; leftMargin: 28; rightMargin: 28; bottom: timeline.top; bottomMargin: 6 }
-            visible: ov.fullscreen; text: ov.title; color: "white"; font.pixelSize: 16; font.weight: Font.DemiBold; elide: Text.ElideRight
-            style: Text.Outline; styleColor: "#80000000"
-        }
-
         // Línea de tiempo: progreso, buffer, miniatura de tiempo al pasar el cursor y arrastre
         Item {
             id: timeline
@@ -185,18 +180,51 @@ Item {
                 width: 14; height: 14; radius: 7; color: Tokens.accent; border.color: "white"; border.width: 1.5
                 opacity: tlMouse.containsMouse || timeline.dragging ? 1 : 0; Behavior on opacity { NumberAnimation { duration: 100 } }
             }
-            Rectangle { // tiempo bajo el cursor
-                visible: (tlMouse.containsMouse || timeline.dragging) && timeline.duration > 0
-                width: hoverLabel.width + 16; height: 26; radius: 6; color: "#E6000000"; border.color: "#44FFFFFF"
+            // Vista previa: fotograma (si ya se generó) y tiempo bajo el cursor. El fotograma anterior se mantiene hasta que llega el nuevo.
+            readonly property bool active: tlMouse.containsMouse || dragging
+            readonly property real hoverTime: duration * (dragging ? dragFrac : hoverFrac)
+            readonly property real curFrac: dragging ? dragFrac : hoverFrac
+            property string thumbSrc: ""
+            property real thumbFrac: 0          // posición (0–1) para la que se generó el fotograma mostrado
+            // El fotograma solo se muestra mientras el cursor siga cerca de su posición (≤ 10 px): si te alejas más, desaparece
+            // y vuelve a aparecer cuando llega el de la posición nueva, en vez de arrastrar un fotograma que ya no corresponde.
+            readonly property bool thumbFresh: thumbSrc !== "" && Math.abs(curFrac - thumbFrac) * width <= 10
+            onActiveChanged: if (!active) thumbSrc = ""
+            function refreshThumb() {
+                if (!ov.thumbs || !active) return
+                const u = ov.thumbs.urlFor(hoverTime)
+                if (u !== "") { thumbSrc = u; thumbFrac = curFrac }
+            }
+            function askThumb() { if (ov.thumbs && !thumbTimer.running) thumbTimer.start() }
+            Timer { id: thumbTimer; interval: 120; onTriggered: if (ov.thumbs && timeline.active) ov.thumbs.request(timeline.hoverTime) }   // como mucho una petición cada 120 ms
+            Connections { target: ov.thumbs; function onReady() { timeline.refreshThumb() } }
+            Item {
+                id: preview
+                visible: timeline.active && timeline.duration > 0
+                readonly property bool hasThumb: timeline.thumbFresh
+                width: hasThumb ? 240 : hoverLabel.width + 16
+                height: (hasThumb ? thumbFrame.height + 6 : 0) + 26
                 x: Math.max(0, Math.min(timeline.width - width, timeline.width * (timeline.dragging ? timeline.dragFrac : timeline.hoverFrac) - width / 2))
-                y: -34
-                Text { id: hoverLabel; anchors.centerIn: parent; color: "white"; font.pixelSize: 13
-                       text: ov.fmt(timeline.duration * (timeline.dragging ? timeline.dragFrac : timeline.hoverFrac)) }
+                y: -height - 8
+                Rectangle {
+                    id: thumbFrame
+                    visible: preview.hasThumb
+                    width: 240; height: Math.round(240 * (thumbImg.implicitWidth > 0 ? thumbImg.implicitHeight / thumbImg.implicitWidth : 9 / 16))
+                    radius: 4; color: "black"; border.color: "#66FFFFFF"; border.width: 1
+                    Image { id: thumbImg; anchors { fill: parent; margins: 1 } source: timeline.thumbSrc; cache: false; smooth: true; fillMode: Image.Stretch }
+                }
+                Rectangle { // tiempo
+                    anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom }
+                    width: hoverLabel.width + 16; height: 26; radius: 6; color: "#E6000000"; border.color: "#44FFFFFF"
+                    Text { id: hoverLabel; anchors.centerIn: parent; color: "white"; font.pixelSize: 13
+                           text: ov.fmt(timeline.hoverTime) }
+                }
             }
             MouseArea {
                 id: tlMouse; anchors { fill: parent; topMargin: -8; bottomMargin: -6 } hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                 function frac(x) { return Math.max(0, Math.min(1, x / width)) }
-                onPositionChanged: (m) => { timeline.hoverFrac = frac(m.x); if (pressed) { timeline.dragFrac = frac(m.x); ov.interacted() } }
+                onPositionChanged: (m) => { timeline.hoverFrac = frac(m.x); if (pressed) { timeline.dragFrac = frac(m.x); ov.interacted() }
+                                            timeline.refreshThumb(); timeline.askThumb() }
                 onPressed: (m) => { timeline.dragging = true; timeline.dragFrac = frac(m.x); ov.interacted() }
                 onReleased: { if (timeline.duration > 0) { ov.player.seek(timeline.duration * timeline.dragFrac, false); ov.seeked() } timeline.dragging = false }
                 onCanceled: timeline.dragging = false

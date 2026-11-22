@@ -121,6 +121,8 @@ qt_add_qml_module(cinemalove
         src/backend/ClImageProvider.cpp
         src/player/MpvItem.h
         src/player/MpvItem.cpp
+        src/player/Thumbnailer.h
+        src/player/Thumbnailer.cpp
 )
 
 target_include_directories(cinemalove PRIVATE src/player src/catalog src/backend)
